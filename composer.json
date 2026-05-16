@@ -1,0 +1,28 @@
+{
+    "name": "rak200/collections",
+    "description": "Typed generic collections for PHP 8.4+ (Collection, planned: DoublyLinkedList, Queue, Stack, etc.)",
+    "version": "0.0.1",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "rak200",
+            "email": "rak.ricardo@windowslive.com"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "rak200/caster": "^1.0.0"
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/rak200/caster"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Rak200\\Collections\\": "src/"
+        }
+    }
+}
