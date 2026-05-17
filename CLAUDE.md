@@ -11,19 +11,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 collections/
 ├── composer.json
-└── src/
-    ├── AbstractCollection.php    # Shared base: $items, $type, Iterator/Countable/ToArray, count/toArray/getType
-    ├── Vector.php                # Int-indexed dynamic array of typed/mixed values
-    ├── Collection.php            # @deprecated 0.0.2; thin BC shim over Vector (string keys)
-    ├── LinkedList.php            # Doubly linked list (O(1) ops via node refs)
-    ├── LinkedNode.php            # Node used by LinkedList
-    ├── Queue.php                 # FIFO (backed by LinkedList)
-    ├── Stack.php                 # LIFO (overrides iteration for top-to-bottom)
-    ├── Set.php                   # Unique elements by spl_object_id (overrides toArray)
-    └── Map.php                   # Ordered key-value map with key+value typing
+├── phpunit.xml
+├── src/
+│   ├── AbstractCollection.php    # Shared base: $items, $type, Iterator/Countable/ToArray, count/toArray/getType
+│   ├── Vector.php                # Int-indexed dynamic array of typed/mixed values
+│   ├── Collection.php            # @deprecated 0.0.2; thin BC shim over Vector (string keys)
+│   ├── LinkedList.php            # Doubly linked list (O(1) ops via node refs)
+│   ├── LinkedNode.php            # Node used by LinkedList
+│   ├── Queue.php                 # FIFO (backed by LinkedList)
+│   ├── Stack.php                 # LIFO (overrides iteration for top-to-bottom)
+│   ├── Set.php                   # Unique elements by spl_object_id (overrides toArray)
+│   └── Map.php                   # Ordered key-value map with key+value typing
+└── tests/                        # PHPUnit suites mirroring each src/ class
 ```
 
-All classes live under the `Rak200\Collections` namespace (PSR-4 from `src/`).
+All classes live under the `Rak200\Collections` namespace (PSR-4 from `src/`); tests under `Rak200\Collections\Tests` (PSR-4 from `tests/`).
+
+## Testing
+
+`composer test` (or `vendor/bin/phpunit`) runs the suite. PHPUnit 13 is required (in `require-dev`). Each `src/X.php` has a paired `tests/XTest.php` covering construction, type enforcement, public API, interface compliance, and edge cases (empty operations, null returns, duplicates).
 
 ## Classes
 
@@ -90,7 +96,7 @@ When adding a new collection type:
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.0.1** — unstable until unit tests are added. 
+Follows [Semantic Versioning](https://semver.org). Current version: **0.0.5** — still pre-1.0 while the API stabilizes. 
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`

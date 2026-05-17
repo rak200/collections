@@ -128,9 +128,18 @@ use Rak200\Caster\Caster;
 Caster::toJson($users);            // delegates to $users->toArray()
 ```
 
+## Testing
+
+```bash
+composer install
+composer test
+```
+
+The suite uses PHPUnit 13 and covers every `src/` class. Each class has a paired `tests/*Test.php` exercising construction, type enforcement, public API, and interface compliance.
+
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.0.4** — unstable until unit tests are added.
+Follows [Semantic Versioning](https://semver.org). Current version: **0.0.5** — still pre-1.0 while the API stabilizes.
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`

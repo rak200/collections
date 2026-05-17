@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.5] - 2026-05-17
+
+### Added
+- PHPUnit 13 test suite under `tests/` covering every `src/` class (91 tests, 178 assertions). `phpunit.xml` config and `composer test` script added.
+- `LinkedList::getType()` getter, matching the other collection types' API.
+
 ## [0.0.4] - 2026-05-17
 
 ### Added
@@ -44,7 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial release with `Collection<T_Key, T_Object>` — typed generic array container implementing `Iterator`, `ArrayAccess`, `Countable`, and `Rak200\Caster\Contracts\ToArray`.
 
-[Unreleased]: https://github.com/rak200/collections/compare/0.0.4...HEAD
+[Unreleased]: https://github.com/rak200/collections/compare/0.0.5...HEAD
+[0.0.5]: https://github.com/rak200/collections/compare/0.0.4...0.0.5
 [0.0.4]: https://github.com/rak200/collections/compare/0.0.3...0.0.4
 [0.0.3]: https://github.com/rak200/collections/compare/0.0.2...0.0.3
 [0.0.2]: https://github.com/rak200/collections/compare/0.0.1...0.0.2

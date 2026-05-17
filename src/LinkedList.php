@@ -49,6 +49,14 @@ class LinkedList implements \Iterator, \Countable, ToArray {
     }
 
     /**
+     * Get the configured type of this list.
+     * @return class-string<T_Value&object>|string
+     */
+    public function getType(): string {
+        return $this->type;
+    }
+
+    /**
      * @param T_Value $item
      * @throws InvalidArgumentException
      */

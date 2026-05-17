@@ -1,7 +1,7 @@
 {
     "name": "rak200/collections",
     "description": "Typed generic collections for PHP 8.4+ (Vector, LinkedList, Queue, Stack, Set, Map).",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -25,7 +25,15 @@
             "Rak200\\Collections\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Rak200\\Collections\\Tests\\": "tests/"
+        }
+    },
     "require-dev": {
         "phpunit/phpunit": "^13.1"
+    },
+    "scripts": {
+        "test": "phpunit"
     }
 }
