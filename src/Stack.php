@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
+use function array_pop;
+use function count;
 use InvalidArgumentException;
 
 /**
  * LIFO stack. Iteration yields elements from top (most recently pushed) to bottom.
  *
- * @template T_Object of object
- * @extends AbstractCollection<T_Object>
+ * @template T_Value
+ * @extends AbstractCollection<T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>
  */
 class Stack extends AbstractCollection {
@@ -18,8 +20,8 @@ class Stack extends AbstractCollection {
     private int $position = 0;
 
     /**
-     * @param class-string<T_Object>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
-     * @param iterable<T_Object> $items Initial items pushed in order (last becomes top).
+     * @param class-string<T_Value&object>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
+     * @param iterable<T_Value> $items Initial items pushed in order (last becomes top).
      * @throws InvalidArgumentException When any item is not an instance of $type.
      */
     public function __construct(string $type = 'mixed', iterable $items = []) {
@@ -30,29 +32,12 @@ class Stack extends AbstractCollection {
     }
 
     /**
-     * @param T_Object $item
-     * @throws InvalidArgumentException
-     */
-    private function checkType(object $item): void {
-        if ($this->type === 'mixed') {
-            return;
-        }
-        if (!is_a($item, $this->type, true)) {
-            throw new InvalidArgumentException(sprintf(
-                'Item must be an instance of %s. Got: %s',
-                $this->type,
-                $item::class
-            ));
-        }
-    }
-
-    /**
      * Push onto the top.
      *
-     * @param T_Object $item
+     * @param T_Value $item
      * @throws InvalidArgumentException
      */
-    public function push(object $item): void {
+    public function push(mixed $item): void {
         $this->checkType($item);
         $this->items[] = $item;
     }
@@ -60,24 +45,24 @@ class Stack extends AbstractCollection {
     /**
      * Remove and return the top, or null if empty.
      *
-     * @return T_Object|null
+     * @return T_Value|null
      */
-    public function pop(): ?object {
+    public function pop(): mixed {
         return array_pop($this->items);
     }
 
     /**
      * Return the top without removing it, or null if empty.
      *
-     * @return T_Object|null
+     * @return T_Value|null
      */
-    public function peek(): ?object {
+    public function peek(): mixed {
         $count = count($this->items);
         return $count === 0 ? null : $this->items[$count - 1];
     }
 
-    /** @return T_Object */
-    public function current(): object {
+    /** @return T_Value */
+    public function current(): mixed {
         return $this->items[count($this->items) - 1 - $this->position];
     }
 

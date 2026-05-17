@@ -75,4 +75,15 @@ final class StackTest extends TestCase {
     public function testIsAbstractCollection(): void {
         self::assertInstanceOf(AbstractCollection::class, new Stack());
     }
+
+    public function testMixedAcceptsScalarsAndNull(): void {
+        $s = new Stack('mixed');
+        $s->push(42);
+        $s->push('top');
+        $s->push(null);
+        self::assertCount(3, $s);
+        self::assertNull($s->pop());
+        self::assertSame('top', $s->pop());
+        self::assertSame(42, $s->pop());
+    }
 }

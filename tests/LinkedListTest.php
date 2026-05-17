@@ -7,7 +7,7 @@ namespace Rak200\Collections\Tests;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use Rak200\Collections\LinkedList;
-use Rak200\Collections\LinkedNode;
+use Rak200\Collections\Internal\LinkedNode;
 use Rak200\Collections\Vector;
 
 final class LinkedListTest extends TestCase {

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Rak200\Collections;
 
 use Rak200\Caster\Contracts\ToArray;
+use Rak200\Collections\Internal\LinkedNode;
+use Rak200\Collections\Internal\ValidatesType;
 use InvalidArgumentException;
 
 /**
@@ -20,6 +22,8 @@ use InvalidArgumentException;
  * @author rak200 <rak.ricardo@windowslive.com>
  */
 class LinkedList implements \Iterator, \Countable, ToArray {
+
+    use ValidatesType;
 
     /** @var LinkedNode<T_Value>|null */
     private ?LinkedNode $head = null;
@@ -57,23 +61,6 @@ class LinkedList implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * @param T_Value $item
-     * @throws InvalidArgumentException
-     */
-    private function checkType(mixed $item): void {
-        if ($this->type === 'mixed') {
-            return;
-        }
-        if (!($item instanceof $this->type)) {
-            throw new InvalidArgumentException(sprintf(
-                'Item must be an instance of %s. Got: %s',
-                $this->type,
-                get_debug_type($item)
-            ));
-        }
-    }
-
-    /**
      * Append at the tail.
      *
      * @param T_Value $item
@@ -82,14 +69,13 @@ class LinkedList implements \Iterator, \Countable, ToArray {
      */
     public function push(mixed $item): LinkedNode {
         $this->checkType($item);
-        $node = new LinkedNode($item);
+        $node = new LinkedNode($item, prev: $this->tail);
         if ($this->tail === null) {
-            $this->head = $this->tail = $node;
+            $this->head = $node;
         } else {
-            $node->prev = $this->tail;
             $this->tail->next = $node;
-            $this->tail = $node;
         }
+        $this->tail = $node;
         $this->count++;
         return $node;
     }
@@ -103,14 +89,13 @@ class LinkedList implements \Iterator, \Countable, ToArray {
      */
     public function unshift(mixed $item): LinkedNode {
         $this->checkType($item);
-        $node = new LinkedNode($item);
+        $node = new LinkedNode($item, next: $this->head);
         if ($this->head === null) {
-            $this->head = $this->tail = $node;
+            $this->tail = $node;
         } else {
-            $node->next = $this->head;
             $this->head->prev = $node;
-            $this->head = $node;
         }
+        $this->head = $node;
         $this->count++;
         return $node;
     }
@@ -153,9 +138,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
      */
     public function insertBefore(LinkedNode $node, mixed $item): LinkedNode {
         $this->checkType($item);
-        $new = new LinkedNode($item);
-        $new->next = $node;
-        $new->prev = $node->prev;
+        $new = new LinkedNode($item, prev: $node->prev, next: $node);
         if ($node->prev !== null) {
             $node->prev->next = $new;
         } else {
@@ -176,9 +159,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
      */
     public function insertAfter(LinkedNode $node, mixed $item): LinkedNode {
         $this->checkType($item);
-        $new = new LinkedNode($item);
-        $new->prev = $node;
-        $new->next = $node->next;
+        $new = new LinkedNode($item, prev: $node, next: $node->next);
         if ($node->next !== null) {
             $node->next->prev = $new;
         } else {

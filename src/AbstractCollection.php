@@ -4,7 +4,13 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
+use function count;
+use function current;
+use function key;
+use function next;
+use function reset;
 use Rak200\Caster\Contracts\ToArray;
+use Rak200\Collections\Internal\ValidatesType;
 
 /**
  * Base class for typed collections. Provides shared mechanics:
@@ -12,15 +18,18 @@ use Rak200\Caster\Contracts\ToArray;
  * - `$items` storage and `$type` discriminator (both `protected` for subclasses)
  * - `getType()`, `count()`, `toArray()`
  * - default `Iterator` over the array's internal pointer
+ * - shared `checkType()` from {@see ValidatesType}
  *
  * Subclasses define their own public mutation API (push/pop, set/get/has,
- * add/remove/contains, etc.), their own type-check logic, and may additionally
- * implement `ArrayAccess` when it fits their semantics.
+ * add/remove/contains, etc.) and may additionally implement `ArrayAccess`
+ * when it fits their semantics.
  *
  * @template T_Value
  * @author rak200 <rak.ricardo@windowslive.com>
  */
 abstract class AbstractCollection implements \Iterator, \Countable, ToArray {
+
+    use ValidatesType;
 
     /** @var array<int|string, T_Value> */
     protected array $items = [];
@@ -35,27 +44,32 @@ abstract class AbstractCollection implements \Iterator, \Countable, ToArray {
         return $this->type;
     }
 
+    /** Number of items currently stored. */
     public function count(): int {
         return count($this->items);
     }
 
-    /** @return T_Value */
+    /** @return T_Value Value at the current iteration cursor. */
     public function current(): mixed {
         return current($this->items);
     }
 
+    /** Key at the current iteration cursor. */
     public function key(): int|string {
         return key($this->items);
     }
 
+    /** Advance the iteration cursor. */
     public function next(): void {
         next($this->items);
     }
 
+    /** Reset the iteration cursor to the first item. */
     public function rewind(): void {
         reset($this->items);
     }
 
+    /** Whether the iteration cursor still points at a valid item. */
     public function valid(): bool {
         return key($this->items) !== null;
     }

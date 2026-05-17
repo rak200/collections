@@ -128,4 +128,17 @@ final class MapTest extends TestCase {
         self::assertInstanceOf(AbstractCollection::class, $m);
         self::assertInstanceOf(\ArrayAccess::class, $m);
     }
+
+    public function testMixedValueAcceptsScalars(): void {
+        $m = new Map('string', 'mixed');
+        $m->set('age', 42);
+        $m->set('name', 'Alice');
+        $m->set('active', true);
+        $m->set('nothing', null);
+        self::assertSame(42, $m->get('age'));
+        self::assertSame('Alice', $m->get('name'));
+        self::assertTrue($m->get('active'));
+        self::assertNull($m->get('nothing'));
+        self::assertTrue($m->has('nothing'));
+    }
 }

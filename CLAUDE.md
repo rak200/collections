@@ -17,11 +17,17 @@ collections/
 │   ├── Vector.php                # Int-indexed dynamic array of typed/mixed values
 │   ├── Collection.php            # @deprecated 0.0.2; thin BC shim over Vector (string keys)
 │   ├── LinkedList.php            # Doubly linked list (O(1) ops via node refs)
-│   ├── LinkedNode.php            # Node used by LinkedList
 │   ├── Queue.php                 # FIFO (backed by LinkedList)
 │   ├── Stack.php                 # LIFO (overrides iteration for top-to-bottom)
-│   ├── Set.php                   # Unique elements by spl_object_id (overrides toArray)
-│   └── Map.php                   # Ordered key-value map with key+value typing
+│   ├── Set.php                   # Unique elements (hybrid identity: spl_object_id for objects, value for scalars)
+│   ├── Map.php                   # Ordered key-value map with key+value typing
+│   ├── PriorityQueue.php         # Max-heap, O(log n) enqueue/dequeue, stable on ties
+│   ├── OrderedSet.php            # Set with insertion order or custom comparator
+│   ├── BiMap.php                 # Bidirectional map (O(1) both ways), unique on both sides
+│   └── Internal/
+│       ├── HashesValues.php      # Trait: hybrid hash for Set/OrderedSet/BiMap
+│       ├── ValidatesType.php     # Trait: shared checkType() for AbstractCollection subclasses
+│       └── LinkedNode.php        # Node used by LinkedList (was Rak200\Collections\LinkedNode in 0.0.x)
 └── tests/                        # PHPUnit suites mirroring each src/ class
 ```
 
@@ -32,6 +38,8 @@ All classes live under the `Rak200\Collections` namespace (PSR-4 from `src/`); t
 `composer test` (or `vendor/bin/phpunit`) runs the suite. PHPUnit 13 is required (in `require-dev`). Each `src/X.php` has a paired `tests/XTest.php` covering construction, type enforcement, public API, interface compliance, and edge cases (empty operations, null returns, duplicates).
 
 ## Classes
+
+All classes and members must have a docblock.
 
 **`AbstractCollection<T_Value>`** (abstract)
 - Implements `Iterator`, `Countable`, `Rak200\Caster\Contracts\ToArray`
@@ -58,35 +66,71 @@ All classes live under the `Rak200\Collections` namespace (PSR-4 from `src/`); t
 - Implements `Iterator`, `Countable`, `ToArray`
 - Accepts values of any type; with a class-string `$type`, items are validated as instances of that class
 - Constructor: `new LinkedList(string $type = 'mixed', iterable $items = [])`
-- O(1) `push()`, `unshift()`, `pop()`, `shift()`, `insertBefore()`, `insertAfter()`, `remove()` (the last four take/return `LinkedNode`)
+- O(1) `push()`, `unshift()`, `pop()`, `shift()`, `insertBefore()`, `insertAfter()`, `remove()` (the last four take/return `Internal\LinkedNode`)
 - `head()`, `tail()` return the boundary nodes (or `null`)
 - Static `fromVector(Vector $v)` builds a list from a `Vector`
 
-**`Queue<T_Object>`**
+**`Queue<T_Value>`**
 - Implements `Iterator`, `Countable`, `ToArray`; backed internally by `LinkedList`
+- Accepts values of any type
 - Constructor: `new Queue(string $type = 'mixed', iterable $items = [])`
-- Methods: `enqueue()`, `dequeue()` (returns `?T_Object`), `peek()` (returns `?T_Object`)
+- Methods: `enqueue()`, `dequeue()` (returns `T_Value|null`), `peek()` (returns `T_Value|null`)
 
-**`Stack<T_Object>`**
+**`Stack<T_Value>`**
 - Implements `Iterator`, `Countable`, `ToArray`
+- Accepts values of any type
 - Constructor: `new Stack(string $type = 'mixed', iterable $items = [])`
 - Methods: `push()`, `pop()`, `peek()`
 - Iteration yields elements from top (most recently pushed) to bottom
 
-**`Set<T_Object>`**
+**`Set<T_Value>`**
 - Implements `Iterator`, `Countable`, `ToArray`
-- Uniqueness is by object identity (`spl_object_id`), not value equality
+- Hybrid identity: objects by `spl_object_id` (same instance only); scalars, null, and arrays by value
 - Constructor: `new Set(string $type = 'mixed', iterable $items = [])`
 - Methods: `add()` (returns `bool` — true if newly added), `remove()` (returns `bool`), `contains()`
-- `toArray()` returns a zero-indexed array (object-id keys discarded)
+- `toArray()` returns a zero-indexed array (internal hash keys discarded)
 
 **`Map<T_Key, T_Value>`**
 - Implements `Iterator`, `ArrayAccess`, `Countable`, `ToArray`
 - Constructor: `new Map(string $keyType = 'mixed', string $valueType = 'mixed', array $items = [])`
   - `$keyType`: `'int'`, `'string'`, or `'mixed'`
-  - `$valueType`: class-string to enforce, or `'mixed'`
+  - `$valueType`: class-string to enforce on values, or `'mixed'` (any type — scalar or object)
 - Methods: `set()`, `get()`, `has()`, `delete()` (returns `bool`), `keys()`, `values()`
 - Insertion order is preserved
+
+**`PriorityQueue<T_Value>`**
+- Implements `Iterator`, `Countable`, `ToArray` (standalone — heap storage, doesn't extend `AbstractCollection`)
+- Max-heap: higher priority is dequeued first; ties broken FIFO via an internal sequence counter
+- Accepts values of any type
+- Constructor: `new PriorityQueue(string $type = 'mixed')` (no initial items — call `enqueue` explicitly)
+- Methods: `enqueue(mixed $item, int|float $priority)`, `dequeue(): T_Value|null`, `peek(): T_Value|null`
+- `enqueue`/`dequeue` are O(log n); `peek`/`count` are O(1)
+- Iteration is non-destructive (builds a sorted snapshot on `rewind`)
+
+**`OrderedSet<T_Value>`**
+- Implements `Iterator`, `Countable`, `ToArray` via `AbstractCollection`
+- Like `Set` (hybrid identity: objects by `spl_object_id`, scalars/null/arrays by value) but with predictable iteration order
+- Constructor: `new OrderedSet(string $type = 'mixed', ?Closure $comparator = null, iterable $items = [])`
+  - `$comparator`: `fn(T $a, T $b): int` (usort-style); `null` = insertion order
+- Methods: `add()`/`remove()`/`contains()` (same shape as `Set`), plus `first()`/`last()`
+- With a comparator, `uasort` runs on every `add()` (O(n log n) per insert)
+
+**`BiMap<T_Key, T_Value>`**
+- Implements `Iterator`, `Countable`, `ToArray` (standalone — two parallel arrays)
+- Both keys and values are unique; reverse lookup is O(1). Values can be of any type (hashed via the same hybrid scheme as `Set` — see `Internal\HashesValues`)
+- Constructor: `new BiMap(string $keyType = 'mixed', string $valueType = 'mixed')`
+- Methods: `put()` (throws on conflict), `forcePut()` (overwrites either side), `getByKey()`, `getByValue()`, `hasKey()`, `hasValue()`, `removeByKey()`, `removeByValue()`
+
+### Internal
+
+**`Internal\HashesValues`** (trait)
+- `private static function hashValue(mixed $value): string` — used by `Set`, `OrderedSet`, and `BiMap` to derive a uniqueness handle: `spl_object_id` for objects, value with a type prefix for scalars/null/arrays. Different types never collide (`'1'` vs `1`).
+
+**`Internal\ValidatesType`** (trait)
+- Shared `checkType()` used by `AbstractCollection` subclasses to validate items against the configured `$type` (`'mixed'` skips; class-string requires `instanceof`).
+
+**`Internal\LinkedNode`** (final class)
+- Node used by `LinkedList`. Public readonly `value`, internal-maintained `prev`/`next`. Moved from `Rak200\Collections\LinkedNode` to this namespace in 0.1.0.
 
 When adding a new collection type:
 1. Create the class under `src/` with namespace `Rak200\Collections`
@@ -96,7 +140,7 @@ When adding a new collection type:
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.0.5** — still pre-1.0 while the API stabilizes. 
+Follows [Semantic Versioning](https://semver.org). Current version: **0.1.0** — still pre-1.0 while the API stabilizes. 
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`

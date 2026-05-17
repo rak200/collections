@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
+use function trigger_error;
 use InvalidArgumentException;
 
 /**

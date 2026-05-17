@@ -10,18 +10,18 @@ use InvalidArgumentException;
 /**
  * FIFO queue backed by a {@see LinkedList} for O(1) enqueue/dequeue.
  *
- * @template T_Object of object
- * @implements \Iterator<int, T_Object>
+ * @template T_Value
+ * @implements \Iterator<int, T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>
  */
 class Queue implements \Iterator, \Countable, ToArray {
 
-    /** @var LinkedList<T_Object> */
+    /** @var LinkedList<T_Value> */
     private LinkedList $list;
 
     /**
-     * @param class-string<T_Object>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
-     * @param iterable<T_Object> $items Initial items enqueued in order.
+     * @param class-string<T_Value&object>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
+     * @param iterable<T_Value> $items Initial items enqueued in order.
      * @throws InvalidArgumentException When any item is not an instance of $type.
      */
     public function __construct(private string $type = 'mixed', iterable $items = []) {
@@ -33,7 +33,7 @@ class Queue implements \Iterator, \Countable, ToArray {
 
     /**
      * Get the configured type of this queue.
-     * @return class-string<T_Object>|string
+     * @return class-string<T_Value&object>|string
      */
     public function getType(): string {
         return $this->type;
@@ -42,28 +42,28 @@ class Queue implements \Iterator, \Countable, ToArray {
     /**
      * Append at the tail.
      *
-     * @param T_Object $item
+     * @param T_Value $item
      * @throws InvalidArgumentException
      */
-    public function enqueue(object $item): void {
+    public function enqueue(mixed $item): void {
         $this->list->push($item);
     }
 
     /**
      * Remove and return the head, or null if empty.
      *
-     * @return T_Object|null
+     * @return T_Value|null
      */
-    public function dequeue(): ?object {
+    public function dequeue(): mixed {
         return $this->list->shift();
     }
 
     /**
      * Return the head without removing it, or null if empty.
      *
-     * @return T_Object|null
+     * @return T_Value|null
      */
-    public function peek(): ?object {
+    public function peek(): mixed {
         return $this->list->head()?->value;
     }
 
@@ -71,8 +71,8 @@ class Queue implements \Iterator, \Countable, ToArray {
         return $this->list->count();
     }
 
-    /** @return T_Object */
-    public function current(): object {
+    /** @return T_Value */
+    public function current(): mixed {
         return $this->list->current();
     }
 

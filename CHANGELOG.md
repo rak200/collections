@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-05-17
+
+First minor release. Consolidates a wave of API additions and the `object`→`mixed` relaxation across the library.
+
+### Added
+- `PriorityQueue<T_Value>` — max-heap priority queue with O(log n) `enqueue`/`dequeue`, O(1) `peek`/`count`. Stable on ties via an internal sequence counter. Non-destructive iteration in extraction order.
+- `OrderedSet<T_Value>` — unique-element set with a predictable iteration order. Default is insertion order; an optional `Closure $comparator` re-sorts on every `add()`. Adds `first()`/`last()`. Extends `AbstractCollection`.
+- `BiMap<T_Key, T_Value>` — bidirectional map with unique keys AND unique values. O(1) `getByKey`/`getByValue`. `put()` rejects conflicts; `forcePut()` overwrites either side.
+- `Internal\HashesValues` trait — hybrid hashing (`spl_object_id` for objects; value with type prefix for scalars/null/arrays) used by `Set`, `OrderedSet`, and `BiMap`.
+- `Internal\ValidatesType` trait — shared `checkType()` logic factored out of `AbstractCollection` subclasses.
+- PHPUnit suites for the three new classes plus scalar-value tests for `Queue`, `Stack`, `Map`, `Set`, `OrderedSet`, and `BiMap`. Suite is now 136 tests / 395 assertions.
+
+### Changed
+- **BREAKING** `Queue`, `Stack`, `Map` (value), `PriorityQueue`, `Set`, `OrderedSet`, and `BiMap` (value) all accept `mixed` values now. Method signatures widened from `object` to `mixed`; class-string enforcement still rejects non-instances (`instanceof` returns false for scalars).
+- **BREAKING** `LinkedNode` moved from `Rak200\Collections\LinkedNode` to `Rak200\Collections\Internal\LinkedNode`. Consumers holding node references returned by `LinkedList::push()`/`unshift()`/etc. need to update their `use` statement; behavior unchanged.
+- `Set`, `OrderedSet`, and `BiMap` now identify items via the hybrid `hashValue()` scheme: objects by identity (unchanged), scalars/null/arrays by value. Previously these classes only accepted objects.
+
+### Fixed
+- `Set` and `OrderedSet` could not store `null` as a unique value because internal presence checks used `isset()`, which returns `false` for stored `null`s. Switched to `array_key_exists()`.
+
 ## [0.0.5] - 2026-05-17
 
 ### Added
@@ -50,7 +70,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial release with `Collection<T_Key, T_Object>` — typed generic array container implementing `Iterator`, `ArrayAccess`, `Countable`, and `Rak200\Caster\Contracts\ToArray`.
 
-[Unreleased]: https://github.com/rak200/collections/compare/0.0.5...HEAD
+[Unreleased]: https://github.com/rak200/collections/compare/0.1.0...HEAD
+[0.1.0]: https://github.com/rak200/collections/compare/0.0.5...0.1.0
 [0.0.5]: https://github.com/rak200/collections/compare/0.0.4...0.0.5
 [0.0.4]: https://github.com/rak200/collections/compare/0.0.3...0.0.4
 [0.0.3]: https://github.com/rak200/collections/compare/0.0.2...0.0.3

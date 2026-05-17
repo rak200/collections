@@ -40,11 +40,10 @@ final class QueueTest extends TestCase {
         self::assertCount(1, $q);
     }
 
-    public function testTypeEnforcement(): void {
+    public function testClassTypeRejectsNonObject(): void {
         $q = new Queue(\stdClass::class);
         $q->enqueue(new \stdClass());
-        $this->expectException(\TypeError::class);
-        /** @phpstan-ignore-next-line — exercising signature contract */
+        $this->expectException(InvalidArgumentException::class);
         $q->enqueue('not-an-object');
     }
 
@@ -52,6 +51,18 @@ final class QueueTest extends TestCase {
         $q = new Queue(\DateTimeImmutable::class);
         $this->expectException(InvalidArgumentException::class);
         $q->enqueue(new \stdClass());
+    }
+
+    public function testMixedAcceptsScalarsAndNull(): void {
+        $q = new Queue('mixed');
+        $q->enqueue(42);
+        $q->enqueue('hello');
+        $q->enqueue(null);
+        self::assertCount(3, $q);
+        self::assertSame(42, $q->dequeue());
+        self::assertSame('hello', $q->dequeue());
+        self::assertNull($q->dequeue());
+        self::assertCount(0, $q);
     }
 
     public function testInitialItems(): void {

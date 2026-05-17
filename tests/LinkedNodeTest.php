@@ -5,15 +5,19 @@ declare(strict_types=1);
 namespace Rak200\Collections\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Rak200\Collections\LinkedNode;
+use Rak200\Collections\Internal\LinkedNode;
 
 final class LinkedNodeTest extends TestCase {
 
+    /**
+     * Test readonly assignment and immutability of the value property.
+     * @return void
+     */
     public function testValueIsReadonly(): void {
         $node = new LinkedNode('hello');
         self::assertSame('hello', $node->value);
         $this->expectException(\Error::class);
-        /** @phpstan-ignore-next-line — intentional violation to exercise readonly */
+        // @phpstan-ignore-next-line
         $node->value = 'world';
     }
 

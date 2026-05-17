@@ -95,4 +95,35 @@ final class SetTest extends TestCase {
     public function testIsAbstractCollection(): void {
         self::assertInstanceOf(AbstractCollection::class, new Set());
     }
+
+    public function testScalarsAreUniqueByValue(): void {
+        $s = new Set('mixed');
+        self::assertTrue($s->add('foo'));
+        self::assertFalse($s->add('foo'));   // same string value
+        self::assertTrue($s->add(42));
+        self::assertFalse($s->add(42));      // same int value
+        self::assertTrue($s->add('42'));     // distinct from int 42 thanks to type prefix
+        self::assertCount(3, $s);
+    }
+
+    public function testNullAndBoolsAreUnique(): void {
+        $s = new Set('mixed');
+        self::assertTrue($s->add(null));
+        self::assertFalse($s->add(null));
+        self::assertTrue($s->add(true));
+        self::assertTrue($s->add(false));
+        self::assertCount(3, $s);
+    }
+
+    public function testMixedCollectionWithObjectsAndScalars(): void {
+        $s = new Set('mixed');
+        $obj = new \stdClass();
+        $s->add($obj);
+        $s->add('foo');
+        $s->add(1);
+        self::assertTrue($s->contains($obj));
+        self::assertTrue($s->contains('foo'));
+        self::assertTrue($s->contains(1));
+        self::assertCount(3, $s);
+    }
 }

@@ -33,23 +33,6 @@ class Vector extends AbstractCollection implements \ArrayAccess {
         $this->items = $items;
     }
 
-    /**
-     * @param T_Value $item
-     * @throws InvalidArgumentException
-     */
-    private function checkType(mixed $item): void {
-        if ($this->type === 'mixed') {
-            return;
-        }
-        if (!($item instanceof $this->type)) {
-            throw new InvalidArgumentException(sprintf(
-                'Item must be an instance of %s. Got: %s',
-                $this->type,
-                get_debug_type($item)
-            ));
-        }
-    }
-
     /** @return int */
     public function key(): int {
         return parent::key();

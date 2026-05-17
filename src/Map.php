@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
+use function array_key_exists;
+use function array_key_last;
+use function array_keys;
+use function array_values;
+use function get_debug_type;
+use function is_int;
+use function is_string;
+use function sprintf;
 use InvalidArgumentException;
 
 /**
@@ -15,7 +23,7 @@ use InvalidArgumentException;
  * type is held in `$keyType` on this class.
  *
  * @template T_Key of int|string
- * @template T_Value of object
+ * @template T_Value
  * @extends AbstractCollection<T_Value>
  * @implements \ArrayAccess<T_Key, T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>
@@ -24,7 +32,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
 
     /**
      * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
-     * @param class-string<T_Value>|'mixed' $valueType Value class to enforce, or 'mixed' to skip.
+     * @param class-string<T_Value&object>|'mixed' $valueType Value class to enforce, or 'mixed' to skip.
      * @param array<T_Key, T_Value> $items Initial entries.
      * @throws InvalidArgumentException When any key or value violates its type.
      */
@@ -44,7 +52,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
         return $this->keyType;
     }
 
-    /** @return class-string<T_Value>|string */
+    /** @return class-string<T_Value&object>|string */
     public function getValueType(): string {
         return $this->type;
     }
@@ -75,15 +83,15 @@ class Map extends AbstractCollection implements \ArrayAccess {
      * @param T_Value $value
      * @throws InvalidArgumentException
      */
-    private function checkValue(object $value): void {
+    private function checkValue(mixed $value): void {
         if ($this->type === 'mixed') {
             return;
         }
-        if (!is_a($value, $this->type, true)) {
+        if (!($value instanceof $this->type)) {
             throw new InvalidArgumentException(sprintf(
                 'Value must be an instance of %s. Got: %s',
                 $this->type,
-                $value::class
+                get_debug_type($value)
             ));
         }
     }
@@ -93,7 +101,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
      * @param T_Value $value
      * @throws InvalidArgumentException
      */
-    public function set(int|string $key, object $value): void {
+    public function set(int|string $key, mixed $value): void {
         $this->checkKey($key);
         $this->checkValue($value);
         $this->items[$key] = $value;
@@ -103,7 +111,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
      * @param T_Key $key
      * @return T_Value|null
      */
-    public function get(int|string $key): ?object {
+    public function get(int|string $key): mixed {
         return $this->items[$key] ?? null;
     }
 
@@ -136,7 +144,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
     }
 
     /** @return T_Value */
-    public function current(): object {
+    public function current(): mixed {
         return parent::current();
     }
 
@@ -149,7 +157,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
      * @param T_Key $offset
      * @return T_Value|null
      */
-    public function offsetGet(mixed $offset): ?object {
+    public function offsetGet(mixed $offset): mixed {
         return $this->items[$offset] ?? null;
     }
 

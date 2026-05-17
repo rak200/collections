@@ -17,18 +17,15 @@ composer require rak200/collections
 | `Rak200\Collections\LinkedList`  | Doubly linked list with O(1) insertion/removal at any node             |
 | `Rak200\Collections\Queue`             | FIFO queue (backed by `LinkedList`)                              |
 | `Rak200\Collections\Stack`             | LIFO stack                                                             |
-| `Rak200\Collections\Set`               | Unique-element set (identity by `spl_object_id`)                       |
+| `Rak200\Collections\Set`               | Unique-element set (hybrid: identity for objects, value for scalars)   |
 | `Rak200\Collections\Map`               | Ordered key-value map with separate key and value type enforcement     |
+| `Rak200\Collections\PriorityQueue`     | Max-heap priority queue with O(log n) enqueue/dequeue, stable on ties  |
+| `Rak200\Collections\OrderedSet`        | Unique-element set with insertion order or custom comparator           |
+| `Rak200\Collections\BiMap`             | Bidirectional map with unique keys AND unique values (O(1) both ways)  |
 
-`Vector`, `Stack`, `Set`, and `Map` share an `AbstractCollection` base that handles `$items` storage, `Iterator`, `Countable`, `ToArray`, and `getType()`/`count()`/`toArray()`. The concrete classes add their public API and override iteration/`toArray` only where their semantics demand it.
+`Vector`, `Stack`, `Set`, `Map`, and `OrderedSet` share an `AbstractCollection` base that handles `$items` storage, `Iterator`, `Countable`, `ToArray`, and `getType()`/`count()`/`toArray()`. The concrete classes add their public API and override iteration/`toArray` only where their semantics demand it. `LinkedList`, `Queue`, `PriorityQueue`, and `BiMap` use their own storage models and stand alone.
 
 All types implement `Countable`, `Rak200\Caster\Contracts\ToArray`, and an appropriate iteration / array-access interface.
-
-## Planned types
-
-- `PriorityQueue` — priority queue with O(log n) insertion and extraction.
-- `OrderedSet` — set that preserves a configurable ordering (insertion order or custom comparator).
-- `BiMap` — bidirectional map with unique values, enabling O(1) lookup by either key or value.
 
 ## Usage
 
@@ -120,6 +117,52 @@ foreach ($index as $key => $user) {
 }
 ```
 
+### Priority queue
+
+```php
+use Rak200\Collections\PriorityQueue;
+
+$pq = new PriorityQueue(Job::class);
+$pq->enqueue($urgentJob, 10);
+$pq->enqueue($normalJob, 5);
+$pq->enqueue($laterJob, 1);
+$pq->dequeue();        // $urgentJob — highest priority first
+$pq->peek();           // $normalJob
+```
+
+### Ordered set
+
+```php
+use Rak200\Collections\OrderedSet;
+
+// Insertion-ordered (default)
+$visited = new OrderedSet(Node::class);
+$visited->add($n1);
+$visited->add($n2);
+$visited->first();     // $n1
+
+// Sorted by custom comparator
+$byScore = fn(Player $a, Player $b) => $b->score <=> $a->score;
+$leaderboard = new OrderedSet(Player::class, $byScore);
+$leaderboard->add($alice);
+$leaderboard->add($bob);
+$leaderboard->first(); // highest-score player
+```
+
+### Bidirectional map
+
+```php
+use Rak200\Collections\BiMap;
+
+$sessions = new BiMap('string', User::class);
+$sessions->put('sess-abc', $alice);
+$sessions->put('sess-xyz', $bob);
+
+$sessions->getByKey('sess-abc');  // $alice
+$sessions->getByValue($alice);    // 'sess-abc' — O(1) reverse lookup
+$sessions->forcePut('sess-abc', $charlie); // overwrites the existing mapping
+```
+
 ### Implements `Rak200\Caster\Contracts\ToArray`
 
 ```php
@@ -139,7 +182,7 @@ The suite uses PHPUnit 13 and covers every `src/` class. Each class has a paired
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.0.5** — still pre-1.0 while the API stabilizes.
+Follows [Semantic Versioning](https://semver.org). Current version: **0.1.0** — still pre-1.0 while the API stabilizes.
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`
