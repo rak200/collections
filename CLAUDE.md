@@ -14,9 +14,9 @@ collections/
 └── src/
     ├── Vector.php                # Int-indexed dynamic array of typed/mixed values
     ├── Collection.php            # @deprecated 0.0.2; thin BC shim over Vector (string keys)
-    ├── DoublyLinkedList.php      # Doubly linked list (O(1) ops via node refs)
-    ├── DoublyLinkedListNode.php  # Node used by DoublyLinkedList
-    ├── Queue.php                 # FIFO (backed by DoublyLinkedList)
+    ├── LinkedList.php            # Doubly linked list (O(1) ops via node refs)
+    ├── LinkedNode.php            # Node used by LinkedList
+    ├── Queue.php                 # FIFO (backed by LinkedList)
     ├── Stack.php                 # LIFO
     ├── Set.php                   # Unique elements by spl_object_id
     └── Map.php                   # Ordered key-value map with key+value typing
@@ -41,16 +41,16 @@ All classes live under the `Rak200\Collections` namespace (PSR-4 from `src/`).
 - Triggers `E_USER_DEPRECATED` from its constructor
 - New code should use `Vector` (int-indexed) or `Map` (keyed lookup)
 
-**`DoublyLinkedList<T_Value>`**
+**`LinkedList<T_Value>`**
 - Implements `Iterator`, `Countable`, `ToArray`
 - Accepts values of any type; with a class-string `$type`, items are validated as instances of that class
-- Constructor: `new DoublyLinkedList(string $type = 'mixed', iterable $items = [])`
-- O(1) `push()`, `unshift()`, `pop()`, `shift()`, `insertBefore()`, `insertAfter()`, `remove()` (the last four take/return `DoublyLinkedListNode`)
+- Constructor: `new LinkedList(string $type = 'mixed', iterable $items = [])`
+- O(1) `push()`, `unshift()`, `pop()`, `shift()`, `insertBefore()`, `insertAfter()`, `remove()` (the last four take/return `LinkedNode`)
 - `head()`, `tail()` return the boundary nodes (or `null`)
 - Static `fromVector(Vector $v)` builds a list from a `Vector`
 
 **`Queue<T_Object>`**
-- Implements `Iterator`, `Countable`, `ToArray`; backed internally by `DoublyLinkedList`
+- Implements `Iterator`, `Countable`, `ToArray`; backed internally by `LinkedList`
 - Constructor: `new Queue(string $type = 'mixed', iterable $items = [])`
 - Methods: `enqueue()`, `dequeue()` (returns `?T_Object`), `peek()` (returns `?T_Object`)
 

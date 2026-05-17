@@ -8,7 +8,7 @@ use Rak200\Caster\Contracts\ToArray;
 use InvalidArgumentException;
 
 /**
- * FIFO queue backed by a {@see DoublyLinkedList} for O(1) enqueue/dequeue.
+ * FIFO queue backed by a {@see LinkedList} for O(1) enqueue/dequeue.
  *
  * @template T_Object of object
  * @implements \Iterator<int, T_Object>
@@ -16,8 +16,8 @@ use InvalidArgumentException;
  */
 class Queue implements \Iterator, \Countable, ToArray {
 
-    /** @var DoublyLinkedList<T_Object> */
-    private DoublyLinkedList $list;
+    /** @var LinkedList<T_Object> */
+    private LinkedList $list;
 
     /**
      * @param class-string<T_Object>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
@@ -25,7 +25,7 @@ class Queue implements \Iterator, \Countable, ToArray {
      * @throws InvalidArgumentException When any item is not an instance of $type.
      */
     public function __construct(private string $type = 'mixed', iterable $items = []) {
-        $this->list = new DoublyLinkedList($type);
+        $this->list = new LinkedList($type);
         foreach ($items as $item) {
             $this->enqueue($item);
         }

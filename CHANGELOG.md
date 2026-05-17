@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.3] - 2026-05-16
+
+### Changed
+- **BREAKING** `DoublyLinkedList` renamed to `LinkedList` and `DoublyLinkedListNode` to `LinkedNode`. `LinkedList::fromVector()` keeps the same name. No deprecation shim — consumers on `0.0.2` must update class references.
+
 ## [0.0.2] - 2026-05-16
 
 ### Added
@@ -30,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial release with `Collection<T_Key, T_Object>` — typed generic array container implementing `Iterator`, `ArrayAccess`, `Countable`, and `Rak200\Caster\Contracts\ToArray`.
 
-[Unreleased]: https://github.com/rak200/collections/compare/0.0.2...HEAD
+[Unreleased]: https://github.com/rak200/collections/compare/0.0.3...HEAD
+[0.0.3]: https://github.com/rak200/collections/compare/0.0.2...0.0.3
 [0.0.2]: https://github.com/rak200/collections/compare/0.0.1...0.0.2
 [0.0.1]: https://github.com/rak200/collections/releases/tag/0.0.1

@@ -14,8 +14,8 @@ composer require rak200/collections
 |----------------------------------------|------------------------------------------------------------------------|
 | `Rak200\Collections\Vector`            | Int-indexed dynamic array of typed (or mixed) values                   |
 | `Rak200\Collections\Collection`        | **Deprecated** (0.0.2 → 1.0.0). Thin BC shim over `Vector` accepting string keys |
-| `Rak200\Collections\DoublyLinkedList`  | Doubly linked list with O(1) insertion/removal at any node             |
-| `Rak200\Collections\Queue`             | FIFO queue (backed by `DoublyLinkedList`)                              |
+| `Rak200\Collections\LinkedList`  | Doubly linked list with O(1) insertion/removal at any node             |
+| `Rak200\Collections\Queue`             | FIFO queue (backed by `LinkedList`)                              |
 | `Rak200\Collections\Stack`             | LIFO stack                                                             |
 | `Rak200\Collections\Set`               | Unique-element set (identity by `spl_object_id`)                       |
 | `Rak200\Collections\Map`               | Ordered key-value map with separate key and value type enforcement     |
@@ -53,9 +53,9 @@ $bag[] = $anything;
 ### Doubly linked list
 
 ```php
-use Rak200\Collections\DoublyLinkedList;
+use Rak200\Collections\LinkedList;
 
-$list = new DoublyLinkedList(Task::class);
+$list = new LinkedList(Task::class);
 $first  = $list->push($a);           // returns the node
 $second = $list->push($b);
 $list->insertBefore($second, $c);    // O(1)
@@ -122,7 +122,7 @@ Caster::toJson($users);            // delegates to $users->toArray()
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.0.2** — unstable until unit tests are added.
+Follows [Semantic Versioning](https://semver.org). Current version: **0.0.3** — unstable until unit tests are added.
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`

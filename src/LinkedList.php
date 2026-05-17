@@ -10,7 +10,7 @@ use InvalidArgumentException;
 /**
  * Doubly linked list with O(1) insertion and removal at any node.
  *
- * Holding a {@see DoublyLinkedListNode} reference (returned by push/unshift/
+ * Holding a {@see LinkedNode} reference (returned by push/unshift/
  * insertBefore/insertAfter) allows constant-time insertion or removal at
  * arbitrary positions. Values can be of any type; when a class-string is
  * given as the type, every value must be an instance of that class.
@@ -19,16 +19,16 @@ use InvalidArgumentException;
  * @implements \Iterator<int, T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-class DoublyLinkedList implements \Iterator, \Countable, ToArray {
+class LinkedList implements \Iterator, \Countable, ToArray {
 
-    /** @var DoublyLinkedListNode<T_Value>|null */
-    private ?DoublyLinkedListNode $head = null;
+    /** @var LinkedNode<T_Value>|null */
+    private ?LinkedNode $head = null;
 
-    /** @var DoublyLinkedListNode<T_Value>|null */
-    private ?DoublyLinkedListNode $tail = null;
+    /** @var LinkedNode<T_Value>|null */
+    private ?LinkedNode $tail = null;
 
-    /** @var DoublyLinkedListNode<T_Value>|null */
-    private ?DoublyLinkedListNode $cursor = null;
+    /** @var LinkedNode<T_Value>|null */
+    private ?LinkedNode $cursor = null;
 
     private int $position = 0;
     private int $count = 0;
@@ -69,12 +69,12 @@ class DoublyLinkedList implements \Iterator, \Countable, ToArray {
      * Append at the tail.
      *
      * @param T_Value $item
-     * @return DoublyLinkedListNode<T_Value>
+     * @return LinkedNode<T_Value>
      * @throws InvalidArgumentException
      */
-    public function push(mixed $item): DoublyLinkedListNode {
+    public function push(mixed $item): LinkedNode {
         $this->checkType($item);
-        $node = new DoublyLinkedListNode($item);
+        $node = new LinkedNode($item);
         if ($this->tail === null) {
             $this->head = $this->tail = $node;
         } else {
@@ -90,12 +90,12 @@ class DoublyLinkedList implements \Iterator, \Countable, ToArray {
      * Prepend at the head.
      *
      * @param T_Value $item
-     * @return DoublyLinkedListNode<T_Value>
+     * @return LinkedNode<T_Value>
      * @throws InvalidArgumentException
      */
-    public function unshift(mixed $item): DoublyLinkedListNode {
+    public function unshift(mixed $item): LinkedNode {
         $this->checkType($item);
-        $node = new DoublyLinkedListNode($item);
+        $node = new LinkedNode($item);
         if ($this->head === null) {
             $this->head = $this->tail = $node;
         } else {
@@ -138,14 +138,14 @@ class DoublyLinkedList implements \Iterator, \Countable, ToArray {
     /**
      * Insert a new node immediately before the given node.
      *
-     * @param DoublyLinkedListNode<T_Value> $node
+     * @param LinkedNode<T_Value> $node
      * @param T_Value $item
-     * @return DoublyLinkedListNode<T_Value>
+     * @return LinkedNode<T_Value>
      * @throws InvalidArgumentException
      */
-    public function insertBefore(DoublyLinkedListNode $node, mixed $item): DoublyLinkedListNode {
+    public function insertBefore(LinkedNode $node, mixed $item): LinkedNode {
         $this->checkType($item);
-        $new = new DoublyLinkedListNode($item);
+        $new = new LinkedNode($item);
         $new->next = $node;
         $new->prev = $node->prev;
         if ($node->prev !== null) {
@@ -161,14 +161,14 @@ class DoublyLinkedList implements \Iterator, \Countable, ToArray {
     /**
      * Insert a new node immediately after the given node.
      *
-     * @param DoublyLinkedListNode<T_Value> $node
+     * @param LinkedNode<T_Value> $node
      * @param T_Value $item
-     * @return DoublyLinkedListNode<T_Value>
+     * @return LinkedNode<T_Value>
      * @throws InvalidArgumentException
      */
-    public function insertAfter(DoublyLinkedListNode $node, mixed $item): DoublyLinkedListNode {
+    public function insertAfter(LinkedNode $node, mixed $item): LinkedNode {
         $this->checkType($item);
-        $new = new DoublyLinkedListNode($item);
+        $new = new LinkedNode($item);
         $new->prev = $node;
         $new->next = $node->next;
         if ($node->next !== null) {
@@ -185,9 +185,9 @@ class DoublyLinkedList implements \Iterator, \Countable, ToArray {
      * Unlink the given node from the list. Caller must pass a node that
      * belongs to this list; passing a foreign node corrupts both lists.
      *
-     * @param DoublyLinkedListNode<T_Value> $node
+     * @param LinkedNode<T_Value> $node
      */
-    public function remove(DoublyLinkedListNode $node): void {
+    public function remove(LinkedNode $node): void {
         if ($node->prev !== null) {
             $node->prev->next = $node->next;
         } else {
@@ -203,13 +203,13 @@ class DoublyLinkedList implements \Iterator, \Countable, ToArray {
         $this->count--;
     }
 
-    /** @return DoublyLinkedListNode<T_Value>|null */
-    public function head(): ?DoublyLinkedListNode {
+    /** @return LinkedNode<T_Value>|null */
+    public function head(): ?LinkedNode {
         return $this->head;
     }
 
-    /** @return DoublyLinkedListNode<T_Value>|null */
-    public function tail(): ?DoublyLinkedListNode {
+    /** @return LinkedNode<T_Value>|null */
+    public function tail(): ?LinkedNode {
         return $this->tail;
     }
 
