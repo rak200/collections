@@ -4,20 +4,16 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use Rak200\Caster\Contracts\ToArray;
 use InvalidArgumentException;
 
 /**
  * LIFO stack. Iteration yields elements from top (most recently pushed) to bottom.
  *
  * @template T_Object of object
- * @implements \Iterator<int, T_Object>
+ * @extends AbstractCollection<T_Object>
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-class Stack implements \Iterator, \Countable, ToArray {
-
-    /** @var T_Object[] */
-    private array $items = [];
+class Stack extends AbstractCollection {
 
     private int $position = 0;
 
@@ -26,18 +22,11 @@ class Stack implements \Iterator, \Countable, ToArray {
      * @param iterable<T_Object> $items Initial items pushed in order (last becomes top).
      * @throws InvalidArgumentException When any item is not an instance of $type.
      */
-    public function __construct(private string $type = 'mixed', iterable $items = []) {
+    public function __construct(string $type = 'mixed', iterable $items = []) {
+        parent::__construct($type);
         foreach ($items as $item) {
             $this->push($item);
         }
-    }
-
-    /**
-     * Get the configured type of this stack.
-     * @return class-string<T_Object>|string
-     */
-    public function getType(): string {
-        return $this->type;
     }
 
     /**
@@ -87,10 +76,6 @@ class Stack implements \Iterator, \Countable, ToArray {
         return $count === 0 ? null : $this->items[$count - 1];
     }
 
-    public function count(): int {
-        return count($this->items);
-    }
-
     /** @return T_Object */
     public function current(): object {
         return $this->items[count($this->items) - 1 - $this->position];
@@ -110,10 +95,5 @@ class Stack implements \Iterator, \Countable, ToArray {
 
     public function valid(): bool {
         return $this->position < count($this->items);
-    }
-
-    /** @return T_Object[] */
-    public function toArray(): array {
-        return $this->items;
     }
 }

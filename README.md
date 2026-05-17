@@ -20,7 +20,15 @@ composer require rak200/collections
 | `Rak200\Collections\Set`               | Unique-element set (identity by `spl_object_id`)                       |
 | `Rak200\Collections\Map`               | Ordered key-value map with separate key and value type enforcement     |
 
+`Vector`, `Stack`, `Set`, and `Map` share an `AbstractCollection` base that handles `$items` storage, `Iterator`, `Countable`, `ToArray`, and `getType()`/`count()`/`toArray()`. The concrete classes add their public API and override iteration/`toArray` only where their semantics demand it.
+
 All types implement `Countable`, `Rak200\Caster\Contracts\ToArray`, and an appropriate iteration / array-access interface.
+
+## Planned types
+
+- `PriorityQueue` — priority queue with O(log n) insertion and extraction.
+- `OrderedSet` — set that preserves a configurable ordering (insertion order or custom comparator).
+- `BiMap` — bidirectional map with unique values, enabling O(1) lookup by either key or value.
 
 ## Usage
 
@@ -122,7 +130,7 @@ Caster::toJson($users);            // delegates to $users->toArray()
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.0.3** — unstable until unit tests are added.
+Follows [Semantic Versioning](https://semver.org). Current version: **0.0.4** — unstable until unit tests are added.
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`

@@ -12,19 +12,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 collections/
 ├── composer.json
 └── src/
+    ├── AbstractCollection.php    # Shared base: $items, $type, Iterator/Countable/ToArray, count/toArray/getType
     ├── Vector.php                # Int-indexed dynamic array of typed/mixed values
     ├── Collection.php            # @deprecated 0.0.2; thin BC shim over Vector (string keys)
     ├── LinkedList.php            # Doubly linked list (O(1) ops via node refs)
     ├── LinkedNode.php            # Node used by LinkedList
     ├── Queue.php                 # FIFO (backed by LinkedList)
-    ├── Stack.php                 # LIFO
-    ├── Set.php                   # Unique elements by spl_object_id
+    ├── Stack.php                 # LIFO (overrides iteration for top-to-bottom)
+    ├── Set.php                   # Unique elements by spl_object_id (overrides toArray)
     └── Map.php                   # Ordered key-value map with key+value typing
 ```
 
 All classes live under the `Rak200\Collections` namespace (PSR-4 from `src/`).
 
 ## Classes
+
+**`AbstractCollection<T_Value>`** (abstract)
+- Implements `Iterator`, `Countable`, `Rak200\Caster\Contracts\ToArray`
+- Holds `protected array $items` and `protected string $type`; exposes `getType()`, `count()`, `toArray()`, and the default array-pointer iteration
+- Subclasses (`Vector`, `Stack`, `Set`, `Map`) extend it; `LinkedList` and `Queue` don't (different storage model)
+- Subclasses define their own type-check methods and public mutation API; `Vector`/`Map` additionally implement `ArrayAccess`; `Stack` overrides iteration (LIFO order); `Set` overrides `toArray()` to discard `spl_object_id` keys; `Map` adds its own `$keyType` field and exposes `getKeyType()`/`getValueType()`
 
 **`Vector<T_Value>`**
 - Implements `Iterator`, `ArrayAccess`, `Countable`, `Rak200\Caster\Contracts\ToArray`

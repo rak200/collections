@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use Rak200\Caster\Contracts\ToArray;
 use InvalidArgumentException;
 
 /**
@@ -12,18 +11,16 @@ use InvalidArgumentException;
  *
  * Insertion order is preserved (PHP associative array semantics). Keys can be
  * constrained to `'int'`, `'string'`, or `'mixed'`; values to a class-string
- * or `'mixed'`.
+ * or `'mixed'`. The parent's `$type` field stores the value type; the key
+ * type is held in `$keyType` on this class.
  *
  * @template T_Key of int|string
  * @template T_Value of object
- * @implements \Iterator<T_Key, T_Value>
+ * @extends AbstractCollection<T_Value>
  * @implements \ArrayAccess<T_Key, T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-class Map implements \Iterator, \ArrayAccess, \Countable, ToArray {
-
-    /** @var array<T_Key, T_Value> */
-    private array $items = [];
+class Map extends AbstractCollection implements \ArrayAccess {
 
     /**
      * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
@@ -33,9 +30,10 @@ class Map implements \Iterator, \ArrayAccess, \Countable, ToArray {
      */
     public function __construct(
         private string $keyType = 'mixed',
-        private string $valueType = 'mixed',
+        string $valueType = 'mixed',
         array $items = []
     ) {
+        parent::__construct($valueType);
         foreach ($items as $key => $value) {
             $this->set($key, $value);
         }
@@ -48,7 +46,7 @@ class Map implements \Iterator, \ArrayAccess, \Countable, ToArray {
 
     /** @return class-string<T_Value>|string */
     public function getValueType(): string {
-        return $this->valueType;
+        return $this->type;
     }
 
     /**
@@ -78,13 +76,13 @@ class Map implements \Iterator, \ArrayAccess, \Countable, ToArray {
      * @throws InvalidArgumentException
      */
     private function checkValue(object $value): void {
-        if ($this->valueType === 'mixed') {
+        if ($this->type === 'mixed') {
             return;
         }
-        if (!is_a($value, $this->valueType, true)) {
+        if (!is_a($value, $this->type, true)) {
             throw new InvalidArgumentException(sprintf(
                 'Value must be an instance of %s. Got: %s',
-                $this->valueType,
+                $this->type,
                 $value::class
             ));
         }
@@ -137,30 +135,9 @@ class Map implements \Iterator, \ArrayAccess, \Countable, ToArray {
         return array_values($this->items);
     }
 
-    public function count(): int {
-        return count($this->items);
-    }
-
     /** @return T_Value */
     public function current(): object {
-        return current($this->items);
-    }
-
-    /** @return T_Key */
-    public function key(): int|string {
-        return key($this->items);
-    }
-
-    public function next(): void {
-        next($this->items);
-    }
-
-    public function rewind(): void {
-        reset($this->items);
-    }
-
-    public function valid(): bool {
-        return key($this->items) !== null;
+        return parent::current();
     }
 
     /** @param T_Key $offset */
@@ -196,10 +173,5 @@ class Map implements \Iterator, \ArrayAccess, \Countable, ToArray {
     /** @param T_Key $offset */
     public function offsetUnset(mixed $offset): void {
         unset($this->items[$offset]);
-    }
-
-    /** @return array<T_Key, T_Value> */
-    public function toArray(): array {
-        return $this->items;
     }
 }

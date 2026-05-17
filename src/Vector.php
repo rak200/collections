@@ -4,74 +4,55 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use Rak200\Caster\Contracts\ToArray;
 use InvalidArgumentException;
 
 /**
  * Typed generic collection of mixed values, indexed by int.
  *
- * Implements Iterator, ArrayAccess, Countable and ToArray. When a class-string
+ * Implements `Iterator`, `ArrayAccess`, `Countable`, and `ToArray` (the first,
+ * third, and fourth come from {@see AbstractCollection}). When a class-string
  * is given as the type, every item must be an instance of that class; with
  * 'mixed', any value is accepted.
  *
  * @template T_Value
+ * @extends AbstractCollection<T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-class Vector implements \Iterator, \ArrayAccess, \Countable, ToArray {
+class Vector extends AbstractCollection implements \ArrayAccess {
 
     /**
      * @param class-string<T_Value&object>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
      * @param T_Value[] $items Initial items indexed by int.
      * @throws InvalidArgumentException When any item is not an instance of $type.
      */
-    public function __construct(private string $type = 'mixed', private array $items = []) {
-        $this->checkType($items);
+    public function __construct(string $type = 'mixed', array $items = []) {
+        parent::__construct($type);
+        foreach ($items as $item) {
+            $this->checkType($item);
+        }
+        $this->items = $items;
     }
 
     /**
-     * Get the configured type of this collection.
-     * @return class-string<T_Value&object>|string
-     */
-    public function getType(): string {
-        return $this->type;
-    }
-
-    /**
-     * @param T_Value[] $items
+     * @param T_Value $item
      * @throws InvalidArgumentException
      */
-    private function checkType(array $items): void {
+    private function checkType(mixed $item): void {
         if ($this->type === 'mixed') {
             return;
         }
-        if (!array_all($items, fn ($item) => $item instanceof $this->type)) {
+        if (!($item instanceof $this->type)) {
             throw new InvalidArgumentException(sprintf(
-                'All items in the collection must be instances of %s. Invalid item found: %s',
+                'Item must be an instance of %s. Got: %s',
                 $this->type,
-                var_export($items, true)
+                get_debug_type($item)
             ));
         }
     }
 
-    /** @return T_Value */
-    public function current(): mixed {
-        return current($this->items);
-    }
-
+    /** @return int */
     public function key(): int {
-        return key($this->items);
-    }
-
-    public function next(): void {
-        next($this->items);
-    }
-
-    public function rewind(): void {
-        reset($this->items);
-    }
-
-    public function valid(): bool {
-        return key($this->items) !== null;
+        return parent::key();
     }
 
     /** @param int $offset */
@@ -93,7 +74,7 @@ class Vector implements \Iterator, \ArrayAccess, \Countable, ToArray {
      * @throws InvalidArgumentException
      */
     public function offsetSet(mixed $offset, mixed $value): void {
-        $this->checkType([$value]);
+        $this->checkType($value);
         if ($offset === null) {
             $this->items[] = $value;
         } else {
@@ -106,17 +87,13 @@ class Vector implements \Iterator, \ArrayAccess, \Countable, ToArray {
         unset($this->items[$offset]);
     }
 
-    public function count(): int {
-        return count($this->items);
-    }
-
     /**
      * @param int $offset
      * @param T_Value $item
      * @throws InvalidArgumentException
      */
     public function add(int $offset, mixed $item): void {
-        $this->checkType([$item]);
+        $this->checkType($item);
         $this->items[$offset] = $item;
     }
 
@@ -131,10 +108,5 @@ class Vector implements \Iterator, \ArrayAccess, \Countable, ToArray {
      */
     public function get(int $offset): mixed {
         return $this->items[$offset] ?? null;
-    }
-
-    /** @return T_Value[] */
-    public function toArray(): array {
-        return $this->items;
     }
 }

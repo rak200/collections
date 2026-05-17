@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use Rak200\Caster\Contracts\ToArray;
 use InvalidArgumentException;
 
 /**
@@ -14,31 +13,21 @@ use InvalidArgumentException;
  * are structurally equal; identity is by object id, not value.
  *
  * @template T_Object of object
- * @implements \Iterator<int, T_Object>
+ * @extends AbstractCollection<T_Object>
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-class Set implements \Iterator, \Countable, ToArray {
-
-    /** @var array<int, T_Object> Indexed by spl_object_id. */
-    private array $items = [];
+class Set extends AbstractCollection {
 
     /**
      * @param class-string<T_Object>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
      * @param iterable<T_Object> $items Initial items added in order; duplicates are ignored.
      * @throws InvalidArgumentException When any item is not an instance of $type.
      */
-    public function __construct(private string $type = 'mixed', iterable $items = []) {
+    public function __construct(string $type = 'mixed', iterable $items = []) {
+        parent::__construct($type);
         foreach ($items as $item) {
             $this->add($item);
         }
-    }
-
-    /**
-     * Get the configured type of this set.
-     * @return class-string<T_Object>|string
-     */
-    public function getType(): string {
-        return $this->type;
     }
 
     /**
@@ -93,29 +82,14 @@ class Set implements \Iterator, \Countable, ToArray {
         return isset($this->items[spl_object_id($item)]);
     }
 
-    public function count(): int {
-        return count($this->items);
+    /** @return int */
+    public function key(): int {
+        return parent::key();
     }
 
     /** @return T_Object */
     public function current(): object {
-        return current($this->items);
-    }
-
-    public function key(): int {
-        return key($this->items);
-    }
-
-    public function next(): void {
-        next($this->items);
-    }
-
-    public function rewind(): void {
-        reset($this->items);
-    }
-
-    public function valid(): bool {
-        return key($this->items) !== null;
+        return parent::current();
     }
 
     /**
