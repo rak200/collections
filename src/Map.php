@@ -32,7 +32,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
 
     /**
      * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
-     * @param class-string<T_Value&object>|'mixed' $valueType Value class to enforce, or 'mixed' to skip.
+     * @param class-string<T_Value>|'mixed' $valueType Value class to enforce, or 'mixed' to skip.
      * @param array<T_Key, T_Value> $items Initial entries.
      * @throws InvalidArgumentException When any key or value violates its type.
      */
@@ -52,14 +52,16 @@ class Map extends AbstractCollection implements \ArrayAccess {
         return $this->keyType;
     }
 
-    /** @return class-string<T_Value&object>|string */
+    /** @return class-string<T_Value>|string */
     public function getValueType(): string {
         return $this->type;
     }
 
     /**
+     * Validate that $key matches the configured key type.
+     *
      * @param T_Key $key
-     * @throws InvalidArgumentException
+     * @throws InvalidArgumentException When the key does not match $this->keyType.
      */
     private function checkKey(int|string $key): void {
         if ($this->keyType === 'mixed') {
@@ -80,8 +82,10 @@ class Map extends AbstractCollection implements \ArrayAccess {
     }
 
     /**
+     * Validate that $value matches the configured value type.
+     *
      * @param T_Value $value
-     * @throws InvalidArgumentException
+     * @throws InvalidArgumentException When the value does not match $this->type.
      */
     private function checkValue(mixed $value): void {
         if ($this->type === 'mixed') {
@@ -97,9 +101,11 @@ class Map extends AbstractCollection implements \ArrayAccess {
     }
 
     /**
+     * Set the value for the given key, overwriting any existing entry.
+     *
      * @param T_Key $key
      * @param T_Value $value
-     * @throws InvalidArgumentException
+     * @throws InvalidArgumentException When the key or value violates its type.
      */
     public function set(int|string $key, mixed $value): void {
         $this->checkKey($key);
@@ -108,6 +114,8 @@ class Map extends AbstractCollection implements \ArrayAccess {
     }
 
     /**
+     * Value at the given key, or null if absent.
+     *
      * @param T_Key $key
      * @return T_Value|null
      */
@@ -115,7 +123,11 @@ class Map extends AbstractCollection implements \ArrayAccess {
         return $this->items[$key] ?? null;
     }
 
-    /** @param T_Key $key */
+    /**
+     * Whether the given key exists in the map.
+     *
+     * @param T_Key $key
+     */
     public function has(int|string $key): bool {
         return array_key_exists($key, $this->items);
     }
@@ -125,7 +137,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
      *
      * @param T_Key $key
      */
-    public function delete(int|string $key): bool {
+    public function remove(int|string $key): bool {
         if (!array_key_exists($key, $this->items)) {
             return false;
         }
@@ -133,27 +145,33 @@ class Map extends AbstractCollection implements \ArrayAccess {
         return true;
     }
 
-    /** @return T_Key[] */
+    /** @return T_Key[] Keys in insertion order. */
     public function keys(): array {
         return array_keys($this->items);
     }
 
-    /** @return T_Value[] */
+    /** @return T_Value[] Values in insertion order. */
     public function values(): array {
         return array_values($this->items);
     }
 
-    /** @return T_Value */
+    /** @return T_Value Value at the current iteration cursor. */
     public function current(): mixed {
         return parent::current();
     }
 
-    /** @param T_Key $offset */
+    /**
+     * Whether the given key exists in the map.
+     *
+     * @param T_Key $offset
+     */
     public function offsetExists(mixed $offset): bool {
         return isset($this->items[$offset]);
     }
 
     /**
+     * Value at the given key, or null if absent.
+     *
      * @param T_Key $offset
      * @return T_Value|null
      */
@@ -162,9 +180,12 @@ class Map extends AbstractCollection implements \ArrayAccess {
     }
 
     /**
+     * Set the value at the given key. When $offset is null, the value is
+     * appended with the next available int key (`count`-based, like PHP arrays).
+     *
      * @param T_Key|null $offset
      * @param T_Value $value
-     * @throws InvalidArgumentException
+     * @throws InvalidArgumentException When the key or value violates its type.
      */
     public function offsetSet(mixed $offset, mixed $value): void {
         if ($offset === null) {
@@ -172,13 +193,17 @@ class Map extends AbstractCollection implements \ArrayAccess {
             $nextKey = is_int($lastKey) ? $lastKey + 1 : 0;
             $this->checkKey($nextKey);
             $this->checkValue($value);
-            $this->items[] = $value;
+            $this->items[$nextKey] = $value;
             return;
         }
         $this->set($offset, $value);
     }
 
-    /** @param T_Key $offset */
+    /**
+     * Remove the entry at the given key (no-op if absent).
+     *
+     * @param T_Key $offset
+     */
     public function offsetUnset(mixed $offset): void {
         unset($this->items[$offset]);
     }

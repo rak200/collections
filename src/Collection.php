@@ -21,7 +21,7 @@ use InvalidArgumentException;
 class Collection extends Vector {
 
     /**
-     * @param class-string<T_Value&object>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
+     * @param class-string<T_Value>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
      * @param T_Value[] $items Initial items.
      * @throws InvalidArgumentException When any item is not an instance of $type.
      */
@@ -34,18 +34,25 @@ class Collection extends Vector {
     }
 
     /**
+     * Set the item at the given offset (int or string).
+     *
      * @param T_Value $item
-     * @throws InvalidArgumentException
+     * @throws InvalidArgumentException When $item is not an instance of $this->type.
      */
     public function add(int|string $offset, mixed $item): void {
         $this[$offset] = $item;
     }
 
-    /** @return T_Value|null */
+    /**
+     * Item at the given offset (int or string), or null if absent.
+     *
+     * @return T_Value|null
+     */
     public function get(int|string $offset): mixed {
         return $this[$offset] ?? null;
     }
 
+    /** Remove the item at the given offset (no-op if absent). */
     public function remove(int|string $offset): void {
         unset($this[$offset]);
     }

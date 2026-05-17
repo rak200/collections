@@ -68,4 +68,16 @@ final class AbstractCollectionTest extends TestCase {
         self::assertInstanceOf(\Countable::class, $c);
         self::assertInstanceOf(ToArray::class, $c);
     }
+
+    public function testIsEmptyReflectsItems(): void {
+        self::assertTrue($this->make()->isEmpty());
+        self::assertFalse($this->make('mixed', [1])->isEmpty());
+    }
+
+    public function testClearDiscardsItems(): void {
+        $c = $this->make('mixed', [1, 2, 3]);
+        $c->clear();
+        self::assertTrue($c->isEmpty());
+        self::assertSame([], $c->toArray());
+    }
 }

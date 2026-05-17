@@ -16,9 +16,10 @@ use InvalidArgumentException;
  * Max-heap priority queue. Items with higher priority are extracted first;
  * ties are broken FIFO via an internal sequence counter (stable ordering).
  *
- * `enqueue()` and `dequeue()` are O(log n); `peek()` and `count()` are O(1).
  * Iteration is non-destructive and yields items in extraction order without
- * mutating the queue (the snapshot is built lazily on `rewind()`).
+ * mutating the queue (the snapshot is built lazily on `rewind()`). The
+ * snapshot and position are held on the instance, so nested `foreach` loops
+ * over the same queue interfere with each other.
  *
  * @template T_Value
  * @implements \Iterator<int, T_Value>
@@ -38,11 +39,15 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
     private ?array $iterSnapshot = null;
 
     /**
-     * @param class-string<T_Value&object>|'mixed' $type Class name to enforce on items, or 'mixed' to skip.
+     * @param class-string<T_Value>|'mixed' $type Class name to enforce on items, or 'mixed' to skip.
      */
-    public function __construct(private string $type = 'mixed') {}
+    public function __construct(private string $type = 'mixed', iterable $items = []) {
+        foreach ($items as $item) {
+            $this->enqueue($item, 0);
+        }
+    }
 
-    /** @return class-string<T_Value&object>|string */
+    /** @return class-string<T_Value>|string */
     public function getType(): string {
         return $this->type;
     }
@@ -93,6 +98,19 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
     /** Number of items currently in the queue. */
     public function count(): int {
         return count($this->heap);
+    }
+
+    /** Whether the queue holds no items. */
+    public function isEmpty(): bool {
+        return $this->heap === [];
+    }
+
+    /** Discard all items and reset iteration state. */
+    public function clear(): void {
+        $this->heap = [];
+        $this->sequence = 0;
+        $this->iterSnapshot = null;
+        $this->iterPos = 0;
     }
 
     /** Negative when $i should be served before $j (closer to top of heap). */
@@ -150,7 +168,7 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
 
     /** @return T_Value Item at the current iteration position. */
     public function current(): mixed {
-        return $this->iterSnapshot[$this->iterPos];
+        return $this->iterSnapshot[$this->iterPos] ?? null;
     }
 
     /** Zero-based position within the sorted snapshot. */

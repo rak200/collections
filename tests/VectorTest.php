@@ -114,4 +114,14 @@ final class VectorTest extends TestCase {
         self::assertInstanceOf(AbstractCollection::class, new Vector());
         self::assertInstanceOf(\ArrayAccess::class, new Vector());
     }
+
+    /**
+     * A2: Vector docs claim int-indexed, but the constructor silently accepts
+     * string keys via $items. This is the gap that should have closed when
+     * Collection was deprecated. If this test passes, A2 is fixed.
+     */
+    public function testConstructorRejectsStringKeys(): void {
+        $this->expectException(InvalidArgumentException::class);
+        new Vector('mixed', ['foo' => 'bar']);
+    }
 }

@@ -13,7 +13,11 @@ use function get_debug_type;
  * (a class-string or `'mixed'`). When `$type` is not `'mixed'`, every value
  * passed to `checkType()` must be an instance of that class.
  *
- * The using class must declare a `string $type` property.
+ * The using class must declare a `string $type` property accessible to the
+ * trait — `protected` (as in {@see \Rak200\Collections\AbstractCollection})
+ * or `private` (as in {@see \Rak200\Collections\LinkedList},
+ * {@see \Rak200\Collections\Queue}, {@see \Rak200\Collections\PriorityQueue}).
+ * Both work because traits resolve member access in the using class's scope.
  *
  * @internal Not part of the public API; subject to change.
  */

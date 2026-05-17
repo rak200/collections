@@ -8,7 +8,7 @@ use Rak200\Caster\Contracts\ToArray;
 use InvalidArgumentException;
 
 /**
- * FIFO queue backed by a {@see LinkedList} for O(1) enqueue/dequeue.
+ * FIFO queue backed by a {@see LinkedList}.
  *
  * @template T_Value
  * @implements \Iterator<int, T_Value>
@@ -20,7 +20,7 @@ class Queue implements \Iterator, \Countable, ToArray {
     private LinkedList $list;
 
     /**
-     * @param class-string<T_Value&object>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
+     * @param class-string<T_Value>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
      * @param iterable<T_Value> $items Initial items enqueued in order.
      * @throws InvalidArgumentException When any item is not an instance of $type.
      */
@@ -33,7 +33,7 @@ class Queue implements \Iterator, \Countable, ToArray {
 
     /**
      * Get the configured type of this queue.
-     * @return class-string<T_Value&object>|string
+     * @return class-string<T_Value>|string
      */
     public function getType(): string {
         return $this->type;
@@ -67,32 +67,47 @@ class Queue implements \Iterator, \Countable, ToArray {
         return $this->list->head()?->value;
     }
 
+    /** Number of items currently in the queue. */
     public function count(): int {
         return $this->list->count();
     }
 
-    /** @return T_Value */
+    /** Whether the queue holds no items. */
+    public function isEmpty(): bool {
+        return $this->list->isEmpty();
+    }
+
+    /** Discard all items. */
+    public function clear(): void {
+        $this->list->clear();
+    }
+
+    /** @return T_Value Item at the current iteration cursor. */
     public function current(): mixed {
         return $this->list->current();
     }
 
+    /** Zero-based offset from the head of the queue. */
     public function key(): int {
         return $this->list->key();
     }
 
+    /** Advance the iteration cursor one step toward the tail. */
     public function next(): void {
         $this->list->next();
     }
 
+    /** Reset the iteration cursor to the head of the queue. */
     public function rewind(): void {
         $this->list->rewind();
     }
 
+    /** Whether the iteration cursor still points at a valid item. */
     public function valid(): bool {
         return $this->list->valid();
     }
 
-    /** @return T_Object[] */
+    /** @return T_Value[] Items from head to tail. */
     public function toArray(): array {
         return $this->list->toArray();
     }

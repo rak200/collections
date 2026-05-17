@@ -35,11 +35,11 @@ final class MapTest extends TestCase {
         self::assertNull($m->get('missing'));
     }
 
-    public function testDeleteReturnsBool(): void {
+    public function testRemoveReturnsBool(): void {
         $m = new Map();
         $m->set('k', new \stdClass());
-        self::assertTrue($m->delete('k'));
-        self::assertFalse($m->delete('k'));
+        self::assertTrue($m->remove('k'));
+        self::assertFalse($m->remove('k'));
         self::assertCount(0, $m);
     }
 

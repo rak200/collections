@@ -171,6 +171,18 @@ use Rak200\Caster\Caster;
 Caster::toJson($users);            // delegates to $users->toArray()
 ```
 
+## Planned
+
+The following collection types are planned but not yet implemented:
+
+| Class                                  | Purpose                                                                |
+|----------------------------------------|------------------------------------------------------------------------|
+| `Rak200\Collections\MultiMap`          | Key-to-many-values map (HTTP headers, `groupBy`)                       |
+| `Rak200\Collections\MultiSet`          | Bag / occurrence counter (frequency, histogram)                        |
+| `Rak200\Collections\Deque`             | Explicit double-ended queue facade over `LinkedList`                   |
+| `Rak200\Collections\CircularBuffer`    | Fixed-capacity FIFO with overwrite semantics                           |
+| `Rak200\Collections\ImmutableSet` / `ImmutableMap` | Read-only variants for value-object style code             |
+
 ## Testing
 
 ```bash
@@ -182,7 +194,7 @@ The suite uses PHPUnit 13 and covers every `src/` class. Each class has a paired
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.1.0** — still pre-1.0 while the API stabilizes.
+Follows [Semantic Versioning](https://semver.org). Current version: **0.1.1** — still pre-1.0 while the API stabilizes.
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`

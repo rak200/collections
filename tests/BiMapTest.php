@@ -159,4 +159,19 @@ final class BiMapTest extends TestCase {
         self::assertSame('intkey', $m->getByValue(1));
         self::assertSame('strkey', $m->getByValue('1'));
     }
+
+    public function testIsEmptyAndClear(): void {
+        $m = new BiMap();
+        self::assertTrue($m->isEmpty());
+        $m->put('a', new \stdClass());
+        $m->put('b', new \stdClass());
+        self::assertFalse($m->isEmpty());
+        $m->clear();
+        self::assertTrue($m->isEmpty());
+        self::assertCount(0, $m);
+        self::assertNull($m->getByKey('a'));
+        // both directions cleared — can reuse the same key without conflict
+        $m->put('a', new \stdClass());
+        self::assertTrue($m->hasKey('a'));
+    }
 }

@@ -111,6 +111,34 @@ final class PriorityQueueTest extends TestCase {
         self::assertSame('low', $pq->dequeue());
     }
 
+    /**
+     * A5: current() reads $iterSnapshot which is null until rewind() runs, so
+     * naive use crashes with a TypeError. Iterator contract calls this
+     * "undefined", but defensive null/value handling is safer. If this test
+     * passes, A5 is fixed.
+     */
+    public function testCurrentBeforeRewindDoesNotCrash(): void {
+        $pq = new PriorityQueue();
+        $pq->enqueue('a', 1);
+        // Should return null or the top value gracefully — not throw TypeError
+        $result = $pq->current();
+        self::assertTrue($result === null || $result === 'a');
+    }
+
+    public function testIsEmptyAndClear(): void {
+        $pq = new PriorityQueue();
+        self::assertTrue($pq->isEmpty());
+        $pq->enqueue('x', 1);
+        $pq->enqueue('y', 2);
+        self::assertFalse($pq->isEmpty());
+        $pq->clear();
+        self::assertTrue($pq->isEmpty());
+        self::assertCount(0, $pq);
+        self::assertNull($pq->peek());
+        $pq->enqueue('z', 1);
+        self::assertSame('z', $pq->dequeue());
+    }
+
     public function testManyOperationsPreserveHeapInvariant(): void {
         $pq = new PriorityQueue();
         $items = [];

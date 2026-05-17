@@ -84,4 +84,16 @@ final class QueueTest extends TestCase {
         }
         self::assertSame([$a, $b, $c], $out);
     }
+
+    public function testIsEmptyAndClear(): void {
+        $q = new Queue();
+        self::assertTrue($q->isEmpty());
+        $q->enqueue('a');
+        $q->enqueue('b');
+        self::assertFalse($q->isEmpty());
+        $q->clear();
+        self::assertTrue($q->isEmpty());
+        self::assertCount(0, $q);
+        self::assertNull($q->peek());
+    }
 }

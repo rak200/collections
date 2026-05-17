@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-05-17
+
+### Added
+- `isEmpty()` and `clear()` across the library — `AbstractCollection` (so `Vector`/`Stack`/`Set`/`Map`/`OrderedSet` inherit them), `LinkedList`, `Queue`, `Stack`, `BiMap`, and `PriorityQueue`. `Stack`, `LinkedList`, and `PriorityQueue` override `clear()` to reset their iteration state too.
+- Set algebra on `Set` and `OrderedSet`: `union()`, `intersection()`, `difference()`, `isSubsetOf()`, `isSupersetOf()`. Returns `static`; `OrderedSet` preserves `$this`'s comparator on derived sets.
+- `LinkedNode::$owner` — every node carries a reference back to its owning `LinkedList`. `LinkedList::remove()` now throws `InvalidArgumentException` when handed a node from a different list.
+- `PriorityQueue` constructor accepts an initial `iterable $items = []` (each enqueued at priority 0).
+- README "Planned" section listing future types (`MultiMap`, `MultiSet`, `Deque`, `CircularBuffer`, `ImmutableSet`/`ImmutableMap`).
+
+### Changed
+- **BREAKING** `Map::delete()` renamed to `Map::remove()` for naming consistency with `Set`/`LinkedList`.
+- **BREAKING** `OrderedSet` constructor signature reordered from `(string $type, ?Closure $comparator, iterable $items)` to `(string $type, iterable $items = [], ?Closure $comparator = null)` so the common case (initial items, no comparator) doesn't need a `null` placeholder. Existing callers must pass `$comparator` by name or update their positional arguments.
+- **BREAKING** `LinkedNode::__construct()` now takes `LinkedList $owner` as its first parameter. The class lives in `Internal\` and is only constructed by `LinkedList` itself, so direct callers should be rare.
+- Class-string generics widened across the library: `class-string<T_Value&object>` → `class-string<T_Value>`. Aligns the type signatures with the `object`→`mixed` relaxation that landed in 0.1.0.
+- `Set::key()` and `OrderedSet::key()` now return a sequential int index instead of the internal hash key, matching the `Iterator<int, T_Value>` contract these classes advertise.
+- Many docblock improvements: explicit return/throw descriptions, and nested-iteration caveats on `LinkedList`, `Stack`, and `PriorityQueue` (instance-held cursor state — iterate `toArray()` for concurrent traversal).
+
+### Fixed
+- `Vector` constructor now rejects string keys in the `$items` array with `InvalidArgumentException`. Previously, string keys could leak through silently, contradicting the documented int-indexed shape.
+- `Map::offsetSet($offset = null, $value)` (i.e. `$map[] = $value`) now uses `lastKey + 1` instead of relying on PHP's `$items[]` count-based behavior, so non-contiguous int keys no longer produce surprising next-keys.
+- `PriorityQueue::current()` no longer throws a `TypeError` when called before `rewind()` — returns `null` for out-of-bounds positions instead.
+- `HashesValues::hashValue()` wraps `serialize()` failures (e.g. arrays containing closures or resources) in `InvalidArgumentException`, matching the docblock promise instead of leaking the raw `Exception`.
+
 ## [0.1.0] - 2026-05-17
 
 First minor release. Consolidates a wave of API additions and the `object`→`mixed` relaxation across the library.
@@ -70,7 +93,8 @@ First minor release. Consolidates a wave of API additions and the `object`→`mi
 ### Added
 - Initial release with `Collection<T_Key, T_Object>` — typed generic array container implementing `Iterator`, `ArrayAccess`, `Countable`, and `Rak200\Caster\Contracts\ToArray`.
 
-[Unreleased]: https://github.com/rak200/collections/compare/0.1.0...HEAD
+[Unreleased]: https://github.com/rak200/collections/compare/0.1.1...HEAD
+[0.1.1]: https://github.com/rak200/collections/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/rak200/collections/compare/0.0.5...0.1.0
 [0.0.5]: https://github.com/rak200/collections/compare/0.0.4...0.0.5
 [0.0.4]: https://github.com/rak200/collections/compare/0.0.3...0.0.4

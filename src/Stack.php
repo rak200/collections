@@ -11,6 +11,10 @@ use InvalidArgumentException;
 /**
  * LIFO stack. Iteration yields elements from top (most recently pushed) to bottom.
  *
+ * Iteration state ($position) is held on the instance, so nested `foreach`
+ * loops over the same stack interfere with each other. Iterate a snapshot via
+ * `toArray()` if concurrent traversal is needed.
+ *
  * @template T_Value
  * @extends AbstractCollection<T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>
@@ -20,7 +24,7 @@ class Stack extends AbstractCollection {
     private int $position = 0;
 
     /**
-     * @param class-string<T_Value&object>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
+     * @param class-string<T_Value>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
      * @param iterable<T_Value> $items Initial items pushed in order (last becomes top).
      * @throws InvalidArgumentException When any item is not an instance of $type.
      */
@@ -61,23 +65,33 @@ class Stack extends AbstractCollection {
         return $count === 0 ? null : $this->items[$count - 1];
     }
 
-    /** @return T_Value */
+    /** Discard all items and reset the iteration cursor. */
+    public function clear(): void {
+        parent::clear();
+        $this->position = 0;
+    }
+
+    /** @return T_Value Item at the current iteration position (top-to-bottom). */
     public function current(): mixed {
         return $this->items[count($this->items) - 1 - $this->position];
     }
 
+    /** Zero-based offset from the top of the stack. */
     public function key(): int {
         return $this->position;
     }
 
+    /** Advance the iteration cursor one step toward the bottom. */
     public function next(): void {
         $this->position++;
     }
 
+    /** Reset the iteration cursor to the top of the stack. */
     public function rewind(): void {
         $this->position = 0;
     }
 
+    /** Whether the iteration cursor still points at a valid item. */
     public function valid(): bool {
         return $this->position < count($this->items);
     }

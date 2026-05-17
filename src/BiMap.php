@@ -9,11 +9,20 @@ use Rak200\Collections\Internal\HashesValues;
 use InvalidArgumentException;
 use function array_key_exists;
 use function count;
+use function current;
+use function get_debug_type;
+use function is_int;
+use function is_string;
+use function key;
+use function next;
+use function reset;
+use function sprintf;
+use function var_export;
 
 /**
  * Bidirectional map with unique keys AND unique values.
  *
- * Both directions are O(1): lookup by key via `getByKey()`, and by value via
+ * Supports lookup in both directions: by key via `getByKey()` and by value via
  * `getByValue()`. Values can be of any type — they are hashed via the same
  * hybrid scheme used by {@see Set} (`spl_object_id` for objects, value for
  * scalars/null/arrays). `put()` rejects conflicts; use `forcePut()` to
@@ -36,7 +45,7 @@ class BiMap implements \Iterator, \Countable, ToArray {
 
     /**
      * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
-     * @param class-string<T_Value&object>|'mixed' $valueType Value class to enforce, or 'mixed' to skip.
+     * @param class-string<T_Value>|'mixed' $valueType Value class to enforce, or 'mixed' to skip.
      */
     public function __construct(
         private string $keyType = 'mixed',
@@ -48,14 +57,16 @@ class BiMap implements \Iterator, \Countable, ToArray {
         return $this->keyType;
     }
 
-    /** @return class-string<T_Value&object>|string */
+    /** @return class-string<T_Value>|string */
     public function getValueType(): string {
         return $this->valueType;
     }
 
     /**
+     * Validate that $key matches the configured key type.
+     *
      * @param T_Key $key
-     * @throws InvalidArgumentException
+     * @throws InvalidArgumentException When the key does not match $this->keyType.
      */
     private function checkKey(int|string $key): void {
         if ($this->keyType === 'mixed') {
@@ -70,8 +81,10 @@ class BiMap implements \Iterator, \Countable, ToArray {
     }
 
     /**
+     * Validate that $value matches the configured value type.
+     *
      * @param T_Value $value
-     * @throws InvalidArgumentException
+     * @throws InvalidArgumentException When the value does not match $this->valueType.
      */
     private function checkValue(mixed $value): void {
         if ($this->valueType === 'mixed') {
@@ -125,6 +138,8 @@ class BiMap implements \Iterator, \Countable, ToArray {
     }
 
     /**
+     * Value mapped to the given key, or null if absent.
+     *
      * @param T_Key $key
      * @return T_Value|null
      */
@@ -133,6 +148,8 @@ class BiMap implements \Iterator, \Countable, ToArray {
     }
 
     /**
+     * Key mapped to the given value, or null if absent.
+     *
      * @param T_Value $value
      * @return T_Key|null
      */
@@ -140,12 +157,20 @@ class BiMap implements \Iterator, \Countable, ToArray {
         return $this->valueHashToKey[self::hashValue($value)] ?? null;
     }
 
-    /** @param T_Key $key */
+    /**
+     * Whether the given key is mapped.
+     *
+     * @param T_Key $key
+     */
     public function hasKey(int|string $key): bool {
         return array_key_exists($key, $this->keyToValue);
     }
 
-    /** @param T_Value $value */
+    /**
+     * Whether the given value is mapped.
+     *
+     * @param T_Value $value
+     */
     public function hasValue(mixed $value): bool {
         return isset($this->valueHashToKey[self::hashValue($value)]);
     }
@@ -184,6 +209,17 @@ class BiMap implements \Iterator, \Countable, ToArray {
         return count($this->keyToValue);
     }
 
+    /** Whether the map holds no mappings. */
+    public function isEmpty(): bool {
+        return $this->keyToValue === [];
+    }
+
+    /** Discard all mappings. */
+    public function clear(): void {
+        $this->keyToValue = [];
+        $this->valueHashToKey = [];
+    }
+
     /** @return T_Value Value at the current iteration cursor. */
     public function current(): mixed {
         return current($this->keyToValue);
@@ -209,7 +245,7 @@ class BiMap implements \Iterator, \Countable, ToArray {
         return key($this->keyToValue) !== null;
     }
 
-    /** @return array<T_Key, T_Value> */
+    /** @return array<T_Key, T_Value> Entries indexed by key, in insertion order. */
     public function toArray(): array {
         return $this->keyToValue;
     }

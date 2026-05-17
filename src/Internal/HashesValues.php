@@ -43,10 +43,30 @@ trait HashesValues {
             is_bool($value)   => 'b:' . ($value ? '1' : '0'),
             is_null($value)   => 'n:',
             is_float($value)  => 'f:' . var_export($value, true),
-            is_array($value)  => 'a:' . md5(serialize($value)),
+            is_array($value)  => 'a:' . self::serializeArray($value),
             default           => throw new InvalidArgumentException(
                 'Unsupported value type: ' . get_debug_type($value)
             ),
         };
+    }
+
+    /**
+     * Serialize an array for hashing. Uses `serialize()` internally, but catches
+     * exceptions to provide a clearer error message when the array contains
+     * unserializable values (e.g. resources).
+     *
+     * @param array $array
+     * @return string Hash of the array contents.
+     * @throws InvalidArgumentException When the array cannot be serialized.
+     */
+    private static function serializeArray(array $array): string {
+        try {
+            // Test if the array is serializable (e.g. doesn't contain resources)
+            return md5(serialize($array));
+        } catch (\Exception $e) {
+            throw new InvalidArgumentException(
+                'Cannot hash array: ' . $e->getMessage()
+            );
+        }
     }
 }

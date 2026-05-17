@@ -35,11 +35,11 @@ abstract class AbstractCollection implements \Iterator, \Countable, ToArray {
     protected array $items = [];
 
     /**
-     * @param class-string<T_Value&object>|'mixed' $type Class name to enforce on items, or 'mixed' to skip.
+     * @param class-string<T_Value>|'mixed' $type Class name to enforce on items, or 'mixed' to skip.
      */
     public function __construct(protected string $type = 'mixed') {}
 
-    /** @return class-string<T_Value&object>|string */
+    /** @return class-string<T_Value>|string */
     public function getType(): string {
         return $this->type;
     }
@@ -47,6 +47,16 @@ abstract class AbstractCollection implements \Iterator, \Countable, ToArray {
     /** Number of items currently stored. */
     public function count(): int {
         return count($this->items);
+    }
+
+    /** Whether the collection holds no items. */
+    public function isEmpty(): bool {
+        return $this->items === [];
+    }
+
+    /** Discard all items. Subclasses with extra state should override. */
+    public function clear(): void {
+        $this->items = [];
     }
 
     /** @return T_Value Value at the current iteration cursor. */

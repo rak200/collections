@@ -86,4 +86,17 @@ final class StackTest extends TestCase {
         self::assertSame('top', $s->pop());
         self::assertSame(42, $s->pop());
     }
+
+    public function testIsEmptyAndClear(): void {
+        $s = new Stack();
+        self::assertTrue($s->isEmpty());
+        $s->push('a');
+        $s->push('b');
+        self::assertFalse($s->isEmpty());
+        $s->clear();
+        self::assertTrue($s->isEmpty());
+        self::assertNull($s->peek());
+        $s->push('x');
+        self::assertSame('x', $s->peek());
+    }
 }

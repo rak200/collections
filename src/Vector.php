@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
+use function get_debug_type;
+use function is_int;
+use function sprintf;
 use InvalidArgumentException;
 
 /**
@@ -21,29 +24,41 @@ use InvalidArgumentException;
 class Vector extends AbstractCollection implements \ArrayAccess {
 
     /**
-     * @param class-string<T_Value&object>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
+     * @param class-string<T_Value>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
      * @param T_Value[] $items Initial items indexed by int.
      * @throws InvalidArgumentException When any item is not an instance of $type.
      */
     public function __construct(string $type = 'mixed', array $items = []) {
         parent::__construct($type);
-        foreach ($items as $item) {
+        foreach ($items as $key => $item) {
+            if (!is_int($key)) {
+                throw new InvalidArgumentException(sprintf(
+                    'Invalid key type: expected int, got %s',
+                    get_debug_type($key)
+                ));
+            }
             $this->checkType($item);
         }
         $this->items = $items;
     }
 
-    /** @return int */
+    /** Integer key at the current iteration cursor. */
     public function key(): int {
         return parent::key();
     }
 
-    /** @param int $offset */
+    /**
+     * Whether the given offset is populated.
+     *
+     * @param int $offset
+     */
     public function offsetExists(mixed $offset): bool {
         return isset($this->items[$offset]);
     }
 
     /**
+     * Item at the given offset, or null if absent.
+     *
      * @param int $offset
      * @return T_Value|null
      */
@@ -52,9 +67,11 @@ class Vector extends AbstractCollection implements \ArrayAccess {
     }
 
     /**
+     * Set the item at the given offset, or append when $offset is null.
+     *
      * @param int|null $offset
      * @param T_Value $value
-     * @throws InvalidArgumentException
+     * @throws InvalidArgumentException When $value is not an instance of $this->type.
      */
     public function offsetSet(mixed $offset, mixed $value): void {
         $this->checkType($value);
@@ -65,27 +82,39 @@ class Vector extends AbstractCollection implements \ArrayAccess {
         }
     }
 
-    /** @param int $offset */
+    /**
+     * Remove the item at the given offset (no-op if absent).
+     *
+     * @param int $offset
+     */
     public function offsetUnset(mixed $offset): void {
         unset($this->items[$offset]);
     }
 
     /**
+     * Set the item at the given offset, overwriting any existing entry.
+     *
      * @param int $offset
      * @param T_Value $item
-     * @throws InvalidArgumentException
+     * @throws InvalidArgumentException When $item is not an instance of $this->type.
      */
     public function add(int $offset, mixed $item): void {
         $this->checkType($item);
         $this->items[$offset] = $item;
     }
 
-    /** @param int $offset */
+    /**
+     * Remove the item at the given offset (no-op if absent).
+     *
+     * @param int $offset
+     */
     public function remove(int $offset): void {
         unset($this->items[$offset]);
     }
 
     /**
+     * Item at the given offset, or null if absent.
+     *
      * @param int $offset
      * @return T_Value|null
      */

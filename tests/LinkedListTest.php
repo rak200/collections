@@ -166,4 +166,32 @@ final class LinkedListTest extends TestCase {
         self::assertSame('mixed', $list->getType());
         self::assertSame([10, 20, 30], $list->toArray());
     }
+
+    public function testIsEmpty(): void {
+        $list = new LinkedList();
+        self::assertTrue($list->isEmpty());
+        $list->push('a');
+        self::assertFalse($list->isEmpty());
+        $list->pop();
+        self::assertTrue($list->isEmpty());
+    }
+
+    public function testClearResetsAllState(): void {
+        $list = new LinkedList('mixed', ['a', 'b', 'c']);
+        $list->clear();
+        self::assertCount(0, $list);
+        self::assertNull($list->head());
+        self::assertNull($list->tail());
+        self::assertSame([], $list->toArray());
+        $list->push('x');
+        self::assertSame('x', $list->head()->value);
+    }
+
+    public function testRemoveRejectsForeignNode(): void {
+        $listA = new LinkedList();
+        $listB = new LinkedList();
+        $node = $listA->push('a');
+        $this->expectException(InvalidArgumentException::class);
+        $listB->remove($node);
+    }
 }

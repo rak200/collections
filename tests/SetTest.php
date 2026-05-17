@@ -126,4 +126,57 @@ final class SetTest extends TestCase {
         self::assertTrue($s->contains(1));
         self::assertCount(3, $s);
     }
+
+    public function testIsEmptyAndClear(): void {
+        $s = new Set('mixed', [1, 2, 3]);
+        self::assertFalse($s->isEmpty());
+        $s->clear();
+        self::assertTrue($s->isEmpty());
+        self::assertCount(0, $s);
+    }
+
+    public function testUnion(): void {
+        $a = new Set('mixed', [1, 2, 3]);
+        $b = new Set('mixed', [3, 4, 5]);
+        $u = $a->union($b);
+        self::assertEqualsCanonicalizing([1, 2, 3, 4, 5], $u->toArray());
+        // originals untouched
+        self::assertCount(3, $a);
+        self::assertCount(3, $b);
+    }
+
+    public function testIntersection(): void {
+        $a = new Set('mixed', [1, 2, 3, 4]);
+        $b = new Set('mixed', [3, 4, 5, 6]);
+        self::assertEqualsCanonicalizing([3, 4], $a->intersection($b)->toArray());
+    }
+
+    public function testDifference(): void {
+        $a = new Set('mixed', [1, 2, 3, 4]);
+        $b = new Set('mixed', [3, 4, 5, 6]);
+        self::assertEqualsCanonicalizing([1, 2], $a->difference($b)->toArray());
+    }
+
+    /**
+     * A6: HashesValues hashes arrays via md5(serialize($value)). When the
+     * array contains a Closure, serialize() throws a generic Exception, not
+     * the InvalidArgumentException promised by the docblock. If this test
+     * passes, A6 is fixed (wrapping serialize errors as InvalidArgumentException).
+     */
+    public function testAddArrayContainingClosureThrowsInvalidArgument(): void {
+        $s = new Set();
+        $this->expectException(InvalidArgumentException::class);
+        $s->add([fn() => 1]);
+    }
+
+    public function testIsSubsetOfAndIsSupersetOf(): void {
+        $small = new Set('mixed', [1, 2]);
+        $large = new Set('mixed', [1, 2, 3]);
+        self::assertTrue($small->isSubsetOf($large));
+        self::assertFalse($large->isSubsetOf($small));
+        self::assertTrue($large->isSupersetOf($small));
+        self::assertFalse($small->isSupersetOf($large));
+        // empty set is a subset of every set
+        self::assertTrue((new Set())->isSubsetOf($large));
+    }
 }

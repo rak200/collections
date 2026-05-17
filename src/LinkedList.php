@@ -10,12 +10,17 @@ use Rak200\Collections\Internal\ValidatesType;
 use InvalidArgumentException;
 
 /**
- * Doubly linked list with O(1) insertion and removal at any node.
+ * Doubly linked list of typed values.
  *
- * Holding a {@see LinkedNode} reference (returned by push/unshift/
- * insertBefore/insertAfter) allows constant-time insertion or removal at
- * arbitrary positions. Values can be of any type; when a class-string is
- * given as the type, every value must be an instance of that class.
+ * Mutating methods (`push`/`unshift`/`insertBefore`/`insertAfter`) return the
+ * {@see LinkedNode} they created so callers can hold a handle for later
+ * insertion or removal at that position. Values can be of any type; when a
+ * class-string is given as the type, every value must be an instance of that
+ * class.
+ *
+ * Iteration state ($cursor/$position) is held on the instance, so nested
+ * `foreach` loops over the same list interfere with each other. Iterate a
+ * snapshot via `toArray()` if concurrent traversal is needed.
  *
  * @template T_Value
  * @implements \Iterator<int, T_Value>
@@ -38,7 +43,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
     private int $count = 0;
 
     /**
-     * @param class-string<T_Value&object>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
+     * @param class-string<T_Value>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
      * @param iterable<T_Value> $items Initial items appended in order.
      * @throws InvalidArgumentException When any item is not an instance of $type.
      */
@@ -48,13 +53,19 @@ class LinkedList implements \Iterator, \Countable, ToArray {
         }
     }
 
+    /**
+     * Build a new list from a {@see Vector}, preserving its type and order.
+     *
+     * @param Vector<T_Value> $vector
+     * @return self<T_Value>
+     */
     public static function fromVector(Vector $vector): self {
         return new self($vector->getType(), $vector->toArray());
     }
 
     /**
      * Get the configured type of this list.
-     * @return class-string<T_Value&object>|string
+     * @return class-string<T_Value>|string
      */
     public function getType(): string {
         return $this->type;
@@ -69,7 +80,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
      */
     public function push(mixed $item): LinkedNode {
         $this->checkType($item);
-        $node = new LinkedNode($item, prev: $this->tail);
+        $node = new LinkedNode($this, $item, prev: $this->tail);
         if ($this->tail === null) {
             $this->head = $node;
         } else {
@@ -89,7 +100,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
      */
     public function unshift(mixed $item): LinkedNode {
         $this->checkType($item);
-        $node = new LinkedNode($item, next: $this->head);
+        $node = new LinkedNode($this, $item, next: $this->head);
         if ($this->head === null) {
             $this->tail = $node;
         } else {
@@ -138,7 +149,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
      */
     public function insertBefore(LinkedNode $node, mixed $item): LinkedNode {
         $this->checkType($item);
-        $new = new LinkedNode($item, prev: $node->prev, next: $node);
+        $new = new LinkedNode($this, $item, prev: $node->prev, next: $node);
         if ($node->prev !== null) {
             $node->prev->next = $new;
         } else {
@@ -159,7 +170,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
      */
     public function insertAfter(LinkedNode $node, mixed $item): LinkedNode {
         $this->checkType($item);
-        $new = new LinkedNode($item, prev: $node, next: $node->next);
+        $new = new LinkedNode($this, $item, prev: $node, next: $node->next);
         if ($node->next !== null) {
             $node->next->prev = $new;
         } else {
@@ -177,6 +188,10 @@ class LinkedList implements \Iterator, \Countable, ToArray {
      * @param LinkedNode<T_Value> $node
      */
     public function remove(LinkedNode $node): void {
+        if ($node->owner !== $this) {
+            throw new InvalidArgumentException('Node does not belong to this list.');
+        }
+
         if ($node->prev !== null) {
             $node->prev->next = $node->next;
         } else {
@@ -192,44 +207,71 @@ class LinkedList implements \Iterator, \Countable, ToArray {
         $this->count--;
     }
 
-    /** @return LinkedNode<T_Value>|null */
+    /**
+     * Node at the head of the list, or null if empty.
+     *
+     * @return LinkedNode<T_Value>|null
+     */
     public function head(): ?LinkedNode {
         return $this->head;
     }
 
-    /** @return LinkedNode<T_Value>|null */
+    /**
+     * Node at the tail of the list, or null if empty.
+     *
+     * @return LinkedNode<T_Value>|null
+     */
     public function tail(): ?LinkedNode {
         return $this->tail;
     }
 
+    /** Number of nodes currently stored. */
     public function count(): int {
         return $this->count;
     }
 
-    /** @return T_Value */
+    /** Whether the list has no nodes. */
+    public function isEmpty(): bool {
+        return $this->head === null;
+    }
+
+    /** Discard all nodes and reset the iteration cursor. */
+    public function clear(): void {
+        $this->head = null;
+        $this->tail = null;
+        $this->cursor = null;
+        $this->position = 0;
+        $this->count = 0;
+    }
+
+    /** @return T_Value Value at the current iteration cursor. */
     public function current(): mixed {
         return $this->cursor->value;
     }
 
+    /** Zero-based offset from the head of the list. */
     public function key(): int {
         return $this->position;
     }
 
+    /** Advance the iteration cursor one node toward the tail. */
     public function next(): void {
         $this->cursor = $this->cursor?->next;
         $this->position++;
     }
 
+    /** Reset the iteration cursor to the head of the list. */
     public function rewind(): void {
         $this->cursor = $this->head;
         $this->position = 0;
     }
 
+    /** Whether the iteration cursor still points at a valid node. */
     public function valid(): bool {
         return $this->cursor !== null;
     }
 
-    /** @return T_Value[] */
+    /** @return T_Value[] Values from head to tail. */
     public function toArray(): array {
         $result = [];
         for ($node = $this->head; $node !== null; $node = $node->next) {

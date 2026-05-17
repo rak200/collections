@@ -31,20 +31,24 @@ class OrderedSet extends AbstractCollection {
     use HashesValues;
 
     /**
-     * @param class-string<T_Value&object>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
+     * @param class-string<T_Value>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
      * @param (Closure(T_Value, T_Value): int)|null $comparator Sort callback; null = insertion order.
      * @param iterable<T_Value> $items Initial items added in order; duplicates are ignored.
      * @throws InvalidArgumentException When any item is not an instance of $type.
      */
     public function __construct(
         string $type = 'mixed',
-        private ?Closure $comparator = null,
-        iterable $items = []
+        iterable $items = [],
+        private ?Closure $comparator = null
     ) {
         parent::__construct($type);
         foreach ($items as $item) {
             $this->add($item);
         }
+    }
+
+    public function key(): int {
+        return array_flip(array_keys($this->items))[parent::key()] ?? null;
     }
 
     /**
@@ -83,6 +87,79 @@ class OrderedSet extends AbstractCollection {
     /** @param T_Value $item */
     public function contains(mixed $item): bool {
         return array_key_exists(self::hashValue($item), $this->items);
+    }
+
+    /**
+     * Return a new set containing items from both. Preserves $this's comparator.
+     *
+     * @param self<T_Value> $other
+     * @return static
+     * @throws InvalidArgumentException When $other has items incompatible with $this->type.
+     */
+    public function union(self $other): static {
+        $result = new static($this->type, comparator: $this->comparator);
+        foreach ($this->items as $item) {
+            $result->add($item);
+        }
+        foreach ($other->items as $item) {
+            $result->add($item);
+        }
+        return $result;
+    }
+
+    /**
+     * Return a new set containing only items present in both. Preserves $this's comparator.
+     *
+     * @param self<T_Value> $other
+     * @return static
+     */
+    public function intersection(self $other): static {
+        $result = new static($this->type, comparator: $this->comparator);
+        foreach ($this->items as $item) {
+            if ($other->contains($item)) {
+                $result->add($item);
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Return a new set containing items in $this not present in $other. Preserves $this's comparator.
+     *
+     * @param self<T_Value> $other
+     * @return static
+     */
+    public function difference(self $other): static {
+        $result = new static($this->type, comparator: $this->comparator);
+        foreach ($this->items as $item) {
+            if (!$other->contains($item)) {
+                $result->add($item);
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Whether every item in $this is also in $other.
+     *
+     * @param self<T_Value> $other
+     */
+    public function isSubsetOf(self $other): bool {
+        foreach ($this->items as $item) {
+            if (!$other->contains($item)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Whether every item in $other is also in $this.
+     *
+     * @param self<T_Value> $other
+     */
+    public function isSupersetOf(self $other): bool {
+        return $other->isSubsetOf($this);
     }
 
     /**
