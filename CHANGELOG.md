@@ -1,0 +1,35 @@
+# Changelog
+
+All notable changes to `rak200/collections` will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.0.2] - 2026-05-16
+
+### Added
+- `Vector<T_Value>` — int-indexed dynamic array of typed or mixed values (replaces the former `Collection` shape).
+- `DoublyLinkedList<T_Value>` and `DoublyLinkedListNode<T_Value>` — doubly linked list with O(1) insertion/removal at any node.
+- `Queue<T_Object>` — FIFO backed by `DoublyLinkedList`, with `enqueue()`, `dequeue()`, `peek()`.
+- `Stack<T_Object>` — LIFO with `push()`, `pop()`, `peek()`; iteration yields top-to-bottom.
+- `Set<T_Object>` — unique-element set keyed by `spl_object_id`; `add()`/`remove()` return `bool`.
+- `Map<T_Key, T_Value>` — ordered key-value map with separate key (`'int'|'string'|'mixed'`) and value type enforcement.
+- `DoublyLinkedList::fromVector()` — build a list from a `Vector` (replaces `fromCollection`).
+
+### Changed
+- **BREAKING** `Collection` renamed to `Vector`; key type narrowed from `int|string` to `int` and value type widened from `object` to `mixed`.
+- `DoublyLinkedList` now accepts values of any type (`mixed`), not only `object`. Class enforcement still works when `$type` is a class-string.
+
+### Deprecated
+- `Collection` is now a thin BC shim extending `Vector` that still accepts `int|string` keys. Triggers `E_USER_DEPRECATED`. Will be removed in **1.0.0** — migrate to `Vector` (int-indexed) or `Map` (keyed lookup).
+
+## [0.0.1] - 2026-05-16
+
+### Added
+- Initial release with `Collection<T_Key, T_Object>` — typed generic array container implementing `Iterator`, `ArrayAccess`, `Countable`, and `Rak200\Caster\Contracts\ToArray`.
+
+[Unreleased]: https://github.com/rak200/collections/compare/0.0.2...HEAD
+[0.0.2]: https://github.com/rak200/collections/compare/0.0.1...0.0.2
+[0.0.1]: https://github.com/rak200/collections/releases/tag/0.0.1
