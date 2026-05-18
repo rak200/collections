@@ -23,6 +23,10 @@ use Rak200\Collections\Internal\ValidatesType;
  * or `'mixed'`. The parent's `$type` field stores the value type; the key
  * type is held in `$keyType` on this class.
  *
+ * Common cases: keyed lookups (id → entity, slug → page, code → label),
+ * in-memory indexes and caches, runtime configuration / option bags with
+ * type guarantees on the values.
+ *
  * @template T_Key of int|string
  * @template T_Value
  * @extends AbstractCollection<T_Value>

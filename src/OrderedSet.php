@@ -23,6 +23,10 @@ use Rak200\Collections\Internal\ValidatesType;
  * - with a comparator (`fn($a, $b): int`, usort-style): re-sorted on every
  *   `add()` so iteration always reflects the comparator's order
  *
+ * Common cases: leaderboards and rankings (with a comparator), insertion-
+ * ordered membership tracking when you also want stable `first()` / `last()`,
+ * UI-facing sorted-distinct lists.
+ *
  * @template T_Value
  * @extends AbstractCollection<T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>
@@ -48,6 +52,10 @@ class OrderedSet extends AbstractCollection {
         }
     }
 
+    /**
+     * Zero-based position of the current item within the set. The internal
+     * hash key is hidden so the `Iterator<int, T_Value>` contract holds.
+     */
     public function key(): int {
         return array_flip(array_keys($this->items))[parent::key()] ?? null;
     }

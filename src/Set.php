@@ -15,6 +15,9 @@ use Rak200\Collections\Internal\ValidatesType;
  * - objects are unique by {@see spl_object_id()} (same instance only)
  * - scalars (int/string/float/bool), null, and arrays are unique by value
  *
+ * Common cases: membership tests, deduplication of inputs, visited-node
+ * tracking in graph traversals, tag / permission collections.
+ *
  * @template T_Value
  * @extends AbstractCollection<T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>
@@ -35,8 +38,12 @@ class Set extends AbstractCollection {
         }
     }
 
+    /**
+     * Zero-based position of the current item within the set. The internal
+     * hash key is hidden so the `Iterator<int, T_Value>` contract holds.
+     */
     public function key(): int {
-        return array_flip(array_keys($this->items))[parent::key()] ?? null;
+        return array_search(parent::key(), array_keys($this->items), true);
     }
 
     /**

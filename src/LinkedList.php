@@ -22,6 +22,10 @@ use InvalidArgumentException;
  * `foreach` loops over the same list interfere with each other. Iterate a
  * snapshot via `toArray()` if concurrent traversal is needed.
  *
+ * Common cases: LRU caches and free lists (holding the node lets you splice
+ * any element out in constant time), playlists / undo-redo chains, and the
+ * backing store for the higher-level {@see Queue} and {@see Deque}.
+ *
  * @template T_Value
  * @implements \Iterator<int, T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>

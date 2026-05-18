@@ -29,6 +29,9 @@ use function var_export;
  * scalars/null/arrays). `put()` rejects conflicts; use `forcePut()` to
  * overwrite any existing mapping on either side.
  *
+ * Common cases: session-id ↔ user mappings, slug ↔ entity lookups, enum code
+ * ↔ label tables, any one-to-one relation you want to query from either side.
+ *
  * @template T_Key of int|string
  * @template T_Value
  * @implements \Iterator<T_Key, T_Value>

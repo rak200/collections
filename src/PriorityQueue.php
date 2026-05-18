@@ -21,6 +21,10 @@ use InvalidArgumentException;
  * snapshot and position are held on the instance, so nested `foreach` loops
  * over the same queue interfere with each other.
  *
+ * Common cases: scheduling (Dijkstra / A* frontier, task urgency queues),
+ * event simulation, top-N extraction, "process the most important item next"
+ * workflows.
+ *
  * @template T_Value
  * @implements \Iterator<int, T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>
@@ -38,6 +42,8 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
 
     /**
      * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
+     * @param iterable<T_Value> $items Initial items enqueued at priority 0 in iteration order.
+     * @throws InvalidArgumentException When any item does not satisfy $type.
      */
     public function __construct(private string $type = 'mixed', iterable $items = []) {
         foreach ($items as $item) {

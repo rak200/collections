@@ -27,6 +27,10 @@ use Rak200\Collections\Internal\ValidatesType;
  * `int|string`, so `$map[$obj]` is not expressible. Use `set()`/`get()`
  * instead.
  *
+ * Common cases: attaching metadata / audit info / cached results to existing
+ * domain objects without modifying them, identity-keyed lookups (per-instance
+ * state), object → object relations.
+ *
  * @template T_Key of object
  * @template T_Value of object
  * @implements \Iterator<T_Key, T_Value>

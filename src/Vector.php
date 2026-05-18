@@ -18,6 +18,10 @@ use Rak200\Collections\Internal\ValidatesType;
  * is given as the type, every item must be an instance of that class; with
  * 'mixed', any value is accepted.
  *
+ * Common cases: ordered lists of typed items (DTO collections, search
+ * results, paginated rows), int-indexed sequences where keyed lookup isn't
+ * needed.
+ *
  * @template T_Value
  * @extends AbstractCollection<T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>

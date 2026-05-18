@@ -16,6 +16,9 @@ use Rak200\Collections\Internal\ValidatesType;
  * loops over the same stack interfere with each other. Iterate a snapshot via
  * `toArray()` if concurrent traversal is needed.
  *
+ * Common cases: undo / redo stacks, DFS / backtracking traversals, parser
+ * scopes, expression evaluation, function-call frames.
+ *
  * @template T_Value
  * @extends AbstractCollection<T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>

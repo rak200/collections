@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-18
+
+### Added
+- `MultiMap<T_Key, T_Value>` — key-to-many-values map (HTTP-header style, `groupBy` results). Each key holds an ordered list of values; the same key may appear repeatedly. Methods: `add()`/`set()`/`get()`/`getFirst()`/`has()`/`hasValue()`/`remove()`/`removeValue()`/`keys()`/`values()`/`countKey()`/`total()`, plus `isEmpty()`/`clear()`. `count()` returns the number of distinct keys; `total()` returns the total value count across all keys. Iteration yields one entry per stored value, snapshotted on `rewind()`.
+- `MultiSet<T_Value>` — bag / occurrence counter (frequency, histogram). Uses the same hybrid identity as `Set` (objects by `spl_object_id`, scalars/null/arrays by value). Methods: `add($item, int $count = 1)`/`remove($item, int $count = 1)`/`setCount()`/`countOf()`/`contains()`/`distinct()`/`unique()`/`mostCommon(int $n)`, plus `isEmpty()`/`clear()`. `count()` returns the total occurrences across the bag; `distinct()` returns the number of unique items. Iteration yields the item with the occurrence count exposed as `Iterator::key()`.
+- `Deque<T_Value>` — explicit double-ended queue facade over `LinkedList`. Surfaces the head/tail operations under deque vocabulary: `pushFront`/`pushBack`/`popFront`/`popBack`/`peekFront`/`peekBack`. Useful when you want either-end semantics without the linked-list node machinery.
+- `CircularBuffer<T_Value>` — fixed-capacity FIFO with overwrite-on-full semantics. `push()` returns the evicted item (or `null` if the buffer had room). Internally a ring buffer over a backing array. Methods: `push()`/`pop()`/`peek()`/`capacity()`/`isFull()`, plus `isEmpty()`/`clear()`. Constructor takes `$capacity` first; non-positive capacity throws.
+- `ImmutableSet<T_Value>` — read-only counterpart to `Set`. Exposes only `contains()`, the set-algebra operators (`union`/`intersection`/`difference`/`isSubsetOf`/`isSupersetOf`), and iteration / `toArray` / `count`. Set-algebra methods accept either a `Set` or another `ImmutableSet` and always return a new `ImmutableSet`. Static `ImmutableSet::fromSet(Set $s)` factory preserves the source set's type.
+- `ImmutableMap<T_Key, T_Value>` — read-only counterpart to `Map`. Methods: `get()`/`has()`/`keys()`/`values()`. Still implements `ArrayAccess` for read access; `offsetSet()`/`offsetUnset()` throw `BadMethodCallException` so the immutability extends to array-access syntax. Static `ImmutableMap::fromMap(Map $m)` factory preserves the source map's key and value types.
+- PHPUnit suites for each new class (`MultiMap`, `MultiSet`, `Deque`, `CircularBuffer`, `ImmutableSet`, `ImmutableMap`). Full suite is now 318 tests / 780 assertions.
+
+### Fixed
+- `Set::key()` simplified to use `array_search()` directly to find the current item's position instead of materializing an intermediate `array_flip()` lookup table on every call. Behavior unchanged.
+
 ## [0.3.0] - 2026-05-18
 
 ### Added
@@ -121,7 +135,8 @@ First minor release. Consolidates a wave of API additions and the `object`→`mi
 ### Added
 - Initial release with `Collection<T_Key, T_Object>` — typed generic array container implementing `Iterator`, `ArrayAccess`, `Countable`, and `Rak200\Caster\Contracts\ToArray`.
 
-[Unreleased]: https://github.com/rak200/collections/compare/0.3.0...HEAD
+[Unreleased]: https://github.com/rak200/collections/compare/0.4.0...HEAD
+[0.4.0]: https://github.com/rak200/collections/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/rak200/collections/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/rak200/collections/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/rak200/collections/compare/0.1.0...0.1.1

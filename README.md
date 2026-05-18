@@ -23,14 +23,22 @@ composer require rak200/collections
 | `Rak200\Collections\OrderedSet`        | Unique-element set with insertion order or custom comparator           |
 | `Rak200\Collections\BiMap`             | Bidirectional map with unique keys AND unique values (O(1) both ways)  |
 | `Rak200\Collections\ObjectMap`         | Ordered map keyed by objects (identity via `spl_object_id`)            |
+| `Rak200\Collections\MultiMap`          | Key-to-many-values map (HTTP headers, `groupBy` results)               |
+| `Rak200\Collections\MultiSet`          | Bag / occurrence counter (frequency, histogram)                        |
+| `Rak200\Collections\Deque`             | Double-ended queue (facade over `LinkedList`)                          |
+| `Rak200\Collections\CircularBuffer`    | Fixed-capacity FIFO with overwrite-on-full semantics                   |
+| `Rak200\Collections\ImmutableSet`      | Read-only set with set algebra                                         |
+| `Rak200\Collections\ImmutableMap`      | Read-only map; mutation through `ArrayAccess` throws                   |
 
-`Vector`, `Stack`, `Set`, `Map`, and `OrderedSet` share an `AbstractCollection` base that handles `$items` storage, `Iterator`, `Countable`, `ToArray`, and `getType()`/`count()`/`toArray()`. The concrete classes add their public API and override iteration/`toArray` only where their semantics demand it. `LinkedList`, `Queue`, `PriorityQueue`, `BiMap`, and `ObjectMap` use their own storage models and stand alone.
+`Vector`, `Stack`, `Set`, `Map`, and `OrderedSet` share an `AbstractCollection` base that handles `$items` storage, `Iterator`, `Countable`, `ToArray`, and `getType()`/`count()`/`toArray()`. The concrete classes add their public API and override iteration/`toArray` only where their semantics demand it. `LinkedList`, `Queue`, `PriorityQueue`, `BiMap`, `ObjectMap`, `MultiMap`, `MultiSet`, `Deque`, `CircularBuffer`, `ImmutableSet`, and `ImmutableMap` use their own storage models and stand alone.
 
 All types implement `Countable`, `Rak200\Caster\Contracts\ToArray`, and an appropriate iteration / array-access interface.
 
 ## Usage
 
 ### Typed vector
+
+Reach for it when you need an ordered, int-indexed list of items with type enforcement (DTO collections, search results, paginated rows).
 
 ```php
 use Rak200\Collections\Vector;
@@ -72,6 +80,8 @@ $pq      = new PriorityQueue('callable');
 
 ### Doubly linked list
 
+Reach for it when you need to splice items in or out at arbitrary positions and can keep a node handle (LRU caches, free lists, playlists with mid-sequence edits).
+
 ```php
 use Rak200\Collections\LinkedList;
 
@@ -83,6 +93,8 @@ $list->remove($first);               // O(1)
 ```
 
 ### Queue (FIFO)
+
+Reach for it for background-job processing, BFS frontiers, message buffers — anywhere "first in, first out" is the rule.
 
 ```php
 use Rak200\Collections\Queue;
@@ -96,6 +108,8 @@ $jobs->dequeue();   // $job1
 
 ### Stack (LIFO)
 
+Reach for it for undo / redo, DFS / backtracking, parser scopes, expression evaluation — anywhere the most recent push should come out first.
+
 ```php
 use Rak200\Collections\Stack;
 
@@ -107,6 +121,8 @@ $undo->pop();       // $action2
 
 ### Set (unique by identity)
 
+Reach for it for membership tests, deduplication, visited-node tracking in graph traversals, tag / permission collections.
+
 ```php
 use Rak200\Collections\Set;
 
@@ -117,6 +133,8 @@ $visited->contains($node); // true
 ```
 
 ### Map (typed key/value)
+
+Reach for it for keyed lookups (id → entity, slug → page, code → label), in-memory indexes / caches, and config bags with typed values.
 
 ```php
 use Rak200\Collections\Map;
@@ -134,6 +152,8 @@ foreach ($index as $key => $user) {
 
 ### Priority queue
 
+Reach for it for scheduling (Dijkstra / A* frontier, urgent-first jobs), event simulation, top-N extraction — anywhere "process the most important next" is the rule.
+
 ```php
 use Rak200\Collections\PriorityQueue;
 
@@ -146,6 +166,8 @@ $pq->peek();           // $normalJob
 ```
 
 ### Ordered set
+
+Reach for it for leaderboards / rankings (with a comparator) or insertion-ordered distinct lists where stable `first()` / `last()` matters.
 
 ```php
 use Rak200\Collections\OrderedSet;
@@ -166,6 +188,8 @@ $leaderboard->first(); // highest-score player
 
 ### Bidirectional map
 
+Reach for it for session-id ↔ user, slug ↔ entity, enum-code ↔ label tables — any one-to-one relation you want to query from either side.
+
 ```php
 use Rak200\Collections\BiMap;
 
@@ -179,6 +203,8 @@ $sessions->forcePut('sess-abc', $charlie); // overwrites the existing mapping
 ```
 
 ### Object-keyed map
+
+Reach for it to attach metadata / audit info / cached results to existing domain objects without modifying them.
 
 ```php
 use Rak200\Collections\ObjectMap;
@@ -198,6 +224,105 @@ foreach ($metadata as $user => $entry) {
 }
 ```
 
+### MultiMap (key → many values)
+
+Reach for it for HTTP headers (where keys can repeat), `groupBy` results, tag → entity indexes — anywhere one key naturally holds many values.
+
+```php
+use Rak200\Collections\MultiMap;
+
+$headers = new MultiMap('string', 'string');
+$headers->add('Set-Cookie', 'session=abc');
+$headers->add('Set-Cookie', 'tracking=xyz');
+$headers->add('Content-Type', 'text/html');
+
+$headers->get('Set-Cookie');        // ['session=abc', 'tracking=xyz']
+$headers->getFirst('Content-Type'); // 'text/html'
+$headers->countKey('Set-Cookie');   // 2
+$headers->count();                  // 2 — distinct keys
+$headers->total();                  // 3 — total values
+```
+
+### MultiSet (bag / occurrence counter)
+
+Reach for it for frequency tables, word counts, histograms, vote tallies — any "how many of each?" tally.
+
+```php
+use Rak200\Collections\MultiSet;
+
+$words = new MultiSet('string', ['the', 'quick', 'the', 'fox', 'the', 'fox']);
+$words->countOf('the');          // 3
+$words->countOf('fox');          // 2
+$words->distinct();              // 3 — unique items
+$words->count();                 // 6 — total occurrences
+$words->mostCommon(2);           // [['the', 3], ['fox', 2]]
+```
+
+### Deque (double-ended queue)
+
+Reach for it for browser-style back/forward history, sliding-window scans, work-stealing queues, two-pointer algorithms.
+
+```php
+use Rak200\Collections\Deque;
+
+$buffer = new Deque('string');
+$buffer->pushBack('b');
+$buffer->pushBack('c');
+$buffer->pushFront('a');
+$buffer->peekFront();   // 'a'
+$buffer->peekBack();    // 'c'
+$buffer->popFront();    // 'a'
+$buffer->popBack();     // 'c'
+```
+
+### Circular buffer (fixed-capacity FIFO)
+
+Reach for it to keep only the last N items: sliding windows, in-memory log ringbuffers, recent-activity feeds, rate-limit windows.
+
+```php
+use Rak200\Collections\CircularBuffer;
+
+$recent = new CircularBuffer(3, 'string');
+$recent->push('a');               // null  — had room
+$recent->push('b');               // null
+$recent->push('c');               // null
+$recent->push('d');               // 'a'   — full; evicts oldest
+$recent->toArray();               // ['b', 'c', 'd']
+```
+
+### Immutable set
+
+Reach for it for allow / deny lists, frozen membership tables, or read-only snapshots returned from an API or service layer.
+
+```php
+use Rak200\Collections\ImmutableSet;
+use Rak200\Collections\Set;
+
+$primes = new ImmutableSet('int', [2, 3, 5, 7]);
+$primes->contains(5);             // true
+$primes->union(new Set('int', [11]));    // new ImmutableSet([2, 3, 5, 7, 11])
+$primes->intersection(new ImmutableSet('int', [3, 5, 13])); // new ImmutableSet([3, 5])
+
+// Convert an existing mutable Set into a read-only snapshot.
+$snapshot = ImmutableSet::fromSet($mutableSet);
+```
+
+### Immutable map
+
+Reach for it for frozen configuration / feature flags, lookup tables built once at boot, defensive returns from getters that must forbid caller mutation.
+
+```php
+use Rak200\Collections\ImmutableMap;
+
+$config = new ImmutableMap('string', 'mixed', [
+    'debug' => false,
+    'timeout' => 30,
+]);
+$config->get('debug');            // false
+$config['timeout'];               // 30 — read via ArrayAccess
+$config['timeout'] = 60;          // BadMethodCallException
+```
+
 ### Implements `Rak200\Caster\Contracts\ToArray`
 
 ```php
@@ -205,18 +330,6 @@ use Rak200\Caster\Caster;
 
 Caster::toJson($users);            // delegates to $users->toArray()
 ```
-
-## Planned
-
-The following collection types are planned but not yet implemented:
-
-| Class                                  | Purpose                                                                |
-|----------------------------------------|------------------------------------------------------------------------|
-| `Rak200\Collections\MultiMap`          | Key-to-many-values map (HTTP headers, `groupBy`)                       |
-| `Rak200\Collections\MultiSet`          | Bag / occurrence counter (frequency, histogram)                        |
-| `Rak200\Collections\Deque`             | Explicit double-ended queue facade over `LinkedList`                   |
-| `Rak200\Collections\CircularBuffer`    | Fixed-capacity FIFO with overwrite semantics                           |
-| `Rak200\Collections\ImmutableSet` / `ImmutableMap` | Read-only variants for value-object style code             |
 
 ## Testing
 
@@ -229,7 +342,7 @@ The suite uses PHPUnit 13 and covers every `src/` class. Each class has a paired
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.3.0** — still pre-1.0 while the API stabilizes.
+Follows [Semantic Versioning](https://semver.org). Current version: **0.4.0** — still pre-1.0 while the API stabilizes.
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`

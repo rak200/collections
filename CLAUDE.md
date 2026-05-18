@@ -25,6 +25,12 @@ collections/
 │   ├── OrderedSet.php            # Set with insertion order or custom comparator
 │   ├── BiMap.php                 # Bidirectional map (O(1) both ways), unique on both sides
 │   ├── ObjectMap.php             # Ordered map keyed by objects (identity via spl_object_id)
+│   ├── MultiMap.php              # Key → many-values map (HTTP-header style)
+│   ├── MultiSet.php              # Bag / occurrence counter (hybrid identity)
+│   ├── Deque.php                 # Double-ended queue facade over LinkedList
+│   ├── CircularBuffer.php        # Fixed-capacity FIFO with overwrite-on-full
+│   ├── ImmutableSet.php          # Read-only Set with set algebra
+│   ├── ImmutableMap.php          # Read-only Map (offsetSet/Unset throw)
 │   └── Internal/
 │       ├── HashesValues.php      # Trait: hybrid hash for Set/OrderedSet/BiMap/ObjectMap
 │       ├── ValidatesType.php     # Static utility (abstract class): checkType($type, $value, $label)
@@ -142,6 +148,67 @@ All dispatch lives in `Internal\ValidatesType::checkType()`. `Map`/`BiMap` `$key
 - Insertion order is preserved
 - `toArray()` returns a `list<array{T_Key, T_Value}>` of pairs (object keys aren't representable as array keys)
 
+**`MultiMap<T_Key, T_Value>`**
+- Implements `Iterator`, `Countable`, `ToArray` (standalone — `array<T_Key, list<T_Value>>` storage)
+- Key-to-many-values map. Each key holds an ordered list of values; the same key can be added repeatedly. Useful for HTTP headers and `groupBy` results.
+- Constructor: `new MultiMap(string $keyType = 'mixed', string $valueType = 'mixed')` — no initial entries; call `add()`/`set()` explicitly
+  - `$keyType`: `'int'`, `'string'`, or `'mixed'`
+  - `$valueType`: full discriminator set (class-string / pseudo-type / `'mixed'`)
+- Methods: `add($k, $v)`, `set($k, array $values)`, `get($k): list<T_Value>`, `getFirst($k): T_Value|null`, `has($k)`, `hasValue($k, $v)`, `remove($k): bool`, `removeValue($k, $v): bool`, `keys()`, `values()` (flattened), `countKey($k)`, `total()` (sum of all list lengths)
+- `count()` returns the number of distinct keys; `total()` returns the total value count
+- Iteration snapshots the flattened `[key, value]` pairs on `rewind()` (instance-held — nested iteration over the same map interferes)
+- `toArray()` returns `array<T_Key, list<T_Value>>` (preserves the multi shape)
+
+**`MultiSet<T_Value>`**
+- Implements `Iterator`, `Countable`, `ToArray` (standalone — parallel hash arrays for items and counts)
+- Bag / occurrence counter. Same hybrid identity as `Set` (`Internal\HashesValues` — objects by `spl_object_id`, scalars/null/arrays by value)
+- Constructor: `new MultiSet(string $type = 'mixed', iterable $items = [])` — each initial item increments its count by one
+- Methods: `add($item, int $count = 1): int`, `remove($item, int $count = 1): int`, `setCount($item, int $count)`, `countOf($item): int`, `contains($item)`, `distinct(): int`, `unique(): list<T_Value>`, `mostCommon(int $n): list<array{0: T_Value, 1: int}>` (descending by count, insertion order on ties)
+- `count()` returns the total occurrences across the bag; `distinct()` returns the number of unique items
+- Iteration yields each unique item with its occurrence count exposed as `Iterator::key()`
+- `add`/`remove` reject `$count < 1`; `setCount` rejects negative counts (zero deletes the item)
+- `toArray()` returns `list<array{T_Value, int}>` of `[item, count]` pairs (object items aren't representable as array keys)
+
+**`Deque<T_Value>`**
+- Implements `Iterator`, `Countable`, `ToArray` (standalone — thin facade over a private `LinkedList`)
+- Double-ended queue under deque vocabulary; backed entirely by `LinkedList`'s O(1) end operations
+- Constructor: `new Deque(string $type = 'mixed', iterable $items = [])` — initial items are pushed to the back in order
+- Methods: `pushFront()`, `pushBack()`, `popFront(): T_Value|null`, `popBack(): T_Value|null`, `peekFront(): T_Value|null`, `peekBack(): T_Value|null`
+- Iteration delegates to the underlying `LinkedList`'s cursor (front to back); shares the same single-cursor caveat
+- `toArray()` returns items front-to-back
+
+**`CircularBuffer<T_Value>`**
+- Implements `Iterator`, `Countable`, `ToArray` (standalone — ring-buffer storage over a plain array)
+- Fixed-capacity FIFO with overwrite-on-full semantics
+- Constructor: `new CircularBuffer(int $capacity, string $type = 'mixed', iterable $items = [])`
+  - `$capacity`: must be a positive integer; non-positive throws `InvalidArgumentException`
+  - Initial items are pushed in order; if more than `$capacity` items are provided, the oldest are evicted on the fly
+- Methods: `push($item): T_Value|null` (returns the evicted oldest item when full, else `null`), `pop(): T_Value|null`, `peek(): T_Value|null`, `capacity()`, `isFull()`
+- Iteration yields items oldest → newest with `Iterator::key()` as a zero-based offset from the oldest
+- `toArray()` returns items oldest to newest
+
+**`ImmutableSet<T_Value>`**
+- Implements `Iterator`, `Countable`, `ToArray` (standalone — same hash-keyed storage as `Set`)
+- Read-only counterpart to `Set`. `final`; entries are fixed at construction.
+- Hybrid identity (same as `Set`/`OrderedSet`): objects by `spl_object_id`, scalars/null/arrays by value
+- Constructor: `new ImmutableSet(string $type = 'mixed', iterable $items = [])` — duplicates in `$items` are silently dropped
+- Static `ImmutableSet::fromSet(Set $set): self` preserves the source set's type
+- Methods: `contains()`, `union()`, `intersection()`, `difference()`, `isSubsetOf()`, `isSupersetOf()`, `isEmpty()`
+- Set-algebra methods accept either a `Set` or another `ImmutableSet` (via `self|Set` union) and always return a new `ImmutableSet`; result's type matches `$this->type`
+- `toArray()` returns a zero-indexed array (internal hash keys discarded)
+
+**`ImmutableMap<T_Key, T_Value>`**
+- Implements `Iterator`, `ArrayAccess`, `Countable`, `ToArray` (standalone — plain `array<T_Key, T_Value>` storage)
+- Read-only counterpart to `Map`. `final`; entries are fixed at construction.
+- `offsetSet()` and `offsetUnset()` always throw `BadMethodCallException` so immutability extends to `$map[$k] = $v` / `unset($map[$k])`
+- Constructor: `new ImmutableMap(string $keyType = 'mixed', string $valueType = 'mixed', array $items = [])`
+  - `$keyType`: `'int'`, `'string'`, or `'mixed'` (same constraint as `Map`)
+  - `$valueType`: full discriminator set (class-string / pseudo-type / `'mixed'`)
+- Static `ImmutableMap::fromMap(Map $map): self` preserves the source map's key and value types
+- Methods: `get($k): T_Value|null`, `has($k)`, `keys()`, `values()`, `isEmpty()`, plus the read side of `ArrayAccess` (`offsetExists`, `offsetGet`)
+- Insertion order is preserved
+- `toArray()` returns the underlying `array<T_Key, T_Value>`
+
 ### Internal
 
 **`Internal\HashesValues`** (trait)
@@ -162,7 +229,7 @@ When adding a new collection type:
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.1.0** — still pre-1.0 while the API stabilizes. 
+Follows [Semantic Versioning](https://semver.org). Current version: **0.4.0** — still pre-1.0 while the API stabilizes. 
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`
