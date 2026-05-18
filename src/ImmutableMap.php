@@ -48,13 +48,13 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
     /**
      * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
      * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $valueType Class name or built-in pseudo-type to enforce on values, or `'mixed'` to skip.
-     * @param array<T_Key, T_Value> $items Initial entries (final).
+     * @param iterable<T_Key, T_Value> $items Initial entries (final).
      * @throws InvalidArgumentException When any key or value violates its type.
      */
     public function __construct(
         private string $keyType = 'mixed',
         private string $valueType = 'mixed',
-        array $items = []
+        iterable $items = []
     ) {
         foreach ($items as $key => $value) {
             $this->checkKey($key);

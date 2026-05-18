@@ -30,10 +30,10 @@ class Vector extends AbstractCollection implements \ArrayAccess {
 
     /**
      * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
-     * @param T_Value[] $items Initial items indexed by int.
-     * @throws InvalidArgumentException When any item does not satisfy $type.
+     * @param iterable<int, T_Value> $items Initial items indexed by int.
+     * @throws InvalidArgumentException When any item does not satisfy $type, or any key is not an int.
      */
-    public function __construct(string $type = 'mixed', array $items = []) {
+    public function __construct(string $type = 'mixed', iterable $items = []) {
         parent::__construct($type);
         foreach ($items as $key => $item) {
             if (!is_int($key)) {
@@ -43,8 +43,8 @@ class Vector extends AbstractCollection implements \ArrayAccess {
                 ));
             }
             ValidatesType::checkType($this->type, $item);
+            $this->items[$key] = $item;
         }
-        $this->items = $items;
     }
 
     /** Integer key at the current iteration cursor. */

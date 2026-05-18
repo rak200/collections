@@ -7,6 +7,8 @@ namespace Rak200\Collections;
 use function array_key_exists;
 use function array_key_first;
 use function array_key_last;
+use function array_keys;
+use function array_search;
 use function array_values;
 use function uasort;
 use Closure;
@@ -57,7 +59,7 @@ class OrderedSet extends AbstractCollection {
      * hash key is hidden so the `Iterator<int, T_Value>` contract holds.
      */
     public function key(): int {
-        return array_flip(array_keys($this->items))[parent::key()] ?? null;
+        return array_search(parent::key(), array_keys($this->items), true);
     }
 
     /**

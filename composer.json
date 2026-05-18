@@ -1,7 +1,7 @@
 {
     "name": "rak200/collections",
-    "description": "Typed generic collections for PHP 8.4+ (Vector, LinkedList, Queue, Stack, Set, Map).",
-    "version": "0.4.0",
+    "description": "Typed generic collections for PHP 8.4+ (Vector, LinkedList, Queue, Stack, Set, Map, PriorityQueue, OrderedSet, BiMap, ObjectMap, MultiMap, MultiSet, Deque, CircularBuffer, ImmutableSet, ImmutableMap).",
+    "version": "0.4.1",
     "type": "library",
     "license": "MIT",
     "authors": [

@@ -9,7 +9,6 @@ use function current;
 use function key;
 use function next;
 use function reset;
-use InvalidArgumentException;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\ValidatesType;
 
@@ -37,18 +36,6 @@ abstract class AbstractCollection implements \Iterator, \Countable, ToArray {
      * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip. See {@see ValidatesType} for the full list.
      */
     public function __construct(protected string $type = 'mixed') {}
-
-    /**
-     * Throw if $item is not an instance of $this->type.
-     *
-     * @deprecated since 0.3.0; call {@see ValidatesType::checkType()} directly
-     *             instead. Kept as a thin pass-through for backwards compatibility
-     *             with external subclasses. Will be removed in 1.0.0.
-     * @throws InvalidArgumentException When $item is not an instance of $this->type.
-     */
-    protected function checkType(mixed $item): void {
-        ValidatesType::checkType($this->type, $item);
-    }
 
     /** @return class-string<T_Value>|string */
     public function getType(): string {

@@ -38,13 +38,13 @@ class Map extends AbstractCollection implements \ArrayAccess {
     /**
      * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
      * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $valueType Class name or built-in pseudo-type to enforce on values, or `'mixed'` to skip.
-     * @param array<T_Key, T_Value> $items Initial entries.
+     * @param iterable<T_Key, T_Value> $items Initial entries.
      * @throws InvalidArgumentException When any key or value violates its type.
      */
     public function __construct(
         private string $keyType = 'mixed',
         string $valueType = 'mixed',
-        array $items = []
+        iterable $items = []
     ) {
         parent::__construct($valueType);
         foreach ($items as $key => $value) {

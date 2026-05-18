@@ -216,7 +216,7 @@ All dispatch lives in `Internal\ValidatesType::checkType()`. `Map`/`BiMap` `$key
 
 **`Internal\ValidatesType`** (abstract class — static utility)
 - `public static function checkType(string $type, mixed $value, string $label = 'Item'): void` — validates `$value` against `$type` via a `match` on the type string. Recognizes `'mixed'` (skip), `'object'` (`is_object`), PHP built-in pseudo-types `'int'`/`'integer'`, `'string'`, `'bool'`/`'boolean'`, `'float'`/`'double'`, `'array'`, `'iterable'`, `'callable'`, and falls back to `is_a($value, $type)` for class-strings. `$label` is interpolated into the error message so callers can distinguish `'Item'`/`'Key'`/`'Value'`.
-- Was a trait through 0.2.0; converted to an abstract class with a static method in 0.3.0 so it can be used anywhere without depending on a `$type` property in the using class. `AbstractCollection` retains a `@deprecated` `protected checkType()` pass-through for backwards compatibility with external subclasses; will be removed in 1.0.0.
+- Was a trait through 0.2.0; converted to an abstract class with a static method in 0.3.0 so it can be used anywhere without depending on a `$type` property in the using class. The `AbstractCollection::checkType()` pass-through that existed for backwards compatibility was removed in 0.4.1.
 
 **`Internal\LinkedNode`** (final class)
 - Node used by `LinkedList`. Public readonly `value`, internal-maintained `prev`/`next`. Moved from `Rak200\Collections\LinkedNode` to this namespace in 0.1.0.
@@ -229,7 +229,7 @@ When adding a new collection type:
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.4.0** — still pre-1.0 while the API stabilizes. 
+Follows [Semantic Versioning](https://semver.org). Current version: **0.4.1** — still pre-1.0 while the API stabilizes. 
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`

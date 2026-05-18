@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-05-18
+
+### Changed
+- **Constructor `$items` parameter widened from `array` to `iterable` on `Vector`, `Map`, and `ImmutableMap`.** Brings them in line with `LinkedList`, `Queue`, `Stack`, `Set`, `OrderedSet`, `MultiSet`, `Deque`, `CircularBuffer`, `ImmutableSet`, `PriorityQueue`, and `ObjectMap`, which already accepted `iterable`. Callers passing plain arrays are unaffected (arrays are iterable).
+- `composer.json` `description` updated to enumerate the full set of provided classes (was frozen at the v0.0.x list of six).
+
+### Fixed
+- `OrderedSet::key()` simplified to use `array_search()` directly, matching the cleanup that landed on `Set::key()` in 0.4.0.
+
+### Removed
+- **BREAKING** `AbstractCollection::checkType()` — the deprecated pass-through introduced for backwards compatibility in 0.3.0 has been removed. External subclasses calling `$this->checkType($item)` must switch to `Rak200\Collections\Internal\ValidatesType::checkType($this->type, $item)`. No internal call sites depended on it.
+
 ## [0.4.0] - 2026-05-18
 
 ### Added
@@ -135,7 +147,8 @@ First minor release. Consolidates a wave of API additions and the `object`→`mi
 ### Added
 - Initial release with `Collection<T_Key, T_Object>` — typed generic array container implementing `Iterator`, `ArrayAccess`, `Countable`, and `Rak200\Caster\Contracts\ToArray`.
 
-[Unreleased]: https://github.com/rak200/collections/compare/0.4.0...HEAD
+[Unreleased]: https://github.com/rak200/collections/compare/0.4.1...HEAD
+[0.4.1]: https://github.com/rak200/collections/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/rak200/collections/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/rak200/collections/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/rak200/collections/compare/0.1.1...0.2.0
