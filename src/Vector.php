@@ -8,6 +8,7 @@ use function get_debug_type;
 use function is_int;
 use function sprintf;
 use InvalidArgumentException;
+use Rak200\Collections\Internal\ValidatesType;
 
 /**
  * Typed generic collection of mixed values, indexed by int.
@@ -24,9 +25,9 @@ use InvalidArgumentException;
 class Vector extends AbstractCollection implements \ArrayAccess {
 
     /**
-     * @param class-string<T_Value>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
+     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
      * @param T_Value[] $items Initial items indexed by int.
-     * @throws InvalidArgumentException When any item is not an instance of $type.
+     * @throws InvalidArgumentException When any item does not satisfy $type.
      */
     public function __construct(string $type = 'mixed', array $items = []) {
         parent::__construct($type);
@@ -37,7 +38,7 @@ class Vector extends AbstractCollection implements \ArrayAccess {
                     get_debug_type($key)
                 ));
             }
-            $this->checkType($item);
+            ValidatesType::checkType($this->type, $item);
         }
         $this->items = $items;
     }
@@ -74,7 +75,7 @@ class Vector extends AbstractCollection implements \ArrayAccess {
      * @throws InvalidArgumentException When $value is not an instance of $this->type.
      */
     public function offsetSet(mixed $offset, mixed $value): void {
-        $this->checkType($value);
+        ValidatesType::checkType($this->type, $value);
         if ($offset === null) {
             $this->items[] = $value;
         } else {
@@ -99,7 +100,7 @@ class Vector extends AbstractCollection implements \ArrayAccess {
      * @throws InvalidArgumentException When $item is not an instance of $this->type.
      */
     public function add(int $offset, mixed $item): void {
-        $this->checkType($item);
+        ValidatesType::checkType($this->type, $item);
         $this->items[$offset] = $item;
     }
 

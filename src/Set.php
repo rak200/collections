@@ -8,6 +8,7 @@ use function array_key_exists;
 use function array_values;
 use InvalidArgumentException;
 use Rak200\Collections\Internal\HashesValues;
+use Rak200\Collections\Internal\ValidatesType;
 
 /**
  * Unique-element set. Identity is hybrid:
@@ -23,9 +24,9 @@ class Set extends AbstractCollection {
     use HashesValues;
 
     /**
-     * @param class-string<T_Value>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
+     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
      * @param iterable<T_Value> $items Initial items added in order; duplicates are ignored.
-     * @throws InvalidArgumentException When any item is not an instance of $type.
+     * @throws InvalidArgumentException When any item does not satisfy $type.
      */
     public function __construct(string $type = 'mixed', iterable $items = []) {
         parent::__construct($type);
@@ -45,7 +46,7 @@ class Set extends AbstractCollection {
      * @throws InvalidArgumentException
      */
     public function add(mixed $item): bool {
-        $this->checkType($item);
+        ValidatesType::checkType($this->type, $item);
         $hash = self::hashValue($item);
         if (array_key_exists($hash, $this->items)) {
             return false;

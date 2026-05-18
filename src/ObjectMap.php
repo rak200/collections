@@ -7,14 +7,13 @@ namespace Rak200\Collections;
 use function array_values;
 use function count;
 use function current;
-use function get_debug_type;
 use function key;
 use function next;
 use function reset;
-use function sprintf;
 use InvalidArgumentException;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\HashesValues;
+use Rak200\Collections\Internal\ValidatesType;
 
 /**
  * Ordered map keyed by objects.
@@ -70,44 +69,6 @@ class ObjectMap implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Validate that $key matches the configured key type.
-     *
-     * @param T_Key $key
-     * @throws InvalidArgumentException When the key does not match $this->keyType.
-     */
-    private function checkKey(object $key): void {
-        if ($this->keyType === 'object') {
-            return;
-        }
-        if (!($key instanceof $this->keyType)) {
-            throw new InvalidArgumentException(sprintf(
-                'Key must be an instance of %s. Got: %s',
-                $this->keyType,
-                get_debug_type($key)
-            ));
-        }
-    }
-
-    /**
-     * Validate that $value matches the configured value type.
-     *
-     * @param T_Value $value
-     * @throws InvalidArgumentException When the value does not match $this->valueType.
-     */
-    private function checkValue(object $value): void {
-        if ($this->valueType === 'object') {
-            return;
-        }
-        if (!($value instanceof $this->valueType)) {
-            throw new InvalidArgumentException(sprintf(
-                'Value must be an instance of %s. Got: %s',
-                $this->valueType,
-                get_debug_type($value)
-            ));
-        }
-    }
-
-    /**
      * Set the value for the given key, overwriting any existing entry.
      *
      * @param T_Key $key
@@ -115,8 +76,8 @@ class ObjectMap implements \Iterator, \Countable, ToArray {
      * @throws InvalidArgumentException When the key or value violates its type.
      */
     public function set(object $key, object $value): void {
-        $this->checkKey($key);
-        $this->checkValue($value);
+        ValidatesType::checkType($this->keyType, $key, 'Key');
+        ValidatesType::checkType($this->valueType, $value, 'Value');
         $hash = self::hashValue($key);
         $this->keys[$hash] = $key;
         $this->values[$hash] = $value;

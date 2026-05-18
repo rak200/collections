@@ -6,6 +6,7 @@ namespace Rak200\Collections;
 
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\HashesValues;
+use Rak200\Collections\Internal\ValidatesType;
 use InvalidArgumentException;
 use function array_key_exists;
 use function count;
@@ -45,7 +46,7 @@ class BiMap implements \Iterator, \Countable, ToArray {
 
     /**
      * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
-     * @param class-string<T_Value>|'mixed' $valueType Value class to enforce, or 'mixed' to skip.
+     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $valueType Class name or built-in pseudo-type to enforce on values, or `'mixed'` to skip.
      */
     public function __construct(
         private string $keyType = 'mixed',
@@ -81,25 +82,6 @@ class BiMap implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Validate that $value matches the configured value type.
-     *
-     * @param T_Value $value
-     * @throws InvalidArgumentException When the value does not match $this->valueType.
-     */
-    private function checkValue(mixed $value): void {
-        if ($this->valueType === 'mixed') {
-            return;
-        }
-        if (!($value instanceof $this->valueType)) {
-            throw new InvalidArgumentException(sprintf(
-                'Value must be an instance of %s. Got: %s',
-                $this->valueType,
-                get_debug_type($value)
-            ));
-        }
-    }
-
-    /**
      * Insert a key/value pair. Throws if the key or the value is already
      * mapped on either side. Use {@see forcePut()} to overwrite.
      *
@@ -109,7 +91,7 @@ class BiMap implements \Iterator, \Countable, ToArray {
      */
     public function put(int|string $key, mixed $value): void {
         $this->checkKey($key);
-        $this->checkValue($value);
+        ValidatesType::checkType($this->valueType, $value, 'Value');
         if (array_key_exists($key, $this->keyToValue)) {
             throw new InvalidArgumentException(sprintf('Key %s is already mapped.', var_export($key, true)));
         }
@@ -130,7 +112,7 @@ class BiMap implements \Iterator, \Countable, ToArray {
      */
     public function forcePut(int|string $key, mixed $value): void {
         $this->checkKey($key);
-        $this->checkValue($value);
+        ValidatesType::checkType($this->valueType, $value, 'Value');
         $this->removeByKey($key);
         $this->removeByValue($value);
         $this->keyToValue[$key] = $value;

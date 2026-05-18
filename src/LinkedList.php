@@ -28,8 +28,6 @@ use InvalidArgumentException;
  */
 class LinkedList implements \Iterator, \Countable, ToArray {
 
-    use ValidatesType;
-
     /** @var LinkedNode<T_Value>|null */
     private ?LinkedNode $head = null;
 
@@ -43,9 +41,9 @@ class LinkedList implements \Iterator, \Countable, ToArray {
     private int $count = 0;
 
     /**
-     * @param class-string<T_Value>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
+     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
      * @param iterable<T_Value> $items Initial items appended in order.
-     * @throws InvalidArgumentException When any item is not an instance of $type.
+     * @throws InvalidArgumentException When any item does not satisfy $type.
      */
     public function __construct(private string $type = 'mixed', iterable $items = []) {
         foreach ($items as $item) {
@@ -79,7 +77,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
      * @throws InvalidArgumentException
      */
     public function push(mixed $item): LinkedNode {
-        $this->checkType($item);
+        ValidatesType::checkType($this->type, $item);
         $node = new LinkedNode($this, $item, prev: $this->tail);
         if ($this->tail === null) {
             $this->head = $node;
@@ -99,7 +97,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
      * @throws InvalidArgumentException
      */
     public function unshift(mixed $item): LinkedNode {
-        $this->checkType($item);
+        ValidatesType::checkType($this->type, $item);
         $node = new LinkedNode($this, $item, next: $this->head);
         if ($this->head === null) {
             $this->tail = $node;
@@ -148,7 +146,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
      * @throws InvalidArgumentException
      */
     public function insertBefore(LinkedNode $node, mixed $item): LinkedNode {
-        $this->checkType($item);
+        ValidatesType::checkType($this->type, $item);
         $new = new LinkedNode($this, $item, prev: $node->prev, next: $node);
         if ($node->prev !== null) {
             $node->prev->next = $new;
@@ -169,7 +167,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
      * @throws InvalidArgumentException
      */
     public function insertAfter(LinkedNode $node, mixed $item): LinkedNode {
-        $this->checkType($item);
+        ValidatesType::checkType($this->type, $item);
         $new = new LinkedNode($this, $item, prev: $node, next: $node->next);
         if ($node->next !== null) {
             $node->next->prev = $new;

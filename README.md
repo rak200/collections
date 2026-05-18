@@ -56,6 +56,20 @@ $bag[] = 'hello';
 $bag[] = $anything;
 ```
 
+### Pseudo-typed collection
+
+Every `$type` parameter accepts a class-string, `'mixed'` (skip), `'object'` (any object), or one of the PHP built-in pseudo-types: `'int'`/`'integer'`, `'string'`, `'bool'`/`'boolean'`, `'float'`/`'double'`, `'array'`, `'iterable'`, `'callable'`.
+
+```php
+$counts  = new Vector('int');
+$counts->add(0, 42);               // ok
+$counts->add(1, 'three');          // InvalidArgumentException
+
+$labels  = new Set('string');
+$weights = new Map('string', 'float');
+$pq      = new PriorityQueue('callable');
+```
+
 ### Doubly linked list
 
 ```php
@@ -215,7 +229,7 @@ The suite uses PHPUnit 13 and covers every `src/` class. Each class has a paired
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.2.0** — still pre-1.0 while the API stabilizes.
+Follows [Semantic Versioning](https://semver.org). Current version: **0.3.0** — still pre-1.0 while the API stabilizes.
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`

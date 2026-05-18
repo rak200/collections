@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-18
+
+### Added
+- **Pseudo-type discriminators** for every collection's `$type` parameter. `ValidatesType::checkType()` now recognizes PHP built-in pseudo-types in addition to class-strings: `'int'`/`'integer'`, `'string'`, `'bool'`/`'boolean'`, `'float'`/`'double'`, `'array'`, `'iterable'`, `'callable'`, plus `'object'` (any object) and `'mixed'` (skip). Collections (`Vector`, `Set`, `Stack`, `OrderedSet`, `LinkedList`, `Queue`, `PriorityQueue`, plus the value side of `Map` and `BiMap`) now accept any of these strings as their type discriminator — e.g. `new Vector('int')`, `new Set('string')`, `new Map('string', 'float')`.
+- PHPUnit suite for `Internal\ValidatesType` (29 tests / 35 assertions) covering every pseudo-type and class-string.
+- `PseudoTypeCollectionsTest` (27 tests / 65 assertions) — cross-collection coverage of pseudo-typed `Vector`/`Set`/`Stack`/`LinkedList`/`Queue`/`OrderedSet`/`PriorityQueue`/`Map`/`BiMap`.
+- Full suite is now 237 tests / 578 assertions.
+
+### Changed
+- `Internal\ValidatesType` converted from a trait to an abstract class with a `public static function checkType(string $type, mixed $value, string $label = 'Item'): void`. Callers pass their own type as the first argument, decoupling the helper from any `$type` property on the using class. The `$label` parameter lets callers distinguish `'Item'`/`'Key'`/`'Value'` in error messages. Internal `instanceof` was replaced with `is_a()` so class-strings dispatch through the same `match` arm as pseudo-types.
+- All internal call sites migrated to `ValidatesType::checkType(...)`: `Vector`, `Set`, `Stack`, `OrderedSet`, `LinkedList`, `PriorityQueue`, `Map` (value), `BiMap` (value), and `ObjectMap` (both key and value).
+- `ObjectMap` drops its private `checkKey`/`checkValue` helpers in favor of the shared utility (~30 lines removed). `BiMap` and `Map` drop their private `checkValue` for the same reason; their `checkKey` methods stay because they validate scalar key types (`'int'`/`'string'`), which doesn't fit the `instanceof`-based helper.
+- Error message wording unified to `'%s must be an instance of %s. Got: %s'` across all cases (class-string and pseudo-type). Tests that asserted the previous `'must be an object'`/`'must be of type X'` phrasings were updated.
+
+### Deprecated
+- `AbstractCollection::checkType()` — kept as a thin `@deprecated` pass-through to `ValidatesType::checkType()` so external subclasses calling `$this->checkType($item)` continue to work. Will be removed in **1.0.0**. New code should call `ValidatesType::checkType($this->type, $item)` directly.
+
 ## [0.2.0] - 2026-05-17
 
 ### Added
@@ -104,7 +121,8 @@ First minor release. Consolidates a wave of API additions and the `object`→`mi
 ### Added
 - Initial release with `Collection<T_Key, T_Object>` — typed generic array container implementing `Iterator`, `ArrayAccess`, `Countable`, and `Rak200\Caster\Contracts\ToArray`.
 
-[Unreleased]: https://github.com/rak200/collections/compare/0.2.0...HEAD
+[Unreleased]: https://github.com/rak200/collections/compare/0.3.0...HEAD
+[0.3.0]: https://github.com/rak200/collections/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/rak200/collections/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/rak200/collections/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/rak200/collections/compare/0.0.5...0.1.0

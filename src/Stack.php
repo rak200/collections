@@ -7,6 +7,7 @@ namespace Rak200\Collections;
 use function array_pop;
 use function count;
 use InvalidArgumentException;
+use Rak200\Collections\Internal\ValidatesType;
 
 /**
  * LIFO stack. Iteration yields elements from top (most recently pushed) to bottom.
@@ -24,9 +25,9 @@ class Stack extends AbstractCollection {
     private int $position = 0;
 
     /**
-     * @param class-string<T_Value>|'mixed' $type Class name to enforce, or 'mixed' to skip type checking.
+     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
      * @param iterable<T_Value> $items Initial items pushed in order (last becomes top).
-     * @throws InvalidArgumentException When any item is not an instance of $type.
+     * @throws InvalidArgumentException When any item does not satisfy $type.
      */
     public function __construct(string $type = 'mixed', iterable $items = []) {
         parent::__construct($type);
@@ -42,7 +43,7 @@ class Stack extends AbstractCollection {
      * @throws InvalidArgumentException
      */
     public function push(mixed $item): void {
-        $this->checkType($item);
+        ValidatesType::checkType($this->type, $item);
         $this->items[] = $item;
     }
 

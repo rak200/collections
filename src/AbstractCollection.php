@@ -9,6 +9,7 @@ use function current;
 use function key;
 use function next;
 use function reset;
+use InvalidArgumentException;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\ValidatesType;
 
@@ -18,26 +19,36 @@ use Rak200\Collections\Internal\ValidatesType;
  * - `$items` storage and `$type` discriminator (both `protected` for subclasses)
  * - `getType()`, `count()`, `toArray()`
  * - default `Iterator` over the array's internal pointer
- * - shared `checkType()` from {@see ValidatesType}
  *
  * Subclasses define their own public mutation API (push/pop, set/get/has,
  * add/remove/contains, etc.) and may additionally implement `ArrayAccess`
- * when it fits their semantics.
+ * when it fits their semantics. Type validation is delegated to
+ * {@see ValidatesType::checkType()}.
  *
  * @template T_Value
  * @author rak200 <rak.ricardo@windowslive.com>
  */
 abstract class AbstractCollection implements \Iterator, \Countable, ToArray {
 
-    use ValidatesType;
-
     /** @var array<int|string, T_Value> */
     protected array $items = [];
 
     /**
-     * @param class-string<T_Value>|'mixed' $type Class name to enforce on items, or 'mixed' to skip.
+     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip. See {@see ValidatesType} for the full list.
      */
     public function __construct(protected string $type = 'mixed') {}
+
+    /**
+     * Throw if $item is not an instance of $this->type.
+     *
+     * @deprecated since 0.3.0; call {@see ValidatesType::checkType()} directly
+     *             instead. Kept as a thin pass-through for backwards compatibility
+     *             with external subclasses. Will be removed in 1.0.0.
+     * @throws InvalidArgumentException When $item is not an instance of $this->type.
+     */
+    protected function checkType(mixed $item): void {
+        ValidatesType::checkType($this->type, $item);
+    }
 
     /** @return class-string<T_Value>|string */
     public function getType(): string {

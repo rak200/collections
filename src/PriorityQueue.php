@@ -27,8 +27,6 @@ use InvalidArgumentException;
  */
 class PriorityQueue implements \Iterator, \Countable, ToArray {
 
-    use ValidatesType;
-
     /** @var list<array{priority: int|float, sequence: int, item: T_Value}> */
     private array $heap = [];
 
@@ -39,7 +37,7 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
     private ?array $iterSnapshot = null;
 
     /**
-     * @param class-string<T_Value>|'mixed' $type Class name to enforce on items, or 'mixed' to skip.
+     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
      */
     public function __construct(private string $type = 'mixed', iterable $items = []) {
         foreach ($items as $item) {
@@ -59,7 +57,7 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
      * @throws InvalidArgumentException
      */
     public function enqueue(mixed $item, int|float $priority): void {
-        $this->checkType($item);
+        ValidatesType::checkType($this->type, $item);
         $this->heap[] = [
             'priority' => $priority,
             'sequence' => $this->sequence++,

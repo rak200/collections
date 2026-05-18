@@ -13,6 +13,7 @@ use function is_int;
 use function is_string;
 use function sprintf;
 use InvalidArgumentException;
+use Rak200\Collections\Internal\ValidatesType;
 
 /**
  * Ordered key-value map with separate key and value type enforcement.
@@ -32,7 +33,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
 
     /**
      * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
-     * @param class-string<T_Value>|'mixed' $valueType Value class to enforce, or 'mixed' to skip.
+     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $valueType Class name or built-in pseudo-type to enforce on values, or `'mixed'` to skip.
      * @param array<T_Key, T_Value> $items Initial entries.
      * @throws InvalidArgumentException When any key or value violates its type.
      */
@@ -82,25 +83,6 @@ class Map extends AbstractCollection implements \ArrayAccess {
     }
 
     /**
-     * Validate that $value matches the configured value type.
-     *
-     * @param T_Value $value
-     * @throws InvalidArgumentException When the value does not match $this->type.
-     */
-    private function checkValue(mixed $value): void {
-        if ($this->type === 'mixed') {
-            return;
-        }
-        if (!($value instanceof $this->type)) {
-            throw new InvalidArgumentException(sprintf(
-                'Value must be an instance of %s. Got: %s',
-                $this->type,
-                get_debug_type($value)
-            ));
-        }
-    }
-
-    /**
      * Set the value for the given key, overwriting any existing entry.
      *
      * @param T_Key $key
@@ -109,7 +91,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
      */
     public function set(int|string $key, mixed $value): void {
         $this->checkKey($key);
-        $this->checkValue($value);
+        ValidatesType::checkType($this->type, $value, 'Value');
         $this->items[$key] = $value;
     }
 
@@ -192,7 +174,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
             $lastKey = array_key_last($this->items);
             $nextKey = is_int($lastKey) ? $lastKey + 1 : 0;
             $this->checkKey($nextKey);
-            $this->checkValue($value);
+            ValidatesType::checkType($this->type, $value, 'Value');
             $this->items[$nextKey] = $value;
             return;
         }

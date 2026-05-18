@@ -5,36 +5,73 @@ declare(strict_types=1);
 namespace Rak200\Collections\Internal;
 
 use InvalidArgumentException;
-use function sprintf;
 use function get_debug_type;
+use function is_a;
+use function is_array;
+use function is_bool;
+use function is_callable;
+use function is_float;
+use function is_int;
+use function is_iterable;
+use function is_object;
+use function is_string;
+use function sprintf;
 
 /**
- * Shared type check for collections that hold a `$type` discriminator
- * (a class-string or `'mixed'`). When `$type` is not `'mixed'`, every value
- * passed to `checkType()` must be an instance of that class.
+ * Static helpers for validating values against a configured `$type` discriminator.
  *
- * The using class must declare a `string $type` property accessible to the
- * trait — `protected` (as in {@see \Rak200\Collections\AbstractCollection})
- * or `private` (as in {@see \Rak200\Collections\LinkedList},
- * {@see \Rak200\Collections\Queue}, {@see \Rak200\Collections\PriorityQueue}).
- * Both work because traits resolve member access in the using class's scope.
+ * `$type` is one of:
+ * - `'mixed'` — no check (any value passes)
+ * - `'object'` — any object (`is_object`)
+ * - a pseudo-type for a PHP built-in: `'int'`/`'integer'`, `'string'`,
+ *   `'bool'`/`'boolean'`, `'float'`/`'double'`, `'array'`, `'iterable'`,
+ *   `'callable'` — checked with the matching `is_*` function
+ * - any other string — treated as a class-string; checked with `is_a()`
+ *
+ * Callers pass their own type as the first argument; the helper has no
+ * knowledge of the containing class or its property layout.
+ *
+ * Used across the library by {@see \Rak200\Collections\AbstractCollection}
+ * subclasses, {@see \Rak200\Collections\LinkedList},
+ * {@see \Rak200\Collections\PriorityQueue}, {@see \Rak200\Collections\BiMap},
+ * {@see \Rak200\Collections\Map}, and {@see \Rak200\Collections\ObjectMap}.
  *
  * @internal Not part of the public API; subject to change.
  */
-trait ValidatesType {
+abstract class ValidatesType {
 
     /**
-     * @throws InvalidArgumentException When $item is not an instance of $this->type.
+     * Throw if $value does not satisfy $type.
+     *
+     * See the class docblock for the full list of accepted `$type` strings.
+     * The `$label` is interpolated into the error message so callers can
+     * distinguish between items, keys, and values.
+     *
+     * @param class-string|'mixed'|'object'|'int'|'integer'|'string'|'bool'|'boolean'|'float'|'double'|'array'|'iterable'|'callable' $type
+     * @param string $label Used in the error message (e.g. `'Item'`, `'Key'`, `'Value'`).
+     * @throws InvalidArgumentException When $value does not satisfy $type.
      */
-    protected function checkType(mixed $item): void {
-        if ($this->type === 'mixed') {
-            return;
-        }
-        if (!($item instanceof $this->type)) {
+    public static function checkType(string $type, mixed $value, string $label = 'Item'): void {
+        $valid = match ($type) {
+            'mixed' => true,
+            'object' => is_object($value),
+            'int', 'integer' => is_int($value),
+            'string' => is_string($value),
+            'bool', 'boolean' => is_bool($value),
+            'float', 'double' => is_float($value),
+            'array' => is_array($value),
+            'iterable' => is_iterable($value),
+            'callable' => is_callable($value),
+            // 'null' => $value === null, // 'null' is not a valid type for collection items, keys, or values, so we don't support it as a type discriminator. If we did, this would be the check.
+            default => is_a($value, $type),
+        };
+
+        if (!$valid) {
             throw new InvalidArgumentException(sprintf(
-                'Item must be an instance of %s. Got: %s',
-                $this->type,
-                get_debug_type($item)
+                '%s must be an instance of %s. Got: %s',
+                $label,
+                $type,
+                get_debug_type($value)
             ));
         }
     }

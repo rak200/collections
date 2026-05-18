@@ -27,7 +27,7 @@ collections/
 │   ├── ObjectMap.php             # Ordered map keyed by objects (identity via spl_object_id)
 │   └── Internal/
 │       ├── HashesValues.php      # Trait: hybrid hash for Set/OrderedSet/BiMap/ObjectMap
-│       ├── ValidatesType.php     # Trait: shared checkType() for AbstractCollection subclasses
+│       ├── ValidatesType.php     # Static utility (abstract class): checkType($type, $value, $label)
 │       └── LinkedNode.php        # Node used by LinkedList (was Rak200\Collections\LinkedNode in 0.0.x)
 └── tests/                        # PHPUnit suites mirroring each src/ class
 ```
@@ -41,6 +41,14 @@ All classes live under the `Rak200\Collections` namespace (PSR-4 from `src/`); t
 ## Classes
 
 All classes and members must have a docblock.
+
+**Type discriminators.** Every collection's `$type` parameter (and `$valueType` on `Map`/`BiMap`) accepts:
+- a class-string (validated with `is_a()`)
+- `'mixed'` — skip the check
+- `'object'` — any object
+- a PHP built-in pseudo-type: `'int'`/`'integer'`, `'string'`, `'bool'`/`'boolean'`, `'float'`/`'double'`, `'array'`, `'iterable'`, `'callable'`
+
+All dispatch lives in `Internal\ValidatesType::checkType()`. `Map`/`BiMap` `$keyType` is its own narrower constraint (`'int'`/`'string'`/`'mixed'`) because PHP array keys can only be `int|string`. `ObjectMap` keys and values are objects only (`'object'` or class-string).
 
 **`AbstractCollection<T_Value>`** (abstract)
 - Implements `Iterator`, `Countable`, `Rak200\Caster\Contracts\ToArray`
@@ -139,8 +147,9 @@ All classes and members must have a docblock.
 **`Internal\HashesValues`** (trait)
 - `private static function hashValue(mixed $value): string` — used by `Set`, `OrderedSet`, `BiMap`, and `ObjectMap` to derive a uniqueness handle: `spl_object_id` for objects, value with a type prefix for scalars/null/arrays. Different types never collide (`'1'` vs `1`).
 
-**`Internal\ValidatesType`** (trait)
-- Shared `checkType()` used by `AbstractCollection` subclasses to validate items against the configured `$type` (`'mixed'` skips; class-string requires `instanceof`).
+**`Internal\ValidatesType`** (abstract class — static utility)
+- `public static function checkType(string $type, mixed $value, string $label = 'Item'): void` — validates `$value` against `$type` via a `match` on the type string. Recognizes `'mixed'` (skip), `'object'` (`is_object`), PHP built-in pseudo-types `'int'`/`'integer'`, `'string'`, `'bool'`/`'boolean'`, `'float'`/`'double'`, `'array'`, `'iterable'`, `'callable'`, and falls back to `is_a($value, $type)` for class-strings. `$label` is interpolated into the error message so callers can distinguish `'Item'`/`'Key'`/`'Value'`.
+- Was a trait through 0.2.0; converted to an abstract class with a static method in 0.3.0 so it can be used anywhere without depending on a `$type` property in the using class. `AbstractCollection` retains a `@deprecated` `protected checkType()` pass-through for backwards compatibility with external subclasses; will be removed in 1.0.0.
 
 **`Internal\LinkedNode`** (final class)
 - Node used by `LinkedList`. Public readonly `value`, internal-maintained `prev`/`next`. Moved from `Rak200\Collections\LinkedNode` to this namespace in 0.1.0.
