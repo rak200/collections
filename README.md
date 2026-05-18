@@ -22,8 +22,9 @@ composer require rak200/collections
 | `Rak200\Collections\PriorityQueue`     | Max-heap priority queue with O(log n) enqueue/dequeue, stable on ties  |
 | `Rak200\Collections\OrderedSet`        | Unique-element set with insertion order or custom comparator           |
 | `Rak200\Collections\BiMap`             | Bidirectional map with unique keys AND unique values (O(1) both ways)  |
+| `Rak200\Collections\ObjectMap`         | Ordered map keyed by objects (identity via `spl_object_id`)            |
 
-`Vector`, `Stack`, `Set`, `Map`, and `OrderedSet` share an `AbstractCollection` base that handles `$items` storage, `Iterator`, `Countable`, `ToArray`, and `getType()`/`count()`/`toArray()`. The concrete classes add their public API and override iteration/`toArray` only where their semantics demand it. `LinkedList`, `Queue`, `PriorityQueue`, and `BiMap` use their own storage models and stand alone.
+`Vector`, `Stack`, `Set`, `Map`, and `OrderedSet` share an `AbstractCollection` base that handles `$items` storage, `Iterator`, `Countable`, `ToArray`, and `getType()`/`count()`/`toArray()`. The concrete classes add their public API and override iteration/`toArray` only where their semantics demand it. `LinkedList`, `Queue`, `PriorityQueue`, `BiMap`, and `ObjectMap` use their own storage models and stand alone.
 
 All types implement `Countable`, `Rak200\Caster\Contracts\ToArray`, and an appropriate iteration / array-access interface.
 
@@ -163,6 +164,26 @@ $sessions->getByValue($alice);    // 'sess-abc' — O(1) reverse lookup
 $sessions->forcePut('sess-abc', $charlie); // overwrites the existing mapping
 ```
 
+### Object-keyed map
+
+```php
+use Rak200\Collections\ObjectMap;
+
+// Attach metadata to existing object instances without modifying them.
+$metadata = new ObjectMap(User::class, AuditEntry::class);
+$metadata->set($alice, $aliceAudit);
+$metadata->set($bob, $bobAudit);
+
+$metadata->get($alice);   // $aliceAudit — identity by spl_object_id
+$metadata->has($bob);     // true
+
+// Object keys aren't expressible via $map[$obj] — ObjectMap deliberately
+// does not implement ArrayAccess. Use set()/get() instead.
+foreach ($metadata as $user => $entry) {
+    echo "{$user->name}: {$entry->summary}\n";
+}
+```
+
 ### Implements `Rak200\Caster\Contracts\ToArray`
 
 ```php
@@ -194,7 +215,7 @@ The suite uses PHPUnit 13 and covers every `src/` class. Each class has a paired
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.1.1** — still pre-1.0 while the API stabilizes.
+Follows [Semantic Versioning](https://semver.org). Current version: **0.2.0** — still pre-1.0 while the API stabilizes.
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`

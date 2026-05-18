@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-17
+
+### Added
+- `ObjectMap<T_Key of object, T_Value of object>` — ordered map keyed by objects. Identity is by `spl_object_id`, so two equal-but-distinct instances are different keys (same semantics as `Set`). Both keys and values are restricted to objects: `'object'` accepts any instance, or pass a `class-string` to enforce a specific class. Methods: `set()`, `get()`, `has()`, `remove()`, `keys()`, `values()`, plus `isEmpty()`/`clear()`/`count()`/`toArray()`. Iteration preserves insertion order and `Iterator::key()` yields the original object. Constructor accepts an `iterable<array{0: T_Key, 1: T_Value}>` of `[key, value]` pairs as initial entries.
+- PHPUnit suite for `ObjectMap` (21 tests / 44 assertions). Full suite is now 181 tests / 501 assertions.
+
+### Notes
+- `ObjectMap` is **standalone** (does not extend `AbstractCollection`) because overriding `Iterator::key()` to return `object` would violate the parent's `int|string` return-type contract. Follows the same precedent as `BiMap` and `PriorityQueue`.
+- `ObjectMap` **does not implement `ArrayAccess`** — PHP array offsets are limited to `int|string`, so `$map[$obj]` cannot be expressed. Use `set()`/`get()` instead.
+- `toArray()` on `ObjectMap` returns a `list<array{T_Key, T_Value}>` of pairs because object keys cannot be expressed as plain PHP array keys.
+
 ## [0.1.1] - 2026-05-17
 
 ### Added
@@ -93,7 +104,8 @@ First minor release. Consolidates a wave of API additions and the `object`→`mi
 ### Added
 - Initial release with `Collection<T_Key, T_Object>` — typed generic array container implementing `Iterator`, `ArrayAccess`, `Countable`, and `Rak200\Caster\Contracts\ToArray`.
 
-[Unreleased]: https://github.com/rak200/collections/compare/0.1.1...HEAD
+[Unreleased]: https://github.com/rak200/collections/compare/0.2.0...HEAD
+[0.2.0]: https://github.com/rak200/collections/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/rak200/collections/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/rak200/collections/compare/0.0.5...0.1.0
 [0.0.5]: https://github.com/rak200/collections/compare/0.0.4...0.0.5

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Rak200\Collections\Tests;
 
-use Dom\NodeList;
-use PhpParser\Node\Expr\List_;
 use PHPUnit\Framework\TestCase;
 use Rak200\Collections\Internal\LinkedNode;
 use Rak200\Collections\LinkedList;
@@ -20,7 +18,6 @@ final class LinkedNodeTest extends TestCase {
         $node = new LinkedNode(new LinkedList(), 'hello');
         self::assertSame('hello', $node->value);
         $this->expectException(\Error::class);
-        /** @noinspection PhpReadonlyPropertyWrittenOutsideOfClassInspection */
         // @phpstan-ignore-next-line
         $node->value = 'world';
     }

@@ -24,8 +24,9 @@ collections/
 │   ├── PriorityQueue.php         # Max-heap, O(log n) enqueue/dequeue, stable on ties
 │   ├── OrderedSet.php            # Set with insertion order or custom comparator
 │   ├── BiMap.php                 # Bidirectional map (O(1) both ways), unique on both sides
+│   ├── ObjectMap.php             # Ordered map keyed by objects (identity via spl_object_id)
 │   └── Internal/
-│       ├── HashesValues.php      # Trait: hybrid hash for Set/OrderedSet/BiMap
+│       ├── HashesValues.php      # Trait: hybrid hash for Set/OrderedSet/BiMap/ObjectMap
 │       ├── ValidatesType.php     # Trait: shared checkType() for AbstractCollection subclasses
 │       └── LinkedNode.php        # Node used by LinkedList (was Rak200\Collections\LinkedNode in 0.0.x)
 └── tests/                        # PHPUnit suites mirroring each src/ class
@@ -121,10 +122,22 @@ All classes and members must have a docblock.
 - Constructor: `new BiMap(string $keyType = 'mixed', string $valueType = 'mixed')`
 - Methods: `put()` (throws on conflict), `forcePut()` (overwrites either side), `getByKey()`, `getByValue()`, `hasKey()`, `hasValue()`, `removeByKey()`, `removeByValue()`
 
+**`ObjectMap<T_Key of object, T_Value of object>`**
+- Implements `Iterator`, `Countable`, `ToArray` (standalone — two parallel arrays keyed by object hash)
+- Like `Map` but **both keys and values are objects**; identity is by `spl_object_id` on the key (same instance only — equal-but-distinct instances are different keys)
+- Does **not** implement `ArrayAccess` (PHP offsets are limited to `int|string`)
+- Constructor: `new ObjectMap(string $keyType = 'object', string $valueType = 'object', iterable $pairs = [])`
+  - `$keyType`: class-string to enforce on keys, or `'object'` to accept any object
+  - `$valueType`: class-string to enforce on values, or `'object'` to accept any object
+  - `$pairs`: iterable of `[key, value]` tuples (a plain associative array can't carry object keys)
+- Methods: `set()`, `get()`, `has()`, `remove()` (returns `bool`), `keys()` (`list<T_Key>`), `values()` (`list<T_Value>`)
+- Insertion order is preserved
+- `toArray()` returns a `list<array{T_Key, T_Value}>` of pairs (object keys aren't representable as array keys)
+
 ### Internal
 
 **`Internal\HashesValues`** (trait)
-- `private static function hashValue(mixed $value): string` — used by `Set`, `OrderedSet`, and `BiMap` to derive a uniqueness handle: `spl_object_id` for objects, value with a type prefix for scalars/null/arrays. Different types never collide (`'1'` vs `1`).
+- `private static function hashValue(mixed $value): string` — used by `Set`, `OrderedSet`, `BiMap`, and `ObjectMap` to derive a uniqueness handle: `spl_object_id` for objects, value with a type prefix for scalars/null/arrays. Different types never collide (`'1'` vs `1`).
 
 **`Internal\ValidatesType`** (trait)
 - Shared `checkType()` used by `AbstractCollection` subclasses to validate items against the configured `$type` (`'mixed'` skips; class-string requires `instanceof`).
