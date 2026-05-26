@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function array_map;
-use function array_pop;
-use function count;
-use function usort;
+use function array_pop, count, usort;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\ValidatesType;
+use Rak200\Utils\Arr;
 use InvalidArgumentException;
 
 /**
@@ -167,7 +165,7 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
             }
             return $a['sequence'] <=> $b['sequence'];
         });
-        return array_map(static fn(array $entry): mixed => $entry['item'], $copy);
+        return Arr::map($copy, static fn(array $entry): mixed => $entry['item']);
     }
 
     /** @return T_Value Item at the current iteration position. */

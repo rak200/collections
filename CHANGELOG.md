@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-05-25
+
+### Added
+- `rak200/utils` `^1.0.0` runtime dependency. Internal call sites for `array_key_exists`/`array_keys`/`array_values`/`array_map` migrated to the shared `Rak200\Utils\Arr` helpers (`Arr::has`, `Arr::keys`, `Arr::values`, `Arr::map`) across `Set`, `OrderedSet`, `ImmutableSet`, `Map`, `MultiMap`, `ImmutableMap`, `BiMap`, `ObjectMap`, `MultiSet`, and `PriorityQueue`. No public API changes.
+
+### Changed
+- `use function` declarations across `src/` consolidated into a single grouped statement per file (`use function foo, bar, baz;`) instead of one line per name. Purely cosmetic — header is more compact, no behavior change.
+- Error messages that built strings via `sprintf('... %s ...', get_debug_type($x))` switched to plain concatenation (`'... ' . get_debug_type($x)`) in `Vector`, `Map`, `BiMap`, `MultiMap`, and `Internal\ValidatesType`. `ImmutableMap` kept its `sprintf` calls. Behavior identical; messages unchanged.
+
 ## [0.4.1] - 2026-05-18
 
 ### Changed
@@ -147,7 +156,8 @@ First minor release. Consolidates a wave of API additions and the `object`→`mi
 ### Added
 - Initial release with `Collection<T_Key, T_Object>` — typed generic array container implementing `Iterator`, `ArrayAccess`, `Countable`, and `Rak200\Caster\Contracts\ToArray`.
 
-[Unreleased]: https://github.com/rak200/collections/compare/0.4.1...HEAD
+[Unreleased]: https://github.com/rak200/collections/compare/0.4.2...HEAD
+[0.4.2]: https://github.com/rak200/collections/compare/0.4.1...0.4.2
 [0.4.1]: https://github.com/rak200/collections/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/rak200/collections/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/rak200/collections/compare/0.2.0...0.3.0

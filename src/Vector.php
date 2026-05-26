@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function get_debug_type;
-use function is_int;
-use function sprintf;
+use function get_debug_type, is_int;
 use InvalidArgumentException;
 use Rak200\Collections\Internal\ValidatesType;
 
@@ -37,10 +35,7 @@ class Vector extends AbstractCollection implements \ArrayAccess {
         parent::__construct($type);
         foreach ($items as $key => $item) {
             if (!is_int($key)) {
-                throw new InvalidArgumentException(sprintf(
-                    'Invalid key type: expected int, got %s',
-                    get_debug_type($key)
-                ));
+                throw new InvalidArgumentException('Invalid key type: expected int, got ' . get_debug_type($key));
             }
             ValidatesType::checkType($this->type, $item);
             $this->items[$key] = $item;

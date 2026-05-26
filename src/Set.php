@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function array_key_exists;
-use function array_values;
+use function array_search;
 use InvalidArgumentException;
 use Rak200\Collections\Internal\HashesValues;
 use Rak200\Collections\Internal\ValidatesType;
+use Rak200\Utils\Arr;
 
 /**
  * Unique-element set. Identity is hybrid:
@@ -43,7 +43,7 @@ class Set extends AbstractCollection {
      * hash key is hidden so the `Iterator<int, T_Value>` contract holds.
      */
     public function key(): int {
-        return array_search(parent::key(), array_keys($this->items), true);
+        return array_search(parent::key(), Arr::keys($this->items), true);
     }
 
     /**
@@ -55,7 +55,7 @@ class Set extends AbstractCollection {
     public function add(mixed $item): bool {
         ValidatesType::checkType($this->type, $item);
         $hash = self::hashValue($item);
-        if (array_key_exists($hash, $this->items)) {
+        if (Arr::has($this->items, $hash)) {
             return false;
         }
         $this->items[$hash] = $item;
@@ -78,7 +78,7 @@ class Set extends AbstractCollection {
 
     /** @param T_Value $item */
     public function contains(mixed $item): bool {
-        return array_key_exists(self::hashValue($item), $this->items);
+        return Arr::has($this->items, self::hashValue($item));
     }
 
     /**
@@ -160,6 +160,6 @@ class Set extends AbstractCollection {
      * @return T_Value[]
      */
     public function toArray(): array {
-        return array_values($this->items);
+        return Arr::values($this->items);
     }
 }

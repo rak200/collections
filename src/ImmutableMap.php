@@ -4,22 +4,12 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function array_key_exists;
-use function array_keys;
-use function array_values;
-use function count;
-use function current;
-use function get_debug_type;
-use function is_int;
-use function is_string;
-use function key;
-use function next;
-use function reset;
-use function sprintf;
+use function count, current, get_debug_type, is_int, is_string, key, next, reset, sprintf;
 use BadMethodCallException;
 use InvalidArgumentException;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\ValidatesType;
+use Rak200\Utils\Arr;
 
 /**
  * Read-only counterpart to {@see Map}. Entries are fixed at construction;
@@ -119,17 +109,17 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
      * @param T_Key $key
      */
     public function has(int|string $key): bool {
-        return array_key_exists($key, $this->items);
+        return Arr::has($this->items, $key);
     }
 
     /** @return T_Key[] Keys in insertion order. */
     public function keys(): array {
-        return array_keys($this->items);
+        return Arr::keys($this->items);
     }
 
     /** @return T_Value[] Values in insertion order. */
     public function values(): array {
-        return array_values($this->items);
+        return Arr::values($this->items);
     }
 
     /** Number of entries currently stored. */

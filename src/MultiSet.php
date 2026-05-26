@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function array_keys;
-use function array_map;
-use function array_slice;
-use function array_values;
-use function count;
-use function usort;
+use function array_slice, count, usort;
 use InvalidArgumentException;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\HashesValues;
 use Rak200\Collections\Internal\ValidatesType;
+use Rak200\Utils\Arr;
 
 /**
  * Bag / occurrence counter. Records how many times each unique value has been
@@ -161,7 +157,7 @@ class MultiSet implements \Iterator, \Countable, ToArray {
      * @return list<T_Value>
      */
     public function unique(): array {
-        return array_values($this->items);
+        return Arr::values($this->items);
     }
 
     /**
@@ -175,7 +171,7 @@ class MultiSet implements \Iterator, \Countable, ToArray {
         if ($n < 0) {
             throw new InvalidArgumentException('Limit must be non-negative.');
         }
-        $hashes = array_keys($this->items);
+        $hashes = Arr::keys($this->items);
         $order = [];
         foreach ($hashes as $i => $hash) {
             $order[$hash] = $i;
@@ -188,9 +184,9 @@ class MultiSet implements \Iterator, \Countable, ToArray {
             return $order[$a] <=> $order[$b];
         });
         $top = array_slice($hashes, 0, $n);
-        return array_map(
+        return Arr::map(
+            $top,
             fn(string $hash): array => [$this->items[$hash], $this->counts[$hash]],
-            $top
         );
     }
 
@@ -239,7 +235,7 @@ class MultiSet implements \Iterator, \Countable, ToArray {
 
     /** Snapshot the current insertion order and reset the iteration position. */
     public function rewind(): void {
-        $this->iterKeys = array_keys($this->items);
+        $this->iterKeys = Arr::keys($this->items);
         $this->iterPos = 0;
     }
 

@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function array_pop;
-use function count;
+use function array_pop, count;
 use InvalidArgumentException;
 use Rak200\Collections\Internal\ValidatesType;
 

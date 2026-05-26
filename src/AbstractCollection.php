@@ -4,11 +4,7 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function count;
-use function current;
-use function key;
-use function next;
-use function reset;
+use function count, current, key, next, reset;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\ValidatesType;
 

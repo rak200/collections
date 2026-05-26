@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function array_values;
-use function count;
-use function current;
-use function key;
-use function next;
-use function reset;
+use function count, current, key, next, reset;
 use InvalidArgumentException;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\HashesValues;
 use Rak200\Collections\Internal\ValidatesType;
+use Rak200\Utils\Arr;
 
 /**
  * Ordered map keyed by objects.
@@ -122,12 +118,12 @@ class ObjectMap implements \Iterator, \Countable, ToArray {
 
     /** @return list<T_Key> Keys in insertion order. */
     public function keys(): array {
-        return array_values($this->keys);
+        return Arr::values($this->keys);
     }
 
     /** @return list<T_Value> Values in insertion order. */
     public function values(): array {
-        return array_values($this->values);
+        return Arr::values($this->values);
     }
 
     /** Number of entries currently stored. */

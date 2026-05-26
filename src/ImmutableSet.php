@@ -4,17 +4,12 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function array_key_exists;
-use function array_values;
-use function count;
-use function current;
-use function key;
-use function next;
-use function reset;
+use function count, current, key, next, reset;
 use InvalidArgumentException;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\HashesValues;
 use Rak200\Collections\Internal\ValidatesType;
+use Rak200\Utils\Arr;
 
 /**
  * Read-only counterpart to {@see Set}. Items are fixed at construction;
@@ -53,7 +48,7 @@ final class ImmutableSet implements \Iterator, \Countable, ToArray {
         foreach ($items as $item) {
             ValidatesType::checkType($this->type, $item);
             $hash = self::hashValue($item);
-            if (!array_key_exists($hash, $this->items)) {
+            if (!Arr::has($this->items, $hash)) {
                 $this->items[$hash] = $item;
             }
         }
@@ -81,7 +76,7 @@ final class ImmutableSet implements \Iterator, \Countable, ToArray {
      * @param T_Value $item
      */
     public function contains(mixed $item): bool {
-        return array_key_exists(self::hashValue($item), $this->items);
+        return Arr::has($this->items, self::hashValue($item));
     }
 
     /**
@@ -198,6 +193,6 @@ final class ImmutableSet implements \Iterator, \Countable, ToArray {
      * @return T_Value[]
      */
     public function toArray(): array {
-        return array_values($this->items);
+        return Arr::values($this->items);
     }
 }

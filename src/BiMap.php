@@ -7,18 +7,9 @@ namespace Rak200\Collections;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\HashesValues;
 use Rak200\Collections\Internal\ValidatesType;
+use Rak200\Utils\Arr;
 use InvalidArgumentException;
-use function array_key_exists;
-use function count;
-use function current;
-use function get_debug_type;
-use function is_int;
-use function is_string;
-use function key;
-use function next;
-use function reset;
-use function sprintf;
-use function var_export;
+use function count, current, get_debug_type, is_int, is_string, key, next, reset, var_export;
 
 /**
  * Bidirectional map with unique keys AND unique values.
@@ -77,10 +68,10 @@ class BiMap implements \Iterator, \Countable, ToArray {
             return;
         }
         if ($this->keyType === 'int' && !is_int($key)) {
-            throw new InvalidArgumentException(sprintf('Key must be of type int. Got: %s', get_debug_type($key)));
+            throw new InvalidArgumentException('Key must be of type int. Got: ' . get_debug_type($key));
         }
         if ($this->keyType === 'string' && !is_string($key)) {
-            throw new InvalidArgumentException(sprintf('Key must be of type string. Got: %s', get_debug_type($key)));
+            throw new InvalidArgumentException('Key must be of type string. Got: ' . get_debug_type($key));
         }
     }
 
@@ -95,8 +86,8 @@ class BiMap implements \Iterator, \Countable, ToArray {
     public function put(int|string $key, mixed $value): void {
         $this->checkKey($key);
         ValidatesType::checkType($this->valueType, $value, 'Value');
-        if (array_key_exists($key, $this->keyToValue)) {
-            throw new InvalidArgumentException(sprintf('Key %s is already mapped.', var_export($key, true)));
+        if (Arr::has($this->keyToValue, $key)) {
+            throw new InvalidArgumentException('Key ' . var_export($key, true) . ' is already mapped.');
         }
         $valueHash = self::hashValue($value);
         if (isset($this->valueHashToKey[$valueHash])) {
@@ -148,7 +139,7 @@ class BiMap implements \Iterator, \Countable, ToArray {
      * @param T_Key $key
      */
     public function hasKey(int|string $key): bool {
-        return array_key_exists($key, $this->keyToValue);
+        return Arr::has($this->keyToValue, $key);
     }
 
     /**
@@ -166,7 +157,7 @@ class BiMap implements \Iterator, \Countable, ToArray {
      * @param T_Key $key
      */
     public function removeByKey(int|string $key): bool {
-        if (!array_key_exists($key, $this->keyToValue)) {
+        if (!Arr::has($this->keyToValue, $key)) {
             return false;
         }
         $value = $this->keyToValue[$key];

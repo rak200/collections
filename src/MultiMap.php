@@ -4,21 +4,11 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function array_filter;
-use function array_key_exists;
-use function array_keys;
-use function array_merge;
-use function array_search;
-use function array_splice;
-use function array_values;
-use function count;
-use function get_debug_type;
-use function is_int;
-use function is_string;
-use function sprintf;
+use function array_search, array_splice, count, get_debug_type, is_int, is_string;
 use InvalidArgumentException;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\ValidatesType;
+use Rak200\Utils\Arr;
 
 /**
  * Key-to-many-values map. Each key holds an ordered list of values; the same
@@ -74,10 +64,10 @@ class MultiMap implements \Iterator, \Countable, ToArray {
             return;
         }
         if ($this->keyType === 'int' && !is_int($key)) {
-            throw new InvalidArgumentException(sprintf('Key must be of type int. Got: %s', get_debug_type($key)));
+            throw new InvalidArgumentException('Key must be of type int. Got: ' . get_debug_type($key));
         }
         if ($this->keyType === 'string' && !is_string($key)) {
-            throw new InvalidArgumentException(sprintf('Key must be of type string. Got: %s', get_debug_type($key)));
+            throw new InvalidArgumentException('Key must be of type string. Got: ' . get_debug_type($key));
         }
     }
 
@@ -106,7 +96,7 @@ class MultiMap implements \Iterator, \Countable, ToArray {
         foreach ($values as $value) {
             ValidatesType::checkType($this->valueType, $value, 'Value');
         }
-        $this->items[$key] = array_values($values);
+        $this->items[$key] = Arr::values($values);
     }
 
     /**
@@ -135,7 +125,7 @@ class MultiMap implements \Iterator, \Countable, ToArray {
      * @param T_Key $key
      */
     public function has(int|string $key): bool {
-        return array_key_exists($key, $this->items);
+        return Arr::has($this->items, $key);
     }
 
     /**
@@ -145,7 +135,7 @@ class MultiMap implements \Iterator, \Countable, ToArray {
      * @param T_Value $value
      */
     public function hasValue(int|string $key, mixed $value): bool {
-        if (!array_key_exists($key, $this->items)) {
+        if (!Arr::has($this->items, $key)) {
             return false;
         }
         return array_search($value, $this->items[$key], true) !== false;
@@ -158,7 +148,7 @@ class MultiMap implements \Iterator, \Countable, ToArray {
      * @return bool True if the key was present, false otherwise.
      */
     public function remove(int|string $key): bool {
-        if (!array_key_exists($key, $this->items)) {
+        if (!Arr::has($this->items, $key)) {
             return false;
         }
         unset($this->items[$key]);
@@ -174,7 +164,7 @@ class MultiMap implements \Iterator, \Countable, ToArray {
      * @return bool True if the value was present, false otherwise.
      */
     public function removeValue(int|string $key, mixed $value): bool {
-        if (!array_key_exists($key, $this->items)) {
+        if (!Arr::has($this->items, $key)) {
             return false;
         }
         $idx = array_search($value, $this->items[$key], true);
@@ -190,12 +180,12 @@ class MultiMap implements \Iterator, \Countable, ToArray {
 
     /** @return list<T_Key> Keys in insertion order (each key once). */
     public function keys(): array {
-        return array_keys($this->items);
+        return Arr::keys($this->items);
     }
 
     /** @return list<T_Value> Flat list of every stored value in insertion order. */
     public function values(): array {
-        return array_merge(...array_values($this->items));
+        return Arr::merge(...Arr::values($this->items));
     }
 
     /**

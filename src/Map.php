@@ -4,16 +4,10 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function array_key_exists;
-use function array_key_last;
-use function array_keys;
-use function array_values;
-use function get_debug_type;
-use function is_int;
-use function is_string;
-use function sprintf;
+use function array_key_last, get_debug_type, is_int, is_string;
 use InvalidArgumentException;
 use Rak200\Collections\Internal\ValidatesType;
+use Rak200\Utils\Arr;
 
 /**
  * Ordered key-value map with separate key and value type enforcement.
@@ -73,16 +67,10 @@ class Map extends AbstractCollection implements \ArrayAccess {
             return;
         }
         if ($this->keyType === 'int' && !is_int($key)) {
-            throw new InvalidArgumentException(sprintf(
-                'Key must be of type int. Got: %s',
-                get_debug_type($key)
-            ));
+            throw new InvalidArgumentException('Key must be of type int. Got: ' . get_debug_type($key));
         }
         if ($this->keyType === 'string' && !is_string($key)) {
-            throw new InvalidArgumentException(sprintf(
-                'Key must be of type string. Got: %s',
-                get_debug_type($key)
-            ));
+            throw new InvalidArgumentException('Key must be of type string. Got: ' . get_debug_type($key));
         }
     }
 
@@ -115,7 +103,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
      * @param T_Key $key
      */
     public function has(int|string $key): bool {
-        return array_key_exists($key, $this->items);
+        return Arr::has($this->items, $key);
     }
 
     /**
@@ -124,7 +112,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
      * @param T_Key $key
      */
     public function remove(int|string $key): bool {
-        if (!array_key_exists($key, $this->items)) {
+        if (!Arr::has($this->items, $key)) {
             return false;
         }
         unset($this->items[$key]);
@@ -133,12 +121,12 @@ class Map extends AbstractCollection implements \ArrayAccess {
 
     /** @return T_Key[] Keys in insertion order. */
     public function keys(): array {
-        return array_keys($this->items);
+        return Arr::keys($this->items);
     }
 
     /** @return T_Value[] Values in insertion order. */
     public function values(): array {
-        return array_values($this->items);
+        return Arr::values($this->items);
     }
 
     /** @return T_Value Value at the current iteration cursor. */

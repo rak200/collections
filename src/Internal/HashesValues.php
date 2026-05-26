@@ -4,16 +4,7 @@ declare(strict_types=1);
 
 namespace Rak200\Collections\Internal;
 
-use function get_debug_type;
-use function is_array;
-use function is_bool;
-use function is_float;
-use function is_int;
-use function is_null;
-use function is_object;
-use function is_string;
-use function md5;
-use function serialize;
+use function get_debug_type, is_array, is_bool, is_float, is_int, is_null, is_object, is_string, md5, serialize;
 use InvalidArgumentException;
 
 /**
