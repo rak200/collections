@@ -15,7 +15,7 @@ use Rak200\Collections\LinkedList;
 final class LinkedNode {
 
     /**
-     * @param LinkedList $owner
+     * @param LinkedList<T_Value> $owner
      * @param T_Value $value
      * @param self<T_Value>|null $prev
      * @param self<T_Value>|null $next

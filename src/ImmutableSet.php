@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function count, current, key, next, reset;
+use function count, key, next, reset;
 use InvalidArgumentException;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\HashesValues;
 use Rak200\Collections\Internal\ValidatesType;
 use Rak200\Utils\Arr;
+use Rak200\Collections\Internal\ProvidesValueFactories;
 
 /**
  * Read-only counterpart to {@see Set}. Items are fixed at construction;
@@ -32,7 +33,8 @@ use Rak200\Utils\Arr;
  */
 final class ImmutableSet implements \Iterator, \Countable, ToArray {
 
-    use HashesValues;
+    use ProvidesValueFactories;
+use HashesValues;
 
     /** @var array<string, T_Value> Hash → original value. */
     private array $items = [];
@@ -40,11 +42,11 @@ final class ImmutableSet implements \Iterator, \Countable, ToArray {
     private int $iterPos = 0;
 
     /**
-     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
+     * @param string $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
      * @param iterable<T_Value> $items Initial items; duplicates are silently dropped.
      * @throws InvalidArgumentException When any item does not satisfy $type.
      */
-    public function __construct(private string $type = 'mixed', iterable $items = []) {
+    protected function __construct(private string $type = 'mixed', iterable $items = []) {
         foreach ($items as $item) {
             ValidatesType::checkType($this->type, $item);
             $hash = self::hashValue($item);
@@ -52,6 +54,21 @@ final class ImmutableSet implements \Iterator, \Countable, ToArray {
                 $this->items[$hash] = $item;
             }
         }
+    }
+
+    /**
+     * Typed factory for class instances. Unlike the constructor, the item
+     * type is inferred statically: `ImmutableSet::of(Foo::class)` is `ImmutableSet<Foo>`
+     * in both PHPStan and IDE analysis.
+     *
+     * @template T of object
+     * @param class-string<T> $class Class to enforce on items.
+     * @param iterable<T> $items Initial items; duplicates are silently dropped.
+     * @return self<T>
+     * @throws InvalidArgumentException When any item does not satisfy $class.
+     */
+    public static function of(string $class, iterable $items = []): self {
+        return new self($class, $items);
     }
 
     /**
@@ -160,9 +177,10 @@ final class ImmutableSet implements \Iterator, \Countable, ToArray {
         return $this->items === [];
     }
 
-    /** @return T_Value Item at the current iteration cursor. */
+    /** @return T_Value|null Item at the current iteration cursor, or null past the end. */
     public function current(): mixed {
-        return current($this->items);
+        $key = key($this->items);
+        return $key === null ? null : $this->items[$key];
     }
 
     /** Zero-based position within the set. */

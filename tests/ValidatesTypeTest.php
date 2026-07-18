@@ -11,20 +11,20 @@ use Rak200\Collections\Internal\ValidatesType;
 final class ValidatesTypeTest extends TestCase {
 
     public function testMixedSkipsCheckForAnyValue(): void {
+        $this->expectNotToPerformAssertions();
         ValidatesType::checkType('mixed', new \stdClass());
         ValidatesType::checkType('mixed', 42);
         ValidatesType::checkType('mixed', 'string');
         ValidatesType::checkType('mixed', null);
         ValidatesType::checkType('mixed', [1, 2, 3]);
         ValidatesType::checkType('mixed', true);
-        self::assertTrue(true);
     }
 
     public function testObjectAcceptsAnyObject(): void {
+        $this->expectNotToPerformAssertions();
         ValidatesType::checkType('object', new \stdClass());
         ValidatesType::checkType('object', new \DateTimeImmutable());
         ValidatesType::checkType('object', new \ArrayObject());
-        self::assertTrue(true);
     }
 
     public function testObjectRejectsScalar(): void {
@@ -46,15 +46,15 @@ final class ValidatesTypeTest extends TestCase {
     }
 
     public function testIntAcceptsInt(): void {
+        $this->expectNotToPerformAssertions();
         ValidatesType::checkType('int', 42);
         ValidatesType::checkType('int', 0);
         ValidatesType::checkType('int', -7);
-        self::assertTrue(true);
     }
 
     public function testIntegerAliasAcceptsInt(): void {
+        $this->expectNotToPerformAssertions();
         ValidatesType::checkType('integer', 42);
-        self::assertTrue(true);
     }
 
     public function testIntRejectsStringAndFloat(): void {
@@ -69,9 +69,9 @@ final class ValidatesTypeTest extends TestCase {
     }
 
     public function testStringAcceptsString(): void {
+        $this->expectNotToPerformAssertions();
         ValidatesType::checkType('string', 'hello');
         ValidatesType::checkType('string', '');
-        self::assertTrue(true);
     }
 
     public function testStringRejectsInt(): void {
@@ -81,14 +81,14 @@ final class ValidatesTypeTest extends TestCase {
     }
 
     public function testBoolAcceptsBool(): void {
+        $this->expectNotToPerformAssertions();
         ValidatesType::checkType('bool', true);
         ValidatesType::checkType('bool', false);
-        self::assertTrue(true);
     }
 
     public function testBooleanAliasAcceptsBool(): void {
+        $this->expectNotToPerformAssertions();
         ValidatesType::checkType('boolean', true);
-        self::assertTrue(true);
     }
 
     public function testBoolRejectsInt(): void {
@@ -97,14 +97,14 @@ final class ValidatesTypeTest extends TestCase {
     }
 
     public function testFloatAcceptsFloat(): void {
+        $this->expectNotToPerformAssertions();
         ValidatesType::checkType('float', 3.14);
         ValidatesType::checkType('float', 0.0);
-        self::assertTrue(true);
     }
 
     public function testDoubleAliasAcceptsFloat(): void {
+        $this->expectNotToPerformAssertions();
         ValidatesType::checkType('double', 3.14);
-        self::assertTrue(true);
     }
 
     public function testFloatRejectsInt(): void {
@@ -113,10 +113,10 @@ final class ValidatesTypeTest extends TestCase {
     }
 
     public function testArrayAcceptsArray(): void {
+        $this->expectNotToPerformAssertions();
         ValidatesType::checkType('array', []);
         ValidatesType::checkType('array', [1, 2, 3]);
         ValidatesType::checkType('array', ['a' => 1]);
-        self::assertTrue(true);
     }
 
     public function testArrayRejectsIterableObject(): void {
@@ -125,9 +125,9 @@ final class ValidatesTypeTest extends TestCase {
     }
 
     public function testIterableAcceptsArrayAndTraversable(): void {
+        $this->expectNotToPerformAssertions();
         ValidatesType::checkType('iterable', [1, 2]);
         ValidatesType::checkType('iterable', new \ArrayObject([1, 2]));
-        self::assertTrue(true);
     }
 
     public function testIterableRejectsScalar(): void {
@@ -136,9 +136,9 @@ final class ValidatesTypeTest extends TestCase {
     }
 
     public function testCallableAcceptsClosureAndStringFunctions(): void {
+        $this->expectNotToPerformAssertions();
         ValidatesType::checkType('callable', fn() => null);
         ValidatesType::checkType('callable', 'strlen');
-        self::assertTrue(true);
     }
 
     public function testCallableRejectsNonCallableString(): void {
@@ -147,8 +147,8 @@ final class ValidatesTypeTest extends TestCase {
     }
 
     public function testClassStringAcceptsInstance(): void {
+        $this->expectNotToPerformAssertions();
         ValidatesType::checkType(\DateTimeImmutable::class, new \DateTimeImmutable());
-        self::assertTrue(true);
     }
 
     public function testClassStringRejectsDifferentClass(): void {

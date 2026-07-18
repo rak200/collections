@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function get_debug_type, is_int;
+use function get_debug_type;
+use function is_int;
+use function sprintf;
 use InvalidArgumentException;
+use Rak200\Collections\Internal\ProvidesValueFactories;
 use Rak200\Collections\Internal\ValidatesType;
 
 /**
@@ -22,29 +25,51 @@ use Rak200\Collections\Internal\ValidatesType;
  *
  * @template T_Value
  * @extends AbstractCollection<T_Value>
+ * @implements \ArrayAccess<int, T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>
  */
 class Vector extends AbstractCollection implements \ArrayAccess {
 
+    use ProvidesValueFactories;
+
     /**
-     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
-     * @param iterable<int, T_Value> $items Initial items indexed by int.
+     * @param string $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
+     * @param iterable<array-key, T_Value> $items Initial items; keys must be int (validated at runtime).
      * @throws InvalidArgumentException When any item does not satisfy $type, or any key is not an int.
      */
-    public function __construct(string $type = 'mixed', iterable $items = []) {
+    protected function __construct(string $type = 'mixed', iterable $items = []) {
         parent::__construct($type);
         foreach ($items as $key => $item) {
             if (!is_int($key)) {
-                throw new InvalidArgumentException('Invalid key type: expected int, got ' . get_debug_type($key));
+                throw new InvalidArgumentException(sprintf(
+                    'Invalid key type: expected int, got %s',
+                    get_debug_type($key)
+                ));
             }
             ValidatesType::checkType($this->type, $item);
             $this->items[$key] = $item;
         }
     }
 
-    /** Integer key at the current iteration cursor. */
-    public function key(): int {
-        return parent::key();
+    /**
+     * Typed factory for class instances. Unlike the constructor, the item
+     * type is inferred statically: `Vector::of(Foo::class)` is `Vector<Foo>`
+     * in both PHPStan and IDE analysis.
+     *
+     * @template T of object
+     * @param class-string<T> $class Class to enforce on items.
+     * @param iterable<array-key, T> $items Initial items; keys must be int (validated at runtime).
+     * @return self<T>
+     * @throws InvalidArgumentException When any item does not satisfy $class, or any key is not an int.
+     */
+    public static function of(string $class, iterable $items = []): self {
+        return new self($class, $items);
+    }
+
+    /** @return int|null Integer key at the current iteration cursor, or null past the end. */
+    public function key(): ?int {
+        $key = key($this->items);
+        return is_int($key) ? $key : null;
     }
 
     /**

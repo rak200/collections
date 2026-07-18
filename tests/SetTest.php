@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rak200\Collections\Tests;
 
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Rak200\Collections\AbstractCollection;
 use Rak200\Collections\Set;
@@ -12,20 +13,20 @@ use Rak200\Collections\Set;
 final class SetTest extends TestCase {
 
     public function testEmptySetState(): void {
-        $s = new Set();
+        $s = Set::any();
         self::assertCount(0, $s);
         self::assertSame([], $s->toArray());
     }
 
     public function testAddReturnsTrueForNew(): void {
-        $s = new Set();
+        $s = Set::any();
         $obj = new \stdClass();
         self::assertTrue($s->add($obj));
         self::assertCount(1, $s);
     }
 
     public function testAddReturnsFalseForDuplicateInstance(): void {
-        $s = new Set();
+        $s = Set::any();
         $obj = new \stdClass();
         $s->add($obj);
         self::assertFalse($s->add($obj));
@@ -33,7 +34,7 @@ final class SetTest extends TestCase {
     }
 
     public function testDifferentInstancesAreDistinct(): void {
-        $s = new Set();
+        $s = Set::any();
         $a = new \stdClass();
         $b = new \stdClass();
         self::assertTrue($s->add($a));
@@ -42,7 +43,7 @@ final class SetTest extends TestCase {
     }
 
     public function testRemoveReturnsBool(): void {
-        $s = new Set();
+        $s = Set::any();
         $obj = new \stdClass();
         self::assertFalse($s->remove($obj));
         $s->add($obj);
@@ -51,7 +52,7 @@ final class SetTest extends TestCase {
     }
 
     public function testContains(): void {
-        $s = new Set();
+        $s = Set::any();
         $obj = new \stdClass();
         self::assertFalse($s->contains($obj));
         $s->add($obj);
@@ -59,13 +60,13 @@ final class SetTest extends TestCase {
     }
 
     public function testTypeEnforcement(): void {
-        $s = new Set(\DateTimeImmutable::class);
+        $s = Set::of(\DateTimeImmutable::class);
         $this->expectException(InvalidArgumentException::class);
-        $s->add(new \stdClass());
+        $s->add(new \stdClass()); // @phpstan-ignore argument.type (runtime rejection test)
     }
 
     public function testToArrayIsZeroIndexed(): void {
-        $s = new Set();
+        $s = Set::any();
         $a = new \stdClass();
         $b = new \stdClass();
         $s->add($a);
@@ -77,14 +78,14 @@ final class SetTest extends TestCase {
 
     public function testInitialItemsDeduplicated(): void {
         $a = new \stdClass();
-        $s = new Set('mixed', [$a, $a, $a]);
+        $s = Set::any([$a, $a, $a]);
         self::assertCount(1, $s);
     }
 
     public function testIteration(): void {
         $a = new \stdClass();
         $b = new \stdClass();
-        $s = new Set('mixed', [$a, $b]);
+        $s = Set::any([$a, $b]);
         $out = [];
         foreach ($s as $item) {
             $out[] = $item;
@@ -93,11 +94,11 @@ final class SetTest extends TestCase {
     }
 
     public function testIsAbstractCollection(): void {
-        self::assertInstanceOf(AbstractCollection::class, new Set());
+        self::assertInstanceOf(AbstractCollection::class, Set::any());
     }
 
     public function testScalarsAreUniqueByValue(): void {
-        $s = new Set('mixed');
+        $s = Set::any();
         self::assertTrue($s->add('foo'));
         self::assertFalse($s->add('foo'));   // same string value
         self::assertTrue($s->add(42));
@@ -107,7 +108,7 @@ final class SetTest extends TestCase {
     }
 
     public function testNullAndBoolsAreUnique(): void {
-        $s = new Set('mixed');
+        $s = Set::any();
         self::assertTrue($s->add(null));
         self::assertFalse($s->add(null));
         self::assertTrue($s->add(true));
@@ -116,7 +117,7 @@ final class SetTest extends TestCase {
     }
 
     public function testMixedCollectionWithObjectsAndScalars(): void {
-        $s = new Set('mixed');
+        $s = Set::any();
         $obj = new \stdClass();
         $s->add($obj);
         $s->add('foo');
@@ -128,7 +129,7 @@ final class SetTest extends TestCase {
     }
 
     public function testIsEmptyAndClear(): void {
-        $s = new Set('mixed', [1, 2, 3]);
+        $s = Set::any([1, 2, 3]);
         self::assertFalse($s->isEmpty());
         $s->clear();
         self::assertTrue($s->isEmpty());
@@ -136,8 +137,8 @@ final class SetTest extends TestCase {
     }
 
     public function testUnion(): void {
-        $a = new Set('mixed', [1, 2, 3]);
-        $b = new Set('mixed', [3, 4, 5]);
+        $a = Set::any([1, 2, 3]);
+        $b = Set::any([3, 4, 5]);
         $u = $a->union($b);
         self::assertEqualsCanonicalizing([1, 2, 3, 4, 5], $u->toArray());
         // originals untouched
@@ -146,14 +147,14 @@ final class SetTest extends TestCase {
     }
 
     public function testIntersection(): void {
-        $a = new Set('mixed', [1, 2, 3, 4]);
-        $b = new Set('mixed', [3, 4, 5, 6]);
+        $a = Set::any([1, 2, 3, 4]);
+        $b = Set::any([3, 4, 5, 6]);
         self::assertEqualsCanonicalizing([3, 4], $a->intersection($b)->toArray());
     }
 
     public function testDifference(): void {
-        $a = new Set('mixed', [1, 2, 3, 4]);
-        $b = new Set('mixed', [3, 4, 5, 6]);
+        $a = Set::any([1, 2, 3, 4]);
+        $b = Set::any([3, 4, 5, 6]);
         self::assertEqualsCanonicalizing([1, 2], $a->difference($b)->toArray());
     }
 
@@ -164,19 +165,32 @@ final class SetTest extends TestCase {
      * passes, A6 is fixed (wrapping serialize errors as InvalidArgumentException).
      */
     public function testAddArrayContainingClosureThrowsInvalidArgument(): void {
-        $s = new Set();
+        $s = Set::any();
         $this->expectException(InvalidArgumentException::class);
         $s->add([fn() => 1]);
     }
 
     public function testIsSubsetOfAndIsSupersetOf(): void {
-        $small = new Set('mixed', [1, 2]);
-        $large = new Set('mixed', [1, 2, 3]);
+        $small = Set::any([1, 2]);
+        $large = Set::any([1, 2, 3]);
         self::assertTrue($small->isSubsetOf($large));
         self::assertFalse($large->isSubsetOf($small));
         self::assertTrue($large->isSupersetOf($small));
         self::assertFalse($small->isSupersetOf($large));
         // empty set is a subset of every set
-        self::assertTrue((new Set())->isSubsetOf($large));
+        self::assertTrue((Set::any())->isSubsetOf($large));
+    }
+
+    public function testClassInference(): void {
+        $a = Set::of(\DateTimeImmutable::class);  // hover em $a: Set<DateTimeImmutable>
+        $b = Set::ofInt();                      // hover em $b: Set<int> (PHPStan; IDE mostra o template)
+        $c = Set::any();                           // hover em $c: Set<mixed>
+
+        self::assertTrue($a->add(new \DateTimeImmutable()));
+        self::assertTrue($b->add(42));
+        self::assertTrue($c->add('anything'));
+        self::assertSame(\DateTimeImmutable::class, $a->getType());
+        self::assertSame('int', $b->getType());
+        self::assertSame('mixed', $c->getType());
     }
 }

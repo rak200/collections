@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rak200\Collections\Tests;
 
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\WithoutErrorHandler;
 use PHPUnit\Framework\TestCase;
 use Rak200\Collections\Collection;
@@ -15,6 +16,9 @@ final class CollectionTest extends TestCase {
     /**
      * Wrap construction in an error handler that swallows the expected
      * E_USER_DEPRECATED so individual tests can focus on behavior.
+     *
+     * @param array<int|string, mixed> $items
+     * @return Collection<mixed>
      */
     private function make(string $type = 'mixed', array $items = []): Collection {
         set_error_handler(static fn() => true, E_USER_DEPRECATED);
@@ -68,15 +72,16 @@ final class CollectionTest extends TestCase {
         self::assertNull($c->get('k'));
     }
 
-    public function testInheritsTypeEnforcement(): void {
-        set_error_handler(static fn() => true, E_USER_DEPRECATED);
-        try {
-            $c = new Collection(\stdClass::class);
-        } finally {
-            restore_error_handler();
-        }
+    /** @return iterable<string, array{string, mixed}> */
+    public static function rejectedItemProvider(): iterable {
+        yield 'non-object into stdClass collection' => [\stdClass::class, 'not-an-object'];
+    }
+
+    #[DataProvider('rejectedItemProvider')]
+    public function testInheritsTypeEnforcement(string $type, mixed $wrong): void {
+        $c = $this->make($type);
         $this->expectException(InvalidArgumentException::class);
-        $c->add('k', 'not-an-object');
+        $c->add('k', $wrong);
     }
 
     public function testArrayAccessAcceptsStringOffset(): void {

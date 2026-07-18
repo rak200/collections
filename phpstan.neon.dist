@@ -1,0 +1,12 @@
+parameters:
+    level: 9
+    paths:
+        - phpstan
+        - src
+        - tests
+
+services:
+    -
+        class: Rak200\Collections\PHPStan\CollectionTypeResolver
+        tags:
+            - phpstan.broker.expressionTypeResolverExtension

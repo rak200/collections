@@ -7,6 +7,7 @@ namespace Rak200\Collections;
 use function array_search;
 use InvalidArgumentException;
 use Rak200\Collections\Internal\HashesValues;
+use Rak200\Collections\Internal\ProvidesValueFactories;
 use Rak200\Collections\Internal\ValidatesType;
 use Rak200\Utils\Arr;
 
@@ -20,18 +21,34 @@ use Rak200\Utils\Arr;
  *
  * @template T_Value
  * @extends AbstractCollection<T_Value>
+ * @phpstan-consistent-constructor
  * @author rak200 <rak.ricardo@windowslive.com>
  */
 class Set extends AbstractCollection {
 
     use HashesValues;
+    use ProvidesValueFactories;
 
     /**
-     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
+     * Collection of instances of the given class, with the element type
+     * inferred statically: `Set::of(Foo::class)` is `Set<Foo>`.
+     *
+     * @template T of object
+     * @param class-string<T> $class Class to enforce on items.
+     * @param iterable<T> $items Initial items added in order; duplicates are ignored.
+     * @return self<T>
+     * @throws InvalidArgumentException When any item is not an instance of $class.
+     */
+    public static function of(string $class, iterable $items = []): self {
+        return new self($class, $items);
+    }
+
+    /**
+     * @param string $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
      * @param iterable<T_Value> $items Initial items added in order; duplicates are ignored.
      * @throws InvalidArgumentException When any item does not satisfy $type.
      */
-    public function __construct(string $type = 'mixed', iterable $items = []) {
+    protected function __construct(string $type = 'mixed', iterable $items = []) {
         parent::__construct($type);
         foreach ($items as $item) {
             $this->add($item);
@@ -42,8 +59,9 @@ class Set extends AbstractCollection {
      * Zero-based position of the current item within the set. The internal
      * hash key is hidden so the `Iterator<int, T_Value>` contract holds.
      */
-    public function key(): int {
-        return array_search(parent::key(), Arr::keys($this->items), true);
+    public function key(): ?int {
+        $pos = array_search(parent::key(), Arr::keys($this->items), true);
+        return $pos === false ? null : $pos;
     }
 
     /**

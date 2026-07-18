@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function count, current, get_debug_type, is_int, is_string, key, next, reset, sprintf;
+use function count, get_debug_type, is_int, is_string, key, next, reset, sprintf;
 use BadMethodCallException;
 use InvalidArgumentException;
 use Rak200\Caster\Contracts\ToArray;
@@ -37,11 +37,11 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
 
     /**
      * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
-     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $valueType Class name or built-in pseudo-type to enforce on values, or `'mixed'` to skip.
+     * @param string $valueType Class name or built-in pseudo-type to enforce on values, or `'mixed'` to skip.
      * @param iterable<T_Key, T_Value> $items Initial entries (final).
      * @throws InvalidArgumentException When any key or value violates its type.
      */
-    public function __construct(
+    protected function __construct(
         private string $keyType = 'mixed',
         private string $valueType = 'mixed',
         iterable $items = []
@@ -54,12 +54,39 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
     }
 
     /**
+     * Factory for an untyped map (no runtime type enforcement).
+     *
+     * @param iterable<int|string, mixed> $items Initial entries (final).
+     * @return self<int|string, mixed>
+     */
+    public static function any(iterable $items = []): self {
+        return new self('mixed', 'mixed', $items);
+    }
+
+    /**
+     * Typed factory for class-typed values. The value type is inferred
+     * statically: `ImmutableMap::of('string', Foo::class)` is `ImmutableMap<int|string, Foo>`
+     * in both PHPStan and IDE analysis. Key narrowing beyond `int|string` is
+     * provided by the PHPStan extension for direct `new` calls.
+     *
+     * @template T of object
+     * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
+     * @param class-string<T> $valueClass Class to enforce on values.
+     * @param iterable<int|string, T> $items Initial entries (final).
+     * @return self<int|string, T>
+     * @throws InvalidArgumentException When any key or value violates its type.
+     */
+    public static function of(string $keyType, string $valueClass, iterable $items = []): self {
+        return new self($keyType, $valueClass, $items);
+    }
+
+    /**
      * Build an immutable copy of the given {@see Map}, preserving its types.
      *
      * @template TK of int|string
      * @template TV
      * @param Map<TK, TV> $map
-     * @return self<TK, TV>
+     * @return self<int|string, TV>
      */
     public static function fromMap(Map $map): self {
         return new self($map->getKeyType(), $map->getValueType(), $map->toArray());
@@ -132,13 +159,14 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
         return $this->items === [];
     }
 
-    /** @return T_Value Value at the current iteration cursor. */
+    /** @return T_Value|null Value at the current iteration cursor, or null past the end. */
     public function current(): mixed {
-        return current($this->items);
+        $key = key($this->items);
+        return $key === null ? null : $this->items[$key];
     }
 
     /** Key at the current iteration cursor. */
-    public function key(): int|string {
+    public function key(): int|string|null {
         return key($this->items);
     }
 

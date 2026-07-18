@@ -12,8 +12,10 @@ use Rak200\Collections\Map;
 
 final class ImmutableMapTest extends TestCase {
 
+    use ConstructsProtected;
+
     public function testEmptyState(): void {
-        $m = new ImmutableMap();
+        $m = ImmutableMap::any();
         self::assertCount(0, $m);
         self::assertTrue($m->isEmpty());
         self::assertSame([], $m->toArray());
@@ -24,7 +26,7 @@ final class ImmutableMapTest extends TestCase {
     }
 
     public function testInitialEntries(): void {
-        $m = new ImmutableMap('string', 'int', ['a' => 1, 'b' => 2]);
+        $m = self::build(ImmutableMap::class, 'string', 'int', ['a' => 1, 'b' => 2]);
         self::assertCount(2, $m);
         self::assertSame(1, $m->get('a'));
         self::assertSame(2, $m->get('b'));
@@ -35,16 +37,16 @@ final class ImmutableMapTest extends TestCase {
 
     public function testKeyTypeEnforcement(): void {
         $this->expectException(InvalidArgumentException::class);
-        new ImmutableMap('int', 'mixed', ['not-int' => 1]);
+        self::build(ImmutableMap::class, 'int', 'mixed', ['not-int' => 1]);
     }
 
     public function testValueTypeEnforcement(): void {
         $this->expectException(InvalidArgumentException::class);
-        new ImmutableMap('mixed', \DateTimeImmutable::class, ['k' => new \stdClass()]);
+        ImmutableMap::of('mixed', \DateTimeImmutable::class, ['k' => new \stdClass()]);
     }
 
     public function testFromMapPreservesTypes(): void {
-        $map = new Map('string', \DateTimeImmutable::class);
+        $map = Map::of('string', \DateTimeImmutable::class);
         $dt = new \DateTimeImmutable();
         $map->set('k', $dt);
         $imm = ImmutableMap::fromMap($map);
@@ -54,26 +56,26 @@ final class ImmutableMapTest extends TestCase {
     }
 
     public function testOffsetGetAndExistsReadOnly(): void {
-        $m = new ImmutableMap('mixed', 'mixed', ['a' => 1]);
+        $m = ImmutableMap::any(['a' => 1]);
         self::assertTrue(isset($m['a']));
         self::assertSame(1, $m['a']);
         self::assertNull($m['missing']);
     }
 
     public function testOffsetSetThrows(): void {
-        $m = new ImmutableMap();
+        $m = ImmutableMap::any();
         $this->expectException(BadMethodCallException::class);
         $m['x'] = 1;
     }
 
     public function testOffsetUnsetThrows(): void {
-        $m = new ImmutableMap('mixed', 'mixed', ['a' => 1]);
+        $m = ImmutableMap::any(['a' => 1]);
         $this->expectException(BadMethodCallException::class);
         unset($m['a']);
     }
 
     public function testIteration(): void {
-        $m = new ImmutableMap('string', 'int', ['a' => 1, 'b' => 2, 'c' => 3]);
+        $m = self::build(ImmutableMap::class, 'string', 'int', ['a' => 1, 'b' => 2, 'c' => 3]);
         $out = [];
         foreach ($m as $k => $v) {
             $out[$k] = $v;
@@ -90,14 +92,14 @@ final class ImmutableMapTest extends TestCase {
     }
 
     public function testMixedAcceptsScalarsAndNull(): void {
-        $m = new ImmutableMap('mixed', 'mixed', ['n' => null, 'i' => 1, 's' => 'str']);
+        $m = ImmutableMap::any(['n' => null, 'i' => 1, 's' => 'str']);
         self::assertNull($m->get('n'));
         self::assertSame(1, $m->get('i'));
         self::assertSame('str', $m->get('s'));
     }
 
     public function testToArrayPreservesOrder(): void {
-        $m = new ImmutableMap('mixed', 'mixed', ['x' => 10, 'y' => 20]);
+        $m = ImmutableMap::any(['x' => 10, 'y' => 20]);
         self::assertSame(['x' => 10, 'y' => 20], $m->toArray());
     }
 }

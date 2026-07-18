@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rak200\Collections\Tests;
 
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Rak200\Collections\AbstractCollection;
 use Rak200\Collections\Stack;
@@ -12,7 +13,7 @@ use Rak200\Collections\Stack;
 final class StackTest extends TestCase {
 
     public function testEmptyStackState(): void {
-        $s = new Stack();
+        $s = Stack::any();
         self::assertCount(0, $s);
         self::assertNull($s->pop());
         self::assertNull($s->peek());
@@ -20,7 +21,7 @@ final class StackTest extends TestCase {
     }
 
     public function testPushPopIsLIFO(): void {
-        $s = new Stack();
+        $s = Stack::any();
         $a = new \stdClass();
         $b = new \stdClass();
         $c = new \stdClass();
@@ -34,7 +35,7 @@ final class StackTest extends TestCase {
     }
 
     public function testPeekReturnsTopWithoutRemoving(): void {
-        $s = new Stack();
+        $s = Stack::any();
         $a = new \stdClass();
         $b = new \stdClass();
         $s->push($a);
@@ -44,7 +45,7 @@ final class StackTest extends TestCase {
     }
 
     public function testIterationIsTopToBottom(): void {
-        $s = new Stack();
+        $s = Stack::any();
         $a = new \stdClass();
         $b = new \stdClass();
         $c = new \stdClass();
@@ -59,25 +60,25 @@ final class StackTest extends TestCase {
     }
 
     public function testTypeEnforcementRejectsWrongInstance(): void {
-        $s = new Stack(\DateTimeImmutable::class);
+        $s = Stack::of(\DateTimeImmutable::class);
         $this->expectException(InvalidArgumentException::class);
-        $s->push(new \stdClass());
+        $s->push(new \stdClass()); // @phpstan-ignore argument.type (runtime rejection test)
     }
 
     public function testInitialItemsArePushedInOrder(): void {
         $a = new \stdClass();
         $b = new \stdClass();
-        $s = new Stack('mixed', [$a, $b]);
+        $s = Stack::any([$a, $b]);
         self::assertSame($b, $s->peek());
         self::assertCount(2, $s);
     }
 
     public function testIsAbstractCollection(): void {
-        self::assertInstanceOf(AbstractCollection::class, new Stack());
+        self::assertInstanceOf(AbstractCollection::class, Stack::any());
     }
 
     public function testMixedAcceptsScalarsAndNull(): void {
-        $s = new Stack('mixed');
+        $s = Stack::any();
         $s->push(42);
         $s->push('top');
         $s->push(null);
@@ -88,7 +89,7 @@ final class StackTest extends TestCase {
     }
 
     public function testIsEmptyAndClear(): void {
-        $s = new Stack();
+        $s = Stack::any();
         self::assertTrue($s->isEmpty());
         $s->push('a');
         $s->push('b');

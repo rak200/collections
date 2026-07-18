@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function array_slice, count, usort;
+use function array_slice, count, max, usort;
 use InvalidArgumentException;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\HashesValues;
 use Rak200\Collections\Internal\ValidatesType;
 use Rak200\Utils\Arr;
+use Rak200\Collections\Internal\ProvidesValueFactories;
 
 /**
  * Bag / occurrence counter. Records how many times each unique value has been
@@ -29,7 +30,8 @@ use Rak200\Utils\Arr;
  */
 class MultiSet implements \Iterator, \Countable, ToArray {
 
-    use HashesValues;
+    use ProvidesValueFactories;
+use HashesValues;
 
     /** @var array<string, T_Value> Hash → original item (insertion order). */
     private array $items = [];
@@ -43,14 +45,29 @@ class MultiSet implements \Iterator, \Countable, ToArray {
     private ?array $iterKeys = null;
 
     /**
-     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
+     * @param string $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
      * @param iterable<T_Value> $items Initial items; each one increments its count by one.
      * @throws InvalidArgumentException When any item does not satisfy $type.
      */
-    public function __construct(private string $type = 'mixed', iterable $items = []) {
+    protected function __construct(private string $type = 'mixed', iterable $items = []) {
         foreach ($items as $item) {
             $this->add($item);
         }
+    }
+
+    /**
+     * Typed factory for class instances. Unlike the constructor, the item
+     * type is inferred statically: `MultiSet::of(Foo::class)` is `MultiSet<Foo>`
+     * in both PHPStan and IDE analysis.
+     *
+     * @template T of object
+     * @param class-string<T> $class Class to enforce on items.
+     * @param iterable<T> $items Initial items; each one increments its count by one.
+     * @return self<T>
+     * @throws InvalidArgumentException When any item does not satisfy $class.
+     */
+    public static function of(string $class, iterable $items = []): self {
+        return new self($class, $items);
     }
 
     /** @return class-string<T_Value>|string */
@@ -184,10 +201,11 @@ class MultiSet implements \Iterator, \Countable, ToArray {
             return $order[$a] <=> $order[$b];
         });
         $top = array_slice($hashes, 0, $n);
-        return Arr::map(
-            $top,
-            fn(string $hash): array => [$this->items[$hash], $this->counts[$hash]],
-        );
+        $result = [];
+        foreach ($top as $hash) {
+            $result[] = [$this->items[$hash], $this->counts[$hash]];
+        }
+        return $result;
     }
 
     /** Total number of occurrences across every item in the bag. */
@@ -196,7 +214,7 @@ class MultiSet implements \Iterator, \Countable, ToArray {
         foreach ($this->counts as $c) {
             $sum += $c;
         }
-        return $sum;
+        return max(0, $sum);
     }
 
     /** Whether the bag holds no items. */
@@ -212,7 +230,7 @@ class MultiSet implements \Iterator, \Countable, ToArray {
         $this->iterPos = 0;
     }
 
-    /** @return T_Value Item at the current iteration position. */
+    /** @return T_Value|null Item at the current iteration position, or null past the end. */
     public function current(): mixed {
         if ($this->iterKeys === null || !isset($this->iterKeys[$this->iterPos])) {
             return null;

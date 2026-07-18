@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function count, current, key, next, reset;
+use function count, key, next, reset;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\ValidatesType;
 
@@ -21,6 +21,7 @@ use Rak200\Collections\Internal\ValidatesType;
  * {@see ValidatesType::checkType()}.
  *
  * @template T_Value
+ * @implements \Iterator<int|string, T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>
  */
 abstract class AbstractCollection implements \Iterator, \Countable, ToArray {
@@ -29,9 +30,9 @@ abstract class AbstractCollection implements \Iterator, \Countable, ToArray {
     protected array $items = [];
 
     /**
-     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip. See {@see ValidatesType} for the full list.
+     * @param string $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip. See {@see ValidatesType} for the full list.
      */
-    public function __construct(protected string $type = 'mixed') {}
+    protected function __construct(protected string $type = 'mixed') {}
 
     /** @return class-string<T_Value>|string */
     public function getType(): string {
@@ -53,13 +54,14 @@ abstract class AbstractCollection implements \Iterator, \Countable, ToArray {
         $this->items = [];
     }
 
-    /** @return T_Value Value at the current iteration cursor. */
+    /** @return T_Value|null Value at the current iteration cursor, or null past the end. */
     public function current(): mixed {
-        return current($this->items);
+        $key = key($this->items);
+        return $key === null ? null : $this->items[$key];
     }
 
-    /** Key at the current iteration cursor. */
-    public function key(): int|string {
+    /** @return int|string|null Key at the current iteration cursor, or null past the end. */
+    public function key(): int|string|null {
         return key($this->items);
     }
 

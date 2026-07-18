@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace Rak200\Collections\Tests;
 
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Rak200\Collections\BiMap;
 
 final class BiMapTest extends TestCase {
 
+    use ConstructsProtected;
+
     public function testEmptyState(): void {
-        $m = new BiMap();
+        $m = BiMap::any();
         self::assertCount(0, $m);
         self::assertSame([], $m->toArray());
         self::assertSame('mixed', $m->getKeyType());
@@ -19,7 +22,7 @@ final class BiMapTest extends TestCase {
     }
 
     public function testPutAndLookupBothDirections(): void {
-        $m = new BiMap();
+        $m = BiMap::any();
         $alice = new \stdClass();
         $bob = new \stdClass();
         $m->put('alice', $alice);
@@ -31,7 +34,7 @@ final class BiMapTest extends TestCase {
     }
 
     public function testHasKeyAndHasValue(): void {
-        $m = new BiMap();
+        $m = BiMap::any();
         $v = new \stdClass();
         self::assertFalse($m->hasKey('k'));
         self::assertFalse($m->hasValue($v));
@@ -41,14 +44,14 @@ final class BiMapTest extends TestCase {
     }
 
     public function testPutRejectsDuplicateKey(): void {
-        $m = new BiMap();
+        $m = BiMap::any();
         $m->put('k', new \stdClass());
         $this->expectException(InvalidArgumentException::class);
         $m->put('k', new \stdClass());
     }
 
     public function testPutRejectsDuplicateValue(): void {
-        $m = new BiMap();
+        $m = BiMap::any();
         $v = new \stdClass();
         $m->put('k1', $v);
         $this->expectException(InvalidArgumentException::class);
@@ -56,7 +59,7 @@ final class BiMapTest extends TestCase {
     }
 
     public function testForcePutOverwritesByKey(): void {
-        $m = new BiMap();
+        $m = BiMap::any();
         $v1 = new \stdClass();
         $v2 = new \stdClass();
         $m->put('k', $v1);
@@ -66,7 +69,7 @@ final class BiMapTest extends TestCase {
     }
 
     public function testForcePutOverwritesByValue(): void {
-        $m = new BiMap();
+        $m = BiMap::any();
         $v = new \stdClass();
         $m->put('old', $v);
         $m->forcePut('new', $v);
@@ -75,7 +78,7 @@ final class BiMapTest extends TestCase {
     }
 
     public function testRemoveByKey(): void {
-        $m = new BiMap();
+        $m = BiMap::any();
         $v = new \stdClass();
         $m->put('k', $v);
         self::assertTrue($m->removeByKey('k'));
@@ -85,7 +88,7 @@ final class BiMapTest extends TestCase {
     }
 
     public function testRemoveByValue(): void {
-        $m = new BiMap();
+        $m = BiMap::any();
         $v = new \stdClass();
         $m->put('k', $v);
         self::assertTrue($m->removeByValue($v));
@@ -95,25 +98,27 @@ final class BiMapTest extends TestCase {
     }
 
     public function testGetByMissingKeyReturnsNull(): void {
-        $m = new BiMap();
+        $m = BiMap::any();
         self::assertNull($m->getByKey('missing'));
         self::assertNull($m->getByValue(new \stdClass()));
     }
 
-    public function testKeyTypeEnforcement(): void {
-        $m = new BiMap('int');
-        $this->expectException(InvalidArgumentException::class);
-        $m->put('not-int', new \stdClass());
+    /** @return iterable<string, array{'int'|'string'|'mixed', string, int|string, mixed}> */
+    public static function rejectedEntryProvider(): iterable {
+        yield 'string key into int-keyed map' => ['int', 'mixed', 'not-int', new \stdClass()];
+        yield 'stdClass value into DateTimeImmutable map' => ['mixed', \DateTimeImmutable::class, 'k', new \stdClass()];
     }
 
-    public function testValueTypeEnforcement(): void {
-        $m = new BiMap('mixed', \DateTimeImmutable::class);
+    /** @param 'int'|'string'|'mixed' $keyType */
+    #[DataProvider('rejectedEntryProvider')]
+    public function testPutRejectsInvalidKeyOrValue(string $keyType, string $valueType, int|string $key, mixed $value): void {
+        $m = self::build(BiMap::class, $keyType, $valueType);
         $this->expectException(InvalidArgumentException::class);
-        $m->put('k', new \stdClass());
+        $m->put($key, $value);
     }
 
     public function testIteration(): void {
-        $m = new BiMap();
+        $m = BiMap::any();
         $a = new \stdClass();
         $b = new \stdClass();
         $m->put('alpha', $a);
@@ -126,7 +131,7 @@ final class BiMapTest extends TestCase {
     }
 
     public function testToArrayReflectsKeyToValueMapping(): void {
-        $m = new BiMap();
+        $m = BiMap::any();
         $a = new \stdClass();
         $b = new \stdClass();
         $m->put('a', $a);
@@ -135,7 +140,7 @@ final class BiMapTest extends TestCase {
     }
 
     public function testMixedValueAcceptsScalars(): void {
-        $m = new BiMap();
+        $m = BiMap::any();
         $m->put('one', 1);
         $m->put('two', 'string-value');
         $m->put('three', null);
@@ -146,14 +151,14 @@ final class BiMapTest extends TestCase {
     }
 
     public function testScalarValueUniquenessIsByValue(): void {
-        $m = new BiMap();
+        $m = BiMap::any();
         $m->put('k1', 'foo');
         $this->expectException(InvalidArgumentException::class);
         $m->put('k2', 'foo');  // same scalar value — conflict
     }
 
     public function testScalarValueDistinctFromSameLookingDifferentType(): void {
-        $m = new BiMap();
+        $m = BiMap::any();
         $m->put('intkey', 1);
         $m->put('strkey', '1');  // distinct from int 1 thanks to type prefix in hash
         self::assertSame('intkey', $m->getByValue(1));
@@ -161,7 +166,7 @@ final class BiMapTest extends TestCase {
     }
 
     public function testIsEmptyAndClear(): void {
-        $m = new BiMap();
+        $m = BiMap::any();
         self::assertTrue($m->isEmpty());
         $m->put('a', new \stdClass());
         $m->put('b', new \stdClass());

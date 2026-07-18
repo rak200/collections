@@ -13,9 +13,13 @@ final class AbstractCollectionTest extends TestCase {
     /**
      * Build a minimal concrete subclass exposing a setter so we can populate
      * $items directly and exercise the inherited mechanics in isolation.
+     *
+     * @param array<int|string, mixed> $items
+     * @return AbstractCollection<mixed>
      */
     private function make(string $type = 'mixed', array $items = []): AbstractCollection {
         return new class($type, $items) extends AbstractCollection {
+            /** @param array<int|string, mixed> $items */
             public function __construct(string $type, array $items) {
                 parent::__construct($type);
                 $this->items = $items;

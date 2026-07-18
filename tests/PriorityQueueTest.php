@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Rak200\Collections\Tests;
 
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Rak200\Collections\PriorityQueue;
 
 final class PriorityQueueTest extends TestCase {
 
     public function testEmptyQueueState(): void {
-        $pq = new PriorityQueue();
+        $pq = PriorityQueue::any();
         self::assertCount(0, $pq);
         self::assertNull($pq->peek());
         self::assertNull($pq->dequeue());
@@ -19,7 +20,7 @@ final class PriorityQueueTest extends TestCase {
     }
 
     public function testHigherPriorityIsExtractedFirst(): void {
-        $pq = new PriorityQueue();
+        $pq = PriorityQueue::any();
         $low = new \stdClass();
         $mid = new \stdClass();
         $high = new \stdClass();
@@ -32,7 +33,7 @@ final class PriorityQueueTest extends TestCase {
     }
 
     public function testTiesBreakFIFOByInsertionOrder(): void {
-        $pq = new PriorityQueue();
+        $pq = PriorityQueue::any();
         $a = new \stdClass();
         $b = new \stdClass();
         $c = new \stdClass();
@@ -45,7 +46,7 @@ final class PriorityQueueTest extends TestCase {
     }
 
     public function testPeekDoesNotMutate(): void {
-        $pq = new PriorityQueue();
+        $pq = PriorityQueue::any();
         $a = new \stdClass();
         $pq->enqueue($a, 1);
         self::assertSame($a, $pq->peek());
@@ -53,7 +54,7 @@ final class PriorityQueueTest extends TestCase {
     }
 
     public function testFloatPrioritiesWork(): void {
-        $pq = new PriorityQueue();
+        $pq = PriorityQueue::any();
         $a = new \stdClass();
         $b = new \stdClass();
         $pq->enqueue($a, 1.5);
@@ -63,13 +64,13 @@ final class PriorityQueueTest extends TestCase {
     }
 
     public function testTypeEnforcement(): void {
-        $pq = new PriorityQueue(\DateTimeImmutable::class);
+        $pq = PriorityQueue::of(\DateTimeImmutable::class);
         $this->expectException(InvalidArgumentException::class);
-        $pq->enqueue(new \stdClass(), 1);
+        $pq->enqueue(new \stdClass(), 1); // @phpstan-ignore argument.type (runtime rejection test)
     }
 
     public function testIterationIsNonDestructiveAndInPriorityOrder(): void {
-        $pq = new PriorityQueue();
+        $pq = PriorityQueue::any();
         $low = new \stdClass();
         $high = new \stdClass();
         $mid = new \stdClass();
@@ -92,7 +93,7 @@ final class PriorityQueueTest extends TestCase {
     }
 
     public function testToArrayReturnsExtractionOrderWithoutMutating(): void {
-        $pq = new PriorityQueue();
+        $pq = PriorityQueue::any();
         $a = new \stdClass();
         $b = new \stdClass();
         $pq->enqueue($a, 1);
@@ -102,7 +103,7 @@ final class PriorityQueueTest extends TestCase {
     }
 
     public function testMixedAcceptsScalars(): void {
-        $pq = new PriorityQueue('mixed');
+        $pq = PriorityQueue::any();
         $pq->enqueue('low', 1);
         $pq->enqueue('high', 10);
         $pq->enqueue(42, 5);
@@ -118,7 +119,7 @@ final class PriorityQueueTest extends TestCase {
      * passes, A5 is fixed.
      */
     public function testCurrentBeforeRewindDoesNotCrash(): void {
-        $pq = new PriorityQueue();
+        $pq = PriorityQueue::any();
         $pq->enqueue('a', 1);
         // Should return null or the top value gracefully — not throw TypeError
         $result = $pq->current();
@@ -126,7 +127,7 @@ final class PriorityQueueTest extends TestCase {
     }
 
     public function testIsEmptyAndClear(): void {
-        $pq = new PriorityQueue();
+        $pq = PriorityQueue::any();
         self::assertTrue($pq->isEmpty());
         $pq->enqueue('x', 1);
         $pq->enqueue('y', 2);
@@ -140,7 +141,7 @@ final class PriorityQueueTest extends TestCase {
     }
 
     public function testManyOperationsPreserveHeapInvariant(): void {
-        $pq = new PriorityQueue();
+        $pq = PriorityQueue::any();
         $items = [];
         for ($i = 0; $i < 50; $i++) {
             $obj = new \stdClass();

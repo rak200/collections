@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function count, current, key, next, reset;
+use function count, key, next, reset;
 use InvalidArgumentException;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\HashesValues;
@@ -43,12 +43,12 @@ class ObjectMap implements \Iterator, \Countable, ToArray {
     private array $values = [];
 
     /**
-     * @param class-string<T_Key>|'object' $keyType Key class to enforce, or 'object' to accept any object.
-     * @param class-string<T_Value>|'object' $valueType Value class to enforce, or 'object' to accept any object.
+     * @param string $keyType Key class to enforce, or 'object' to accept any object.
+     * @param string $valueType Value class to enforce, or 'object' to accept any object.
      * @param iterable<array{0: T_Key, 1: T_Value}> $pairs Initial entries as `[key, value]` pairs.
      * @throws InvalidArgumentException When any key or value violates its type.
      */
-    public function __construct(
+    protected function __construct(
         private string $keyType = 'object',
         private string $valueType = 'object',
         iterable $pairs = []
@@ -58,12 +58,39 @@ class ObjectMap implements \Iterator, \Countable, ToArray {
         }
     }
 
-    /** @return class-string<T_Key>|'object' */
+    /**
+     * Factory for a map accepting any objects as keys and values.
+     *
+     * @param iterable<array{0: object, 1: object}> $pairs Initial entries as `[key, value]` pairs.
+     * @return self<object, object>
+     */
+    public static function any(iterable $pairs = []): self {
+        return new self('object', 'object', $pairs);
+    }
+
+    /**
+     * Typed factory for class-typed keys and values. Both types are inferred
+     * statically: `ObjectMap::of(User::class, Role::class)` is
+     * `ObjectMap<User, Role>` in both PHPStan and IDE analysis.
+     *
+     * @template TK of object
+     * @template TV of object
+     * @param class-string<TK> $keyClass Key class to enforce.
+     * @param class-string<TV> $valueClass Value class to enforce.
+     * @param iterable<array{0: TK, 1: TV}> $pairs Initial entries as `[key, value]` pairs.
+     * @return self<TK, TV>
+     * @throws InvalidArgumentException When any key or value violates its type.
+     */
+    public static function of(string $keyClass, string $valueClass, iterable $pairs = []): self {
+        return new self($keyClass, $valueClass, $pairs);
+    }
+
+    /** @return string A value class-string, or 'object' for any object. */
     public function getKeyType(): string {
         return $this->keyType;
     }
 
-    /** @return class-string<T_Value>|'object' */
+    /** @return string A value class-string, or 'object' for any object. */
     public function getValueType(): string {
         return $this->valueType;
     }
@@ -142,14 +169,16 @@ class ObjectMap implements \Iterator, \Countable, ToArray {
         $this->values = [];
     }
 
-    /** @return T_Value Value at the current iteration cursor. */
-    public function current(): object {
-        return current($this->values);
+    /** @return T_Value|null Value at the current iteration cursor, or null past the end. */
+    public function current(): ?object {
+        $hash = key($this->values);
+        return $hash === null ? null : $this->values[$hash];
     }
 
-    /** @return T_Key Key at the current iteration cursor. */
-    public function key(): object {
-        return $this->keys[key($this->values)];
+    /** @return T_Key|null Key at the current iteration cursor, or null past the end. */
+    public function key(): ?object {
+        $hash = key($this->values);
+        return $hash === null ? null : $this->keys[$hash];
     }
 
     /** Advance the iteration cursor. */

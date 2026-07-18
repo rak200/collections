@@ -34,6 +34,20 @@ composer require rak200/collections
 
 All types implement `Countable`, `Rak200\Caster\Contracts\ToArray`, and an appropriate iteration / array-access interface.
 
+## Construction
+
+Collections are built through **static factories**, not `new` (constructors are `protected`). The factory carries the element type so both PHPStan and IDE tooling infer it — `Vector::ofInt()` is a `Vector<int>`, `Vector::of(User::class)` a `Vector<User>`.
+
+| Factory                              | Element type                                              |
+|--------------------------------------|-----------------------------------------------------------|
+| `X::any()`                           | untyped (`mixed` — no runtime enforcement)                |
+| `X::of(Foo::class)`                  | instances of `Foo`                                        |
+| `X::ofInt()` / `ofString()` / `ofBool()` / `ofFloat()` / `ofObject()` / `ofCallable()` | the matching PHP built-in type |
+
+Key/value collections take the key discriminator first — `Map::of('string', Foo::class)`, `BiMap::of('int', Foo::class)`, `ObjectMap::of(Key::class, Value::class)` — or `X::any()` for untyped. `CircularBuffer` keeps capacity first: `CircularBuffer::any(3)` / `CircularBuffer::of(3, Foo::class)`. `OrderedSet` takes an optional comparator last: `OrderedSet::of(Foo::class, comparator: $cmp)`.
+
+> `LinkedList`, `Queue`, and `Deque` still expose public (soft-`@deprecated`) constructors because they are composed by other collections; prefer their factories in new code.
+
 ## Usage
 
 ### Typed vector
@@ -43,7 +57,7 @@ Reach for it when you need an ordered, int-indexed list of items with type enfor
 ```php
 use Rak200\Collections\Vector;
 
-$users = new Vector(User::class);
+$users = Vector::of(User::class);
 $users->add(0, $alice);
 $users->add(1, $bob);
 
@@ -58,7 +72,7 @@ $users->remove(0);
 ### Untyped (mixed) vector
 
 ```php
-$bag = new Vector();               // accepts any value (scalar or object)
+$bag = Vector::any();              // accepts any value (scalar or object)
 $bag[] = 42;
 $bag[] = 'hello';
 $bag[] = $anything;
@@ -66,16 +80,15 @@ $bag[] = $anything;
 
 ### Pseudo-typed collection
 
-Every `$type` parameter accepts a class-string, `'mixed'` (skip), `'object'` (any object), or one of the PHP built-in pseudo-types: `'int'`/`'integer'`, `'string'`, `'bool'`/`'boolean'`, `'float'`/`'double'`, `'array'`, `'iterable'`, `'callable'`.
+The single-value collections expose a factory per PHP built-in type — `ofInt()`, `ofString()`, `ofBool()`, `ofFloat()`, `ofObject()`, `ofCallable()` — alongside `of(Foo::class)` and `any()`.
 
 ```php
-$counts  = new Vector('int');
+$counts = Vector::ofInt();
 $counts->add(0, 42);               // ok
 $counts->add(1, 'three');          // InvalidArgumentException
 
-$labels  = new Set('string');
-$weights = new Map('string', 'float');
-$pq      = new PriorityQueue('callable');
+$labels = Set::ofString();
+$pq     = PriorityQueue::ofCallable();
 ```
 
 ### Doubly linked list
@@ -85,7 +98,7 @@ Reach for it when you need to splice items in or out at arbitrary positions and 
 ```php
 use Rak200\Collections\LinkedList;
 
-$list = new LinkedList(Task::class);
+$list = LinkedList::of(Task::class);
 $first  = $list->push($a);           // returns the node
 $second = $list->push($b);
 $list->insertBefore($second, $c);    // O(1)
@@ -99,7 +112,7 @@ Reach for it for background-job processing, BFS frontiers, message buffers — a
 ```php
 use Rak200\Collections\Queue;
 
-$jobs = new Queue(Job::class);
+$jobs = Queue::of(Job::class);
 $jobs->enqueue($job1);
 $jobs->enqueue($job2);
 $jobs->peek();      // $job1
@@ -113,7 +126,7 @@ Reach for it for undo / redo, DFS / backtracking, parser scopes, expression eval
 ```php
 use Rak200\Collections\Stack;
 
-$undo = new Stack(Action::class);
+$undo = Stack::of(Action::class);
 $undo->push($action1);
 $undo->push($action2);
 $undo->pop();       // $action2
@@ -126,7 +139,7 @@ Reach for it for membership tests, deduplication, visited-node tracking in graph
 ```php
 use Rak200\Collections\Set;
 
-$visited = new Set(Node::class);
+$visited = Set::of(Node::class);
 $visited->add($node);     // true
 $visited->add($node);     // false — already present
 $visited->contains($node); // true
@@ -139,11 +152,11 @@ Reach for it for keyed lookups (id → entity, slug → page, code → label), i
 ```php
 use Rak200\Collections\Map;
 
-$index = new Map('string', User::class);
+$index = Map::of('string', User::class);
 $index->set('alice', $alice);
 $index->get('alice');     // $alice
 $index->has('bob');       // false
-$index->delete('alice');  // true
+$index->remove('alice');  // true
 
 foreach ($index as $key => $user) {
     // ...
@@ -157,7 +170,7 @@ Reach for it for scheduling (Dijkstra / A* frontier, urgent-first jobs), event s
 ```php
 use Rak200\Collections\PriorityQueue;
 
-$pq = new PriorityQueue(Job::class);
+$pq = PriorityQueue::of(Job::class);
 $pq->enqueue($urgentJob, 10);
 $pq->enqueue($normalJob, 5);
 $pq->enqueue($laterJob, 1);
@@ -173,14 +186,14 @@ Reach for it for leaderboards / rankings (with a comparator) or insertion-ordere
 use Rak200\Collections\OrderedSet;
 
 // Insertion-ordered (default)
-$visited = new OrderedSet(Node::class);
+$visited = OrderedSet::of(Node::class);
 $visited->add($n1);
 $visited->add($n2);
 $visited->first();     // $n1
 
 // Sorted by custom comparator
 $byScore = fn(Player $a, Player $b) => $b->score <=> $a->score;
-$leaderboard = new OrderedSet(Player::class, $byScore);
+$leaderboard = OrderedSet::of(Player::class, comparator: $byScore);
 $leaderboard->add($alice);
 $leaderboard->add($bob);
 $leaderboard->first(); // highest-score player
@@ -193,7 +206,7 @@ Reach for it for session-id ↔ user, slug ↔ entity, enum-code ↔ label table
 ```php
 use Rak200\Collections\BiMap;
 
-$sessions = new BiMap('string', User::class);
+$sessions = BiMap::of('string', User::class);
 $sessions->put('sess-abc', $alice);
 $sessions->put('sess-xyz', $bob);
 
@@ -210,7 +223,7 @@ Reach for it to attach metadata / audit info / cached results to existing domain
 use Rak200\Collections\ObjectMap;
 
 // Attach metadata to existing object instances without modifying them.
-$metadata = new ObjectMap(User::class, AuditEntry::class);
+$metadata = ObjectMap::of(User::class, AuditEntry::class);
 $metadata->set($alice, $aliceAudit);
 $metadata->set($bob, $bobAudit);
 
@@ -231,7 +244,7 @@ Reach for it for HTTP headers (where keys can repeat), `groupBy` results, tag �
 ```php
 use Rak200\Collections\MultiMap;
 
-$headers = new MultiMap('string', 'string');
+$headers = MultiMap::any();        // string keys → string values (untyped)
 $headers->add('Set-Cookie', 'session=abc');
 $headers->add('Set-Cookie', 'tracking=xyz');
 $headers->add('Content-Type', 'text/html');
@@ -250,7 +263,7 @@ Reach for it for frequency tables, word counts, histograms, vote tallies — any
 ```php
 use Rak200\Collections\MultiSet;
 
-$words = new MultiSet('string', ['the', 'quick', 'the', 'fox', 'the', 'fox']);
+$words = MultiSet::ofString(['the', 'quick', 'the', 'fox', 'the', 'fox']);
 $words->countOf('the');          // 3
 $words->countOf('fox');          // 2
 $words->distinct();              // 3 — unique items
@@ -265,7 +278,7 @@ Reach for it for browser-style back/forward history, sliding-window scans, work-
 ```php
 use Rak200\Collections\Deque;
 
-$buffer = new Deque('string');
+$buffer = Deque::ofString();
 $buffer->pushBack('b');
 $buffer->pushBack('c');
 $buffer->pushFront('a');
@@ -282,7 +295,7 @@ Reach for it to keep only the last N items: sliding windows, in-memory log ringb
 ```php
 use Rak200\Collections\CircularBuffer;
 
-$recent = new CircularBuffer(3, 'string');
+$recent = CircularBuffer::any(3);  // capacity 3, untyped
 $recent->push('a');               // null  — had room
 $recent->push('b');               // null
 $recent->push('c');               // null
@@ -298,10 +311,10 @@ Reach for it for allow / deny lists, frozen membership tables, or read-only snap
 use Rak200\Collections\ImmutableSet;
 use Rak200\Collections\Set;
 
-$primes = new ImmutableSet('int', [2, 3, 5, 7]);
+$primes = ImmutableSet::ofInt([2, 3, 5, 7]);
 $primes->contains(5);             // true
-$primes->union(new Set('int', [11]));    // new ImmutableSet([2, 3, 5, 7, 11])
-$primes->intersection(new ImmutableSet('int', [3, 5, 13])); // new ImmutableSet([3, 5])
+$primes->union(Set::ofInt([11]));    // new ImmutableSet([2, 3, 5, 7, 11])
+$primes->intersection(ImmutableSet::ofInt([3, 5, 13])); // new ImmutableSet([3, 5])
 
 // Convert an existing mutable Set into a read-only snapshot.
 $snapshot = ImmutableSet::fromSet($mutableSet);
@@ -314,7 +327,7 @@ Reach for it for frozen configuration / feature flags, lookup tables built once 
 ```php
 use Rak200\Collections\ImmutableMap;
 
-$config = new ImmutableMap('string', 'mixed', [
+$config = ImmutableMap::any([
     'debug' => false,
     'timeout' => 30,
 ]);
@@ -335,14 +348,15 @@ Caster::toJson($users);            // delegates to $users->toArray()
 
 ```bash
 composer install
-composer test
+composer test      # PHPUnit 13
+composer phpstan   # PHPStan level 9
 ```
 
-The suite uses PHPUnit 13 and covers every `src/` class. Each class has a paired `tests/*Test.php` exercising construction, type enforcement, public API, and interface compliance.
+The suite uses PHPUnit 13 and covers every `src/` class. Each class has a paired `tests/*Test.php` exercising construction, type enforcement, public API, and interface compliance. `composer phpstan` runs level-9 static analysis, including a project extension (`phpstan/CollectionTypeResolver.php`) that binds each collection's generics from its factory/constructor discriminator strings.
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.4.2** — still pre-1.0 while the API stabilizes.
+Follows [Semantic Versioning](https://semver.org). Current version: **0.5.0** — still pre-1.0 while the API stabilizes.
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`

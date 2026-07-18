@@ -1,7 +1,7 @@
 {
     "name": "rak200/collections",
     "description": "Typed generic collections for PHP 8.4+ (Vector, LinkedList, Queue, Stack, Set, Map, PriorityQueue, OrderedSet, BiMap, ObjectMap, MultiMap, MultiSet, Deque, CircularBuffer, ImmutableSet, ImmutableMap).",
-    "version": "0.4.2",
+    "version": "0.5.0",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -32,13 +32,16 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Rak200\\Collections\\Tests\\": "tests/"
+            "Rak200\\Collections\\Tests\\": "tests/",
+            "Rak200\\Collections\\PHPStan\\": "phpstan/"
         }
     },
     "require-dev": {
-        "phpunit/phpunit": "^13.1"
+        "phpunit/phpunit": "^13.1",
+        "phpstan/phpstan": "^2.0"
     },
     "scripts": {
-        "test": "phpunit"
+        "test": "phpunit",
+        "phpstan": "phpstan analyse --memory-limit=512M"
     }
 }

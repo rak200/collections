@@ -9,7 +9,7 @@ use Rak200\Collections\Internal\HashesValues;
 use Rak200\Collections\Internal\ValidatesType;
 use Rak200\Utils\Arr;
 use InvalidArgumentException;
-use function count, current, get_debug_type, is_int, is_string, key, next, reset, var_export;
+use function count, get_debug_type, is_int, is_string, key, next, reset, var_export;
 
 /**
  * Bidirectional map with unique keys AND unique values.
@@ -40,12 +40,37 @@ class BiMap implements \Iterator, \Countable, ToArray {
 
     /**
      * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
-     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $valueType Class name or built-in pseudo-type to enforce on values, or `'mixed'` to skip.
+     * @param string $valueType Class name or built-in pseudo-type to enforce on values, or `'mixed'` to skip.
      */
-    public function __construct(
+    protected function __construct(
         private string $keyType = 'mixed',
         private string $valueType = 'mixed'
     ) {}
+
+    /**
+     * Factory for an untyped map (no runtime type enforcement).
+     *
+     * @return self<int|string, mixed>
+     */
+    public static function any(): self {
+        return new self();
+    }
+
+    /**
+     * Typed factory for class-typed values. The value type is inferred
+     * statically: `BiMap::of('string', Foo::class)` is `BiMap<int|string, Foo>`
+     * in both PHPStan and IDE analysis. Key narrowing beyond `int|string` is
+     * provided by the PHPStan extension for direct `new` calls.
+     *
+     * @template T of object
+     * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
+     * @param class-string<T> $valueClass Class to enforce on values.
+     * @return self<int|string, T>
+     * @throws InvalidArgumentException When any key or value violates its type.
+     */
+    public static function of(string $keyType, string $valueClass): self {
+        return new self($keyType, $valueClass);
+    }
 
     /** @return 'int'|'string'|'mixed' */
     public function getKeyType(): string {
@@ -196,13 +221,14 @@ class BiMap implements \Iterator, \Countable, ToArray {
         $this->valueHashToKey = [];
     }
 
-    /** @return T_Value Value at the current iteration cursor. */
+    /** @return T_Value|null Value at the current iteration cursor, or null past the end. */
     public function current(): mixed {
-        return current($this->keyToValue);
+        $key = key($this->keyToValue);
+        return $key === null ? null : $this->keyToValue[$key];
     }
 
-    /** @return T_Key Key at the current iteration cursor. */
-    public function key(): int|string {
+    /** @return T_Key|null Key at the current iteration cursor, or null past the end. */
+    public function key(): int|string|null {
         return key($this->keyToValue);
     }
 

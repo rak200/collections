@@ -36,12 +36,37 @@ class MultiMap implements \Iterator, \Countable, ToArray {
 
     /**
      * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
-     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $valueType Class name or built-in pseudo-type to enforce on values, or `'mixed'` to skip.
+     * @param string $valueType Class name or built-in pseudo-type to enforce on values, or `'mixed'` to skip.
      */
-    public function __construct(
+    protected function __construct(
         private string $keyType = 'mixed',
         private string $valueType = 'mixed'
     ) {}
+
+    /**
+     * Factory for an untyped map (no runtime type enforcement).
+     *
+     * @return self<int|string, mixed>
+     */
+    public static function any(): self {
+        return new self();
+    }
+
+    /**
+     * Typed factory for class-typed values. The value type is inferred
+     * statically: `MultiMap::of('string', Foo::class)` is `MultiMap<int|string, Foo>`
+     * in both PHPStan and IDE analysis. Key narrowing beyond `int|string` is
+     * provided by the PHPStan extension for direct `new` calls.
+     *
+     * @template T of object
+     * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
+     * @param class-string<T> $valueClass Class to enforce on values.
+     * @return self<int|string, T>
+     * @throws InvalidArgumentException When any key or value violates its type.
+     */
+    public static function of(string $keyType, string $valueClass): self {
+        return new self($keyType, $valueClass);
+    }
 
     /** @return 'int'|'string'|'mixed' */
     public function getKeyType(): string {
@@ -185,7 +210,13 @@ class MultiMap implements \Iterator, \Countable, ToArray {
 
     /** @return list<T_Value> Flat list of every stored value in insertion order. */
     public function values(): array {
-        return Arr::merge(...Arr::values($this->items));
+        $flat = [];
+        foreach ($this->items as $values) {
+            foreach ($values as $value) {
+                $flat[] = $value;
+            }
+        }
+        return $flat;
     }
 
     /**
@@ -234,14 +265,14 @@ class MultiMap implements \Iterator, \Countable, ToArray {
         return $out;
     }
 
-    /** @return T_Value Value at the current iteration position. */
+    /** @return T_Value|null Value at the current iteration position, or null past the end. */
     public function current(): mixed {
         return $this->iterSnapshot[$this->iterPos][1] ?? null;
     }
 
     /** @return T_Key Key at the current iteration position. */
-    public function key(): int|string {
-        return $this->iterSnapshot[$this->iterPos][0];
+    public function key(): int|string|null {
+        return $this->iterSnapshot[$this->iterPos][0] ?? null;
     }
 
     /** Advance the iteration position. */

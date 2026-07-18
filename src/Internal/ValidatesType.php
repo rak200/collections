@@ -37,7 +37,7 @@ abstract class ValidatesType {
      * The `$label` is interpolated into the error message so callers can
      * distinguish between items, keys, and values.
      *
-     * @param class-string|'mixed'|'object'|'int'|'integer'|'string'|'bool'|'boolean'|'float'|'double'|'array'|'iterable'|'callable' $type
+     * @param string $type A class-string or one of the pseudo-type discriminators listed in the class docblock.
      * @param string $label Used in the error message (e.g. `'Item'`, `'Key'`, `'Value'`).
      * @throws InvalidArgumentException When $value does not satisfy $type.
      */
@@ -53,7 +53,7 @@ abstract class ValidatesType {
             'iterable' => is_iterable($value),
             'callable' => is_callable($value),
             // 'null' => $value === null, // 'null' is not a valid type for collection items, keys, or values, so we don't support it as a type discriminator. If we did, this would be the check.
-            default => is_a($value, $type),
+            default => is_object($value) && is_a($value, $type),
         };
 
         if (!$valid) {

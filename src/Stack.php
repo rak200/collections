@@ -6,6 +6,7 @@ namespace Rak200\Collections;
 
 use function array_pop, count;
 use InvalidArgumentException;
+use Rak200\Collections\Internal\ProvidesValueFactories;
 use Rak200\Collections\Internal\ValidatesType;
 
 /**
@@ -24,18 +25,35 @@ use Rak200\Collections\Internal\ValidatesType;
  */
 class Stack extends AbstractCollection {
 
+    use ProvidesValueFactories;
+
     private int $position = 0;
 
     /**
-     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
+     * @param string $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
      * @param iterable<T_Value> $items Initial items pushed in order (last becomes top).
      * @throws InvalidArgumentException When any item does not satisfy $type.
      */
-    public function __construct(string $type = 'mixed', iterable $items = []) {
+    protected function __construct(string $type = 'mixed', iterable $items = []) {
         parent::__construct($type);
         foreach ($items as $item) {
             $this->push($item);
         }
+    }
+
+    /**
+     * Typed factory for class instances. Unlike the constructor, the item
+     * type is inferred statically: `Stack::of(Foo::class)` is `Stack<Foo>`
+     * in both PHPStan and IDE analysis.
+     *
+     * @template T of object
+     * @param class-string<T> $class Class to enforce on items.
+     * @param iterable<T> $items Initial items pushed in order (last becomes top).
+     * @return self<T>
+     * @throws InvalidArgumentException When any item does not satisfy $class.
+     */
+    public static function of(string $class, iterable $items = []): self {
+        return new self($class, $items);
     }
 
     /**

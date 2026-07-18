@@ -31,11 +31,11 @@ class Map extends AbstractCollection implements \ArrayAccess {
 
     /**
      * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
-     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $valueType Class name or built-in pseudo-type to enforce on values, or `'mixed'` to skip.
+     * @param string $valueType Class name or built-in pseudo-type to enforce on values, or `'mixed'` to skip.
      * @param iterable<T_Key, T_Value> $items Initial entries.
      * @throws InvalidArgumentException When any key or value violates its type.
      */
-    public function __construct(
+    protected function __construct(
         private string $keyType = 'mixed',
         string $valueType = 'mixed',
         iterable $items = []
@@ -44,6 +44,33 @@ class Map extends AbstractCollection implements \ArrayAccess {
         foreach ($items as $key => $value) {
             $this->set($key, $value);
         }
+    }
+
+    /**
+     * Factory for an untyped map (no runtime type enforcement).
+     *
+     * @param iterable<int|string, mixed> $items Initial entries.
+     * @return self<int|string, mixed>
+     */
+    public static function any(iterable $items = []): self {
+        return new self('mixed', 'mixed', $items);
+    }
+
+    /**
+     * Typed factory for class-typed values. The value type is inferred
+     * statically: `Map::of('string', Foo::class)` is `Map<int|string, Foo>`
+     * in both PHPStan and IDE analysis. Key narrowing beyond `int|string` is
+     * provided by the PHPStan extension for direct `new` calls.
+     *
+     * @template T of object
+     * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
+     * @param class-string<T> $valueClass Class to enforce on values.
+     * @param iterable<int|string, T> $items Initial entries.
+     * @return self<int|string, T>
+     * @throws InvalidArgumentException When any key or value violates its type.
+     */
+    public static function of(string $keyType, string $valueClass, iterable $items = []): self {
+        return new self($keyType, $valueClass, $items);
     }
 
     /** @return 'int'|'string'|'mixed' */
@@ -59,7 +86,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
     /**
      * Validate that $key matches the configured key type.
      *
-     * @param T_Key $key
+     * @param int|string $key
      * @throws InvalidArgumentException When the key does not match $this->keyType.
      */
     private function checkKey(int|string $key): void {
@@ -119,7 +146,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
         return true;
     }
 
-    /** @return T_Key[] Keys in insertion order. */
+    /** @return list<int|string> Keys in insertion order. */
     public function keys(): array {
         return Arr::keys($this->items);
     }
@@ -129,7 +156,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
         return Arr::values($this->items);
     }
 
-    /** @return T_Value Value at the current iteration cursor. */
+    /** @return T_Value|null Value at the current iteration cursor, or null past the end. */
     public function current(): mixed {
         return parent::current();
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Rak200\Collections\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Rak200\Collections\Internal\LinkedNode;
 use Rak200\Collections\LinkedList;
@@ -14,37 +15,42 @@ final class LinkedNodeTest extends TestCase {
      * Test readonly assignment and immutability of the value property.
      * @return void
      */
-    public function testValueIsReadonly(): void {
-        $node = new LinkedNode(new LinkedList(), 'hello');
+    /** @return iterable<string, array{string}> */
+    public static function guardedPropertyProvider(): iterable {
+        yield 'value' => ['value'];
+    }
+
+    #[DataProvider('guardedPropertyProvider')]
+    public function testValueIsReadonly(string $property): void {
+        $node = new LinkedNode(LinkedList::any(), 'hello');
         self::assertSame('hello', $node->value);
         $this->expectException(\Error::class);
-        // @phpstan-ignore-next-line
-        $node->value = 'world';
+        $node->{$property} = 'world';
     }
 
     public function testPrevAndNextDefaultNull(): void {
-        $node = new LinkedNode(new LinkedList(), 42);
+        $node = new LinkedNode(LinkedList::any(), 42);
         self::assertNull($node->prev);
         self::assertNull($node->next);
     }
 
     public function testHoldsArbitraryValueType(): void {
         $obj = new \stdClass();
-        $node = new LinkedNode(new LinkedList(), $obj);
+        $node = new LinkedNode(LinkedList::any(), $obj);
         self::assertSame($obj, $node->value);
     }
 
     public function testNodeOwner(): void {
         $obj = new \stdClass();
-        $list = new LinkedList();
+        $list = LinkedList::any();
         $node = new LinkedNode($list, $obj);
         self::assertSame($list, $node->owner);
     }
 
     public function testInvalidNodeOwner(): void {
         $obj = new \stdClass();
-        $list = new LinkedList();
-        $node = new LinkedNode(new LinkedList(), $obj);
+        $list = LinkedList::any();
+        $node = new LinkedNode(LinkedList::any(), $obj);
         $this->expectException(\InvalidArgumentException::class);
         $list->remove($node);
     }

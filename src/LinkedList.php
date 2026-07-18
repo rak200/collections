@@ -8,6 +8,7 @@ use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\LinkedNode;
 use Rak200\Collections\Internal\ValidatesType;
 use InvalidArgumentException;
+use Rak200\Collections\Internal\ProvidesValueFactories;
 
 /**
  * Doubly linked list of typed values.
@@ -32,7 +33,8 @@ use InvalidArgumentException;
  */
 class LinkedList implements \Iterator, \Countable, ToArray {
 
-    /** @var LinkedNode<T_Value>|null */
+    use ProvidesValueFactories;
+/** @var LinkedNode<T_Value>|null */
     private ?LinkedNode $head = null;
 
     /** @var LinkedNode<T_Value>|null */
@@ -42,10 +44,13 @@ class LinkedList implements \Iterator, \Countable, ToArray {
     private ?LinkedNode $cursor = null;
 
     private int $position = 0;
+    /** @var int<0, max> */
     private int $count = 0;
 
     /**
-     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
+     * @deprecated soft-deprecated in 0.5.0 — prefer the static factories ({@see self::of()}, {@see self::ofInt()}, {@see self::any()}, …). Stays public because this collection is composed by others; will be revisited in 1.0.0.
+     *
+     * @param string $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
      * @param iterable<T_Value> $items Initial items appended in order.
      * @throws InvalidArgumentException When any item does not satisfy $type.
      */
@@ -53,6 +58,21 @@ class LinkedList implements \Iterator, \Countable, ToArray {
         foreach ($items as $item) {
             $this->push($item);
         }
+    }
+
+    /**
+     * Typed factory for class instances. Unlike the constructor, the item
+     * type is inferred statically: `LinkedList::of(Foo::class)` is `LinkedList<Foo>`
+     * in both PHPStan and IDE analysis.
+     *
+     * @template T of object
+     * @param class-string<T> $class Class to enforce on items.
+     * @param iterable<T> $items Initial items appended in order.
+     * @return self<T>
+     * @throws InvalidArgumentException When any item does not satisfy $class.
+     */
+    public static function of(string $class, iterable $items = []): self {
+        return new self($class, $items);
     }
 
     /**
@@ -206,7 +226,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
         }
         $node->prev = null;
         $node->next = null;
-        $this->count--;
+        $this->count = max(0, $this->count - 1);
     }
 
     /**
@@ -246,9 +266,9 @@ class LinkedList implements \Iterator, \Countable, ToArray {
         $this->count = 0;
     }
 
-    /** @return T_Value Value at the current iteration cursor. */
+    /** @return T_Value|null Value at the current iteration cursor, or null past the end. */
     public function current(): mixed {
-        return $this->cursor->value;
+        return $this->cursor?->value;
     }
 
     /** Zero-based offset from the head of the list. */

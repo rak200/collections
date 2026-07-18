@@ -10,6 +10,7 @@ use InvalidArgumentException;
 use Rak200\Collections\Internal\HashesValues;
 use Rak200\Collections\Internal\ValidatesType;
 use Rak200\Utils\Arr;
+use Rak200\Collections\Internal\ProvidesValueFactories;
 
 /**
  * Unique-element set with a predictable iteration order.
@@ -26,19 +27,21 @@ use Rak200\Utils\Arr;
  *
  * @template T_Value
  * @extends AbstractCollection<T_Value>
+ * @phpstan-consistent-constructor
  * @author rak200 <rak.ricardo@windowslive.com>
  */
 class OrderedSet extends AbstractCollection {
 
-    use HashesValues;
+    use ProvidesValueFactories;
+use HashesValues;
 
     /**
-     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
+     * @param string $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
      * @param (Closure(T_Value, T_Value): int)|null $comparator Sort callback; null = insertion order.
      * @param iterable<T_Value> $items Initial items added in order; duplicates are ignored.
      * @throws InvalidArgumentException When any item does not satisfy $type.
      */
-    public function __construct(
+    protected function __construct(
         string $type = 'mixed',
         iterable $items = [],
         private ?Closure $comparator = null
@@ -50,11 +53,40 @@ class OrderedSet extends AbstractCollection {
     }
 
     /**
+     * Typed factory for class instances. Unlike the constructor, the item
+     * type is inferred statically: `OrderedSet::of(Foo::class)` is
+     * `OrderedSet<Foo>` in both PHPStan and IDE analysis.
+     *
+     * @template T of object
+     * @param class-string<T> $class Class to enforce on items.
+     * @param iterable<T> $items Initial items added in order; duplicates are ignored.
+     * @param (Closure(T, T): int)|null $comparator Sort callback; null = insertion order.
+     * @return self<T>
+     * @throws InvalidArgumentException When any item does not satisfy $class.
+     */
+    public static function of(string $class, iterable $items = [], ?Closure $comparator = null): self {
+        return new self($class, $items, $comparator);
+    }
+
+    /**
+     * Untyped ordered set (no runtime type enforcement), optionally sorted.
+     * Overrides {@see ProvidesValueFactories::any()} to carry a comparator.
+     *
+     * @param iterable<mixed> $items
+     * @param (Closure(mixed, mixed): int)|null $comparator Sort callback; null = insertion order.
+     * @return self<mixed>
+     */
+    public static function any(iterable $items = [], ?Closure $comparator = null): self {
+        return new self('mixed', $items, $comparator);
+    }
+
+    /**
      * Zero-based position of the current item within the set. The internal
      * hash key is hidden so the `Iterator<int, T_Value>` contract holds.
      */
-    public function key(): int {
-        return array_search(parent::key(), Arr::keys($this->items), true);
+    public function key(): ?int {
+        $pos = array_search(parent::key(), Arr::keys($this->items), true);
+        return $pos === false ? null : $pos;
     }
 
     /**

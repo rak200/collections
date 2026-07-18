@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace Rak200\Collections\Tests;
 
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Rak200\Collections\MultiMap;
 
 final class MultiMapTest extends TestCase {
 
+    use ConstructsProtected;
+
     public function testEmptyState(): void {
-        $m = new MultiMap();
+        $m = MultiMap::any();
         self::assertCount(0, $m);
         self::assertSame(0, $m->total());
         self::assertTrue($m->isEmpty());
@@ -23,7 +26,7 @@ final class MultiMapTest extends TestCase {
     }
 
     public function testAddAppendsUnderKey(): void {
-        $m = new MultiMap();
+        $m = MultiMap::any();
         $m->add('h', 'one');
         $m->add('h', 'two');
         $m->add('h', 'three');
@@ -35,7 +38,7 @@ final class MultiMapTest extends TestCase {
     }
 
     public function testHasAndHasValue(): void {
-        $m = new MultiMap();
+        $m = MultiMap::any();
         $m->add('k', 'a');
         $m->add('k', 'b');
         self::assertTrue($m->has('k'));
@@ -47,7 +50,7 @@ final class MultiMapTest extends TestCase {
     }
 
     public function testSetReplacesAllValues(): void {
-        $m = new MultiMap();
+        $m = MultiMap::any();
         $m->add('k', 'a');
         $m->add('k', 'b');
         $m->set('k', ['x', 'y']);
@@ -55,7 +58,7 @@ final class MultiMapTest extends TestCase {
     }
 
     public function testRemoveDropsAllValuesForKey(): void {
-        $m = new MultiMap();
+        $m = MultiMap::any();
         $m->add('k', 'a');
         $m->add('k', 'b');
         self::assertTrue($m->remove('k'));
@@ -64,7 +67,7 @@ final class MultiMapTest extends TestCase {
     }
 
     public function testRemoveValueDropsOnlyOneOccurrence(): void {
-        $m = new MultiMap();
+        $m = MultiMap::any();
         $m->add('k', 'a');
         $m->add('k', 'a');
         $m->add('k', 'b');
@@ -74,14 +77,14 @@ final class MultiMapTest extends TestCase {
     }
 
     public function testRemoveLastValueDropsKey(): void {
-        $m = new MultiMap();
+        $m = MultiMap::any();
         $m->add('k', 'only');
         $m->removeValue('k', 'only');
         self::assertFalse($m->has('k'));
     }
 
     public function testKeysAndValues(): void {
-        $m = new MultiMap();
+        $m = MultiMap::any();
         $m->add('a', 1);
         $m->add('b', 2);
         $m->add('a', 3);
@@ -89,27 +92,38 @@ final class MultiMapTest extends TestCase {
         self::assertSame([1, 3, 2], $m->values());
     }
 
-    public function testKeyTypeEnforcement(): void {
-        $m = new MultiMap('int');
-        $m->add(0, 'ok');
-        $this->expectException(InvalidArgumentException::class);
-        $m->add('nope', 'bad');
+    /** @return iterable<string, array{'int'|'string'|'mixed', string, int|string, mixed}> */
+    public static function rejectedEntryProvider(): iterable {
+        yield 'string key into int-keyed map' => ['int', 'mixed', 'nope', 'bad'];
+        yield 'stdClass value into DateTimeImmutable map' => ['string', \DateTimeImmutable::class, 'k', new \stdClass()];
     }
 
-    public function testValueTypeEnforcement(): void {
-        $m = new MultiMap('string', \DateTimeImmutable::class);
+    /** @param 'int'|'string'|'mixed' $keyType */
+    #[DataProvider('rejectedEntryProvider')]
+    public function testAddRejectsInvalidKeyOrValue(string $keyType, string $valueType, int|string $key, mixed $value): void {
+        $m = self::build(MultiMap::class, $keyType, $valueType);
         $this->expectException(InvalidArgumentException::class);
-        $m->add('k', new \stdClass());
+        $m->add($key, $value);
     }
 
-    public function testSetValidatesEveryValue(): void {
-        $m = new MultiMap('string', 'int');
+    /** @return iterable<string, array{'int'|'string'|'mixed', string, list<mixed>}> */
+    public static function rejectedValueListProvider(): iterable {
+        yield 'string among ints' => ['string', 'int', [1, 2, 'three']];
+    }
+
+    /**
+     * @param 'int'|'string'|'mixed' $keyType
+     * @param list<mixed> $values
+     */
+    #[DataProvider('rejectedValueListProvider')]
+    public function testSetValidatesEveryValue(string $keyType, string $valueType, array $values): void {
+        $m = self::build(MultiMap::class, $keyType, $valueType);
         $this->expectException(InvalidArgumentException::class);
-        $m->set('k', [1, 2, 'three']);
+        $m->set('k', $values);
     }
 
     public function testIterationYieldsOnePairPerValue(): void {
-        $m = new MultiMap();
+        $m = MultiMap::any();
         $m->add('a', 1);
         $m->add('a', 2);
         $m->add('b', 3);
@@ -121,7 +135,7 @@ final class MultiMapTest extends TestCase {
     }
 
     public function testToArrayKeepsListShape(): void {
-        $m = new MultiMap();
+        $m = MultiMap::any();
         $m->add('a', 1);
         $m->add('a', 2);
         $m->add('b', 3);
@@ -129,7 +143,7 @@ final class MultiMapTest extends TestCase {
     }
 
     public function testClear(): void {
-        $m = new MultiMap();
+        $m = MultiMap::any();
         $m->add('a', 1);
         $m->add('b', 2);
         $m->clear();
@@ -138,7 +152,7 @@ final class MultiMapTest extends TestCase {
     }
 
     public function testMixedValueAcceptsScalars(): void {
-        $m = new MultiMap();
+        $m = MultiMap::any();
         $m->add('mix', 1);
         $m->add('mix', 'two');
         $m->add('mix', null);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rak200\Collections\Tests;
 
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Rak200\Collections\AbstractCollection;
 use Rak200\Collections\OrderedSet;
@@ -12,7 +13,7 @@ use Rak200\Collections\OrderedSet;
 final class OrderedSetTest extends TestCase {
 
     public function testEmptyState(): void {
-        $s = new OrderedSet();
+        $s = OrderedSet::any();
         self::assertCount(0, $s);
         self::assertNull($s->first());
         self::assertNull($s->last());
@@ -20,7 +21,7 @@ final class OrderedSetTest extends TestCase {
     }
 
     public function testInsertionOrderByDefault(): void {
-        $s = new OrderedSet();
+        $s = OrderedSet::any();
         $a = new \stdClass();
         $b = new \stdClass();
         $c = new \stdClass();
@@ -33,14 +34,14 @@ final class OrderedSetTest extends TestCase {
     }
 
     public function testAddReturnsBool(): void {
-        $s = new OrderedSet();
+        $s = OrderedSet::any();
         $a = new \stdClass();
         self::assertTrue($s->add($a));
         self::assertFalse($s->add($a));
     }
 
     public function testRemoveAndContains(): void {
-        $s = new OrderedSet();
+        $s = OrderedSet::any();
         $a = new \stdClass();
         self::assertFalse($s->contains($a));
         $s->add($a);
@@ -52,7 +53,7 @@ final class OrderedSetTest extends TestCase {
 
     public function testCustomComparatorReordersOnAdd(): void {
         $byN = static fn(\stdClass $a, \stdClass $b): int => $a->n <=> $b->n;
-        $s = new OrderedSet('mixed', comparator: $byN);
+        $s = OrderedSet::of(\stdClass::class, comparator: $byN);
 
         $three = new \stdClass(); $three->n = 3;
         $one   = new \stdClass(); $one->n   = 1;
@@ -73,14 +74,14 @@ final class OrderedSetTest extends TestCase {
     }
 
     public function testTypeEnforcement(): void {
-        $s = new OrderedSet(\DateTimeImmutable::class);
+        $s = OrderedSet::of(\DateTimeImmutable::class);
         $this->expectException(InvalidArgumentException::class);
-        $s->add(new \stdClass());
+        $s->add(new \stdClass()); // @phpstan-ignore argument.type (runtime rejection test)
     }
 
     public function testInitialItemsDeduplicated(): void {
         $a = new \stdClass();
-        $s = new OrderedSet('mixed', [$a, $a, $a]);
+        $s = OrderedSet::any([$a, $a, $a]);
         self::assertCount(1, $s);
     }
 
@@ -89,13 +90,13 @@ final class OrderedSetTest extends TestCase {
         $three = new \stdClass(); $three->n = 3;
         $one   = new \stdClass(); $one->n   = 1;
         $two   = new \stdClass(); $two->n   = 2;
-        $s = new OrderedSet('mixed', [$three, $one, $two], $byN);
+        $s = OrderedSet::of(\stdClass::class, [$three, $one, $two], $byN);
         $out = array_map(static fn(\stdClass $o): int => $o->n, $s->toArray());
         self::assertSame([1, 2, 3], $out);
     }
 
     public function testToArrayIsZeroIndexed(): void {
-        $s = new OrderedSet();
+        $s = OrderedSet::any();
         $a = new \stdClass();
         $b = new \stdClass();
         $s->add($a);
@@ -104,11 +105,11 @@ final class OrderedSetTest extends TestCase {
     }
 
     public function testIsAbstractCollection(): void {
-        self::assertInstanceOf(AbstractCollection::class, new OrderedSet());
+        self::assertInstanceOf(AbstractCollection::class, OrderedSet::any());
     }
 
     public function testScalarsWithComparator(): void {
-        $s = new OrderedSet('mixed', comparator: static fn($a, $b) => $a <=> $b);
+        $s = OrderedSet::any(comparator: static fn($a, $b) => $a <=> $b);
         $s->add(3);
         $s->add(1);
         $s->add(2);
@@ -117,7 +118,7 @@ final class OrderedSetTest extends TestCase {
     }
 
     public function testMixedInsertionOrder(): void {
-        $s = new OrderedSet('mixed');
+        $s = OrderedSet::any();
         $obj = new \stdClass();
         $s->add('first');
         $s->add($obj);
@@ -126,7 +127,7 @@ final class OrderedSetTest extends TestCase {
     }
 
     public function testIsEmptyAndClear(): void {
-        $s = new OrderedSet('mixed', [1, 2, 3]);
+        $s = OrderedSet::any([1, 2, 3]);
         self::assertFalse($s->isEmpty());
         $s->clear();
         self::assertTrue($s->isEmpty());
@@ -135,26 +136,26 @@ final class OrderedSetTest extends TestCase {
 
     public function testUnionPreservesComparator(): void {
         $asc = static fn($a, $b) => $a <=> $b;
-        $a = new OrderedSet('mixed', [3, 1], $asc);
-        $b = new OrderedSet('mixed', [2, 5]);
+        $a = OrderedSet::any([3, 1], $asc);
+        $b = OrderedSet::any([2, 5]);
         self::assertSame([1, 2, 3, 5], $a->union($b)->toArray());
     }
 
     public function testIntersection(): void {
-        $a = new OrderedSet('mixed', [1, 2, 3, 4]);
-        $b = new OrderedSet('mixed', [3, 4, 5]);
+        $a = OrderedSet::any([1, 2, 3, 4]);
+        $b = OrderedSet::any([3, 4, 5]);
         self::assertSame([3, 4], $a->intersection($b)->toArray());
     }
 
     public function testDifference(): void {
-        $a = new OrderedSet('mixed', [1, 2, 3, 4]);
-        $b = new OrderedSet('mixed', [3, 4, 5]);
+        $a = OrderedSet::any([1, 2, 3, 4]);
+        $b = OrderedSet::any([3, 4, 5]);
         self::assertSame([1, 2], $a->difference($b)->toArray());
     }
 
     public function testIsSubsetOfAndIsSupersetOf(): void {
-        $small = new OrderedSet('mixed', [1, 2]);
-        $large = new OrderedSet('mixed', [1, 2, 3]);
+        $small = OrderedSet::any([1, 2]);
+        $large = OrderedSet::any([1, 2, 3]);
         self::assertTrue($small->isSubsetOf($large));
         self::assertFalse($large->isSubsetOf($small));
         self::assertTrue($large->isSupersetOf($small));

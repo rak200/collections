@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace Rak200\Collections\Tests;
 
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Rak200\Collections\AbstractCollection;
 use Rak200\Collections\Map;
 
 final class MapTest extends TestCase {
 
+    use ConstructsProtected;
+
     public function testEmptyMapState(): void {
-        $m = new Map();
+        $m = Map::any();
         self::assertCount(0, $m);
         self::assertSame([], $m->toArray());
         self::assertSame([], $m->keys());
@@ -20,13 +23,13 @@ final class MapTest extends TestCase {
     }
 
     public function testDefaultTypesAreMixed(): void {
-        $m = new Map();
+        $m = Map::any();
         self::assertSame('mixed', $m->getKeyType());
         self::assertSame('mixed', $m->getValueType());
     }
 
     public function testSetGetHas(): void {
-        $m = new Map();
+        $m = Map::any();
         $obj = new \stdClass();
         $m->set('k', $obj);
         self::assertSame($obj, $m->get('k'));
@@ -36,40 +39,37 @@ final class MapTest extends TestCase {
     }
 
     public function testRemoveReturnsBool(): void {
-        $m = new Map();
+        $m = Map::any();
         $m->set('k', new \stdClass());
         self::assertTrue($m->remove('k'));
         self::assertFalse($m->remove('k'));
         self::assertCount(0, $m);
     }
 
-    public function testIntKeyTypeRejectsString(): void {
-        $m = new Map('int');
-        $this->expectException(InvalidArgumentException::class);
-        $m->set('not-int', new \stdClass());
+    /** @return iterable<string, array{'int'|'string'|'mixed', string, int|string, mixed}> */
+    public static function rejectedEntryProvider(): iterable {
+        yield 'string key into int-keyed map' => ['int', 'mixed', 'not-int', new \stdClass()];
+        yield 'int key into string-keyed map' => ['string', 'mixed', 42, new \stdClass()];
+        yield 'stdClass value into DateTimeImmutable map' => ['mixed', \DateTimeImmutable::class, 'k', new \stdClass()];
     }
 
-    public function testStringKeyTypeRejectsInt(): void {
-        $m = new Map('string');
+    /** @param 'int'|'string'|'mixed' $keyType */
+    #[DataProvider('rejectedEntryProvider')]
+    public function testRejectsInvalidKeyOrValue(string $keyType, string $valueType, int|string $key, mixed $value): void {
+        $m = self::build(Map::class, $keyType, $valueType);
         $this->expectException(InvalidArgumentException::class);
-        $m->set(42, new \stdClass());
+        $m->set($key, $value);
     }
 
     public function testMixedKeyTypeAcceptsBoth(): void {
-        $m = new Map('mixed');
+        $m = Map::any();
         $m->set('a', new \stdClass());
         $m->set(7, new \stdClass());
         self::assertCount(2, $m);
     }
 
-    public function testValueTypeEnforcement(): void {
-        $m = new Map('mixed', \DateTimeImmutable::class);
-        $this->expectException(InvalidArgumentException::class);
-        $m->set('k', new \stdClass());
-    }
-
     public function testKeysAndValuesPreserveInsertionOrder(): void {
-        $m = new Map();
+        $m = Map::any();
         $a = new \stdClass();
         $b = new \stdClass();
         $c = new \stdClass();
@@ -81,7 +81,7 @@ final class MapTest extends TestCase {
     }
 
     public function testIterationPreservesKeysAndOrder(): void {
-        $m = new Map();
+        $m = Map::any();
         $a = new \stdClass();
         $b = new \stdClass();
         $m->set('alpha', $a);
@@ -94,7 +94,7 @@ final class MapTest extends TestCase {
     }
 
     public function testArrayAccess(): void {
-        $m = new Map();
+        $m = Map::any();
         $obj = new \stdClass();
         $m['k'] = $obj;
         self::assertSame($obj, $m['k']);
@@ -104,7 +104,7 @@ final class MapTest extends TestCase {
     }
 
     public function testArrayAccessNullOffsetAppendsAsInt(): void {
-        $m = new Map();
+        $m = Map::any();
         $a = new \stdClass();
         $b = new \stdClass();
         $m[] = $a;
@@ -113,24 +113,24 @@ final class MapTest extends TestCase {
     }
 
     public function testArrayAccessNullOffsetRespectsStringKeyType(): void {
-        $m = new Map('string');
+        $m = self::build(Map::class, 'string');
         $this->expectException(InvalidArgumentException::class);
         $m[] = new \stdClass();
     }
 
     public function testInitialItemsValidated(): void {
         $this->expectException(InvalidArgumentException::class);
-        new Map('string', 'mixed', [42 => new \stdClass()]);
+        self::build(Map::class, 'string', 'mixed', [42 => new \stdClass()]);
     }
 
     public function testIsAbstractCollectionAndArrayAccess(): void {
-        $m = new Map();
+        $m = Map::any();
         self::assertInstanceOf(AbstractCollection::class, $m);
         self::assertInstanceOf(\ArrayAccess::class, $m);
     }
 
     public function testMixedValueAcceptsScalars(): void {
-        $m = new Map('string', 'mixed');
+        $m = self::build(Map::class, 'string', 'mixed');
         $m->set('age', 42);
         $m->set('name', 'Alice');
         $m->set('active', true);

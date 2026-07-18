@@ -9,6 +9,7 @@ use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\ValidatesType;
 use Rak200\Utils\Arr;
 use InvalidArgumentException;
+use Rak200\Collections\Internal\ProvidesValueFactories;
 
 /**
  * Max-heap priority queue. Items with higher priority are extracted first;
@@ -29,7 +30,8 @@ use InvalidArgumentException;
  */
 class PriorityQueue implements \Iterator, \Countable, ToArray {
 
-    /** @var list<array{priority: int|float, sequence: int, item: T_Value}> */
+    use ProvidesValueFactories;
+/** @var list<array{priority: int|float, sequence: int, item: T_Value}> */
     private array $heap = [];
 
     private int $sequence = 0;
@@ -39,14 +41,29 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
     private ?array $iterSnapshot = null;
 
     /**
-     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
+     * @param string $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
      * @param iterable<T_Value> $items Initial items enqueued at priority 0 in iteration order.
      * @throws InvalidArgumentException When any item does not satisfy $type.
      */
-    public function __construct(private string $type = 'mixed', iterable $items = []) {
+    protected function __construct(private string $type = 'mixed', iterable $items = []) {
         foreach ($items as $item) {
             $this->enqueue($item, 0);
         }
+    }
+
+    /**
+     * Typed factory for class instances. Unlike the constructor, the item
+     * type is inferred statically: `PriorityQueue::of(Foo::class)` is `PriorityQueue<Foo>`
+     * in both PHPStan and IDE analysis.
+     *
+     * @template T of object
+     * @param class-string<T> $class Class to enforce on items.
+     * @param iterable<T> $items Initial items enqueued at priority 0 in iteration order.
+     * @return self<T>
+     * @throws InvalidArgumentException When any item does not satisfy $class.
+     */
+    public static function of(string $class, iterable $items = []): self {
+        return new self($class, $items);
     }
 
     /** @return class-string<T_Value>|string */
@@ -165,10 +182,14 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
             }
             return $a['sequence'] <=> $b['sequence'];
         });
-        return Arr::map($copy, static fn(array $entry): mixed => $entry['item']);
+        $items = [];
+        foreach ($copy as $entry) {
+            $items[] = $entry['item'];
+        }
+        return $items;
     }
 
-    /** @return T_Value Item at the current iteration position. */
+    /** @return T_Value|null Item at the current iteration position, or null past the end. */
     public function current(): mixed {
         return $this->iterSnapshot[$this->iterPos] ?? null;
     }

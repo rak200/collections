@@ -12,6 +12,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 collections/
 ├── composer.json
 ├── phpunit.xml
+├── phpstan.neon.dist            # PHPStan level 9 config; registers the type-resolver extension
+├── phpstan/
+│   └── CollectionTypeResolver.php  # ExpressionTypeResolverExtension: binds generics from discriminator strings
 ├── src/
 │   ├── AbstractCollection.php    # Shared base: $items, $type, Iterator/Countable/ToArray, count/toArray/getType
 │   ├── Vector.php                # Int-indexed dynamic array of typed/mixed values
@@ -33,9 +36,10 @@ collections/
 │   ├── ImmutableMap.php          # Read-only Map (offsetSet/Unset throw)
 │   └── Internal/
 │       ├── HashesValues.php      # Trait: hybrid hash for Set/OrderedSet/BiMap/ObjectMap
+│       ├── ProvidesValueFactories.php  # Trait: any()/ofInt()/ofString()/… factories for single-value collections
 │       ├── ValidatesType.php     # Static utility (abstract class): checkType($type, $value, $label)
 │       └── LinkedNode.php        # Node used by LinkedList (was Rak200\Collections\LinkedNode in 0.0.x)
-└── tests/                        # PHPUnit suites mirroring each src/ class
+└── tests/                        # PHPUnit suites mirroring each src/ class (+ ConstructsProtected trait, TypedFactoriesTest)
 ```
 
 All classes live under the `Rak200\Collections` namespace (PSR-4 from `src/`); tests under `Rak200\Collections\Tests` (PSR-4 from `tests/`).
@@ -43,6 +47,10 @@ All classes live under the `Rak200\Collections` namespace (PSR-4 from `src/`); t
 ## Testing
 
 `composer test` (or `vendor/bin/phpunit`) runs the suite. PHPUnit 13 is required (in `require-dev`). Each `src/X.php` has a paired `tests/XTest.php` covering construction, type enforcement, public API, interface compliance, and edge cases (empty operations, null returns, duplicates).
+
+`composer phpstan` runs PHPStan level 9 (`phpstan/phpstan ^2.0`, in `require-dev`) over `phpstan/`, `src/`, and `tests/`. The project ships an `ExpressionTypeResolverExtension` — `Rak200\Collections\PHPStan\CollectionTypeResolver` in `phpstan/CollectionTypeResolver.php` — that binds each collection's generic parameters from the discriminator strings passed to its factory/constructor (`'int'` → `int`, `Foo::class` → `Foo`, etc.), so `Vector::ofInt()` resolves to `Vector<int>` even though the tooling can't otherwise infer a type from a runtime string. It's registered in `phpstan.neon.dist`; PHPStan runs the extension but the IDE (DEVSENSE) does not, which is why the factories carry plain `@return self<int>` docblocks that both understand.
+
+Test construction: constructors are `protected` (see below), so tests build through the public factories. The few cases with no factory — the `'array'`/`'iterable'` discriminators, pseudo-typed map values, partially-typed object maps — go through the `tests/ConstructsProtected.php` trait's `build(Cls::class, ...$args)` helper (Reflection: `newInstanceWithoutConstructor()` + `getConstructor()?->invokeArgs()`, so the protected constructor's validation still fires). Negative type-rejection tests deliberately violate the static types and carry a `// @phpstan-ignore` on the offending line.
 
 ## Classes
 
@@ -55,6 +63,14 @@ All classes and members must have a docblock.
 - a PHP built-in pseudo-type: `'int'`/`'integer'`, `'string'`, `'bool'`/`'boolean'`, `'float'`/`'double'`, `'array'`, `'iterable'`, `'callable'`
 
 All dispatch lives in `Internal\ValidatesType::checkType()`. `Map`/`BiMap` `$keyType` is its own narrower constraint (`'int'`/`'string'`/`'mixed'`) because PHP array keys can only be `int|string`. `ObjectMap` keys and values are objects only (`'object'` or class-string).
+
+**Construction — factories, not `new` (0.5.0).** Every collection's constructor is `protected`; collections are built through static factories so the element type is statically inferable (a discriminator string passed to `new` can't be resolved to a generic by the tooling, but a factory with a plain `@return self<int>` is). The `Constructor:` signatures documented per class below describe the underlying protected constructor — construct via these factories:
+- `X::any(...)` — untyped (`mixed`); on the key/value collections (`Map`, `BiMap`, `MultiMap`, `ObjectMap`, `ImmutableMap`) it means `mixed`/`mixed`.
+- `X::of(...)` — class-typed; declared **inline per class** (a per-call method template doesn't resolve through a trait in IDE analysis). Single-value: `of(Foo::class, $items)`. Key/value: `of($keyType, Foo::class, ...)`. `ObjectMap::of(Key::class, Value::class, ...)`. `CircularBuffer::of($capacity, Foo::class, ...)`. `OrderedSet::of(Foo::class, $items, ?$comparator)`.
+- `X::ofInt()` / `ofString()` / `ofBool()` / `ofFloat()` / `ofObject()` / `ofCallable()` — pseudo-type factories from `Internal\ProvidesValueFactories`, on the ten single-value collections (`Vector`, `Set`, `Stack`, `OrderedSet`, `MultiSet`, `PriorityQueue`, `ImmutableSet`, `LinkedList`, `Queue`, `Deque`). Scalar **value** types on the key/value collections have no factory — use `any()` or the `ConstructsProtected::build()` test helper.
+- `LinkedList`, `Queue`, `Deque` keep **public** (soft-`@deprecated`) constructors because they compose a `LinkedList` internally (whose type can't flow through `any()`); prefer their factories anyway. `Collection` keeps its public deprecated constructor.
+
+**Nullable iterators (0.5.0).** On the collections that iterate the backing array, `Iterator::current()` and `Iterator::key()` return types are nullable (`?T_Value` / `?int`), so calling them past the end is well-typed.
 
 **`AbstractCollection<T_Value>`** (abstract)
 - Implements `Iterator`, `Countable`, `Rak200\Caster\Contracts\ToArray`
@@ -110,7 +126,7 @@ All dispatch lives in `Internal\ValidatesType::checkType()`. `Map`/`BiMap` `$key
 - Constructor: `new Map(string $keyType = 'mixed', string $valueType = 'mixed', array $items = [])`
   - `$keyType`: `'int'`, `'string'`, or `'mixed'`
   - `$valueType`: class-string to enforce on values, or `'mixed'` (any type — scalar or object)
-- Methods: `set()`, `get()`, `has()`, `delete()` (returns `bool`), `keys()`, `values()`
+- Methods: `set()`, `get()`, `has()`, `remove()` (returns `bool`), `keys()`, `values()`
 - Insertion order is preserved
 
 **`PriorityQueue<T_Value>`**
@@ -214,6 +230,9 @@ All dispatch lives in `Internal\ValidatesType::checkType()`. `Map`/`BiMap` `$key
 **`Internal\HashesValues`** (trait)
 - `private static function hashValue(mixed $value): string` — used by `Set`, `OrderedSet`, `BiMap`, and `ObjectMap` to derive a uniqueness handle: `spl_object_id` for objects, value with a type prefix for scalars/null/arrays. Different types never collide (`'1'` vs `1`).
 
+**`Internal\ProvidesValueFactories`** (trait)
+- Supplies the pseudo-type factories (`any()`, `ofObject()`, `ofInt()`, `ofString()`, `ofBool()`, `ofFloat()`, `ofCallable()`) to the ten single-value collections whose constructor is `__construct(string $type, iterable $items = [])`. Each returns the statically-inferred element type via a literal `@return self<int>` etc. The class-string `of()` is **not** here — a per-call method template doesn't resolve through a trait in IDE analysis, so each class declares `of()` inline.
+
 **`Internal\ValidatesType`** (abstract class — static utility)
 - `public static function checkType(string $type, mixed $value, string $label = 'Item'): void` — validates `$value` against `$type` via a `match` on the type string. Recognizes `'mixed'` (skip), `'object'` (`is_object`), PHP built-in pseudo-types `'int'`/`'integer'`, `'string'`, `'bool'`/`'boolean'`, `'float'`/`'double'`, `'array'`, `'iterable'`, `'callable'`, and falls back to `is_a($value, $type)` for class-strings. `$label` is interpolated into the error message so callers can distinguish `'Item'`/`'Key'`/`'Value'`.
 - Was a trait through 0.2.0; converted to an abstract class with a static method in 0.3.0 so it can be used anywhere without depending on a `$type` property in the using class. The `AbstractCollection::checkType()` pass-through that existed for backwards compatibility was removed in 0.4.1.
@@ -229,7 +248,7 @@ When adding a new collection type:
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.4.1** — still pre-1.0 while the API stabilizes. 
+Follows [Semantic Versioning](https://semver.org). Current version: **0.5.0** — still pre-1.0 while the API stabilizes. 
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`

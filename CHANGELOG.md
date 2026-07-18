@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-18
+
+Construction moves from `new` to typed static factories, and constructors are
+now `protected`. The change closes a long-standing type-inference gap: a
+discriminator string passed to the constructor (`new Vector('int')`) can't be
+resolved to `Vector<int>` by IDE tooling, whereas a factory with a plain
+`@return self<int>` is understood everywhere.
+
+### Added
+- **Typed static factories on every collection.** Construction is now done through factories instead of `new`:
+  - Pseudo-type factories (from the new `Internal\ProvidesValueFactories` trait) on the single-value collections — `Vector`, `Set`, `Stack`, `OrderedSet`, `MultiSet`, `PriorityQueue`, `ImmutableSet`, `LinkedList`, `Queue`, `Deque`: `any()`, `ofObject()`, `ofInt()`, `ofString()`, `ofBool()`, `ofFloat()`, `ofCallable()` — each returns the statically-inferred element type (`Vector::ofInt()` is `Vector<int>`).
+  - Class-string factory `of()` on every collection, declared inline per class (a per-call method template doesn't resolve through a trait in IDE analysis): `Vector::of(Foo::class)` → `Vector<Foo>`. Key/value collections take the key discriminator first — `Map::of('string', Foo::class)`, `BiMap::of('string', Foo::class)`, `ImmutableMap::of('string', Foo::class)`, `ObjectMap::of(Key::class, Value::class)`, `MultiMap::of('string', Foo::class)`.
+  - `any()` on the key/value and object-keyed collections — `Map::any()`, `BiMap::any()`, `MultiMap::any()`, `ObjectMap::any()`, `ImmutableMap::any()`.
+  - `CircularBuffer::any(int $capacity, ...)` / `CircularBuffer::of(int $capacity, string $class, ...)` keep capacity as the first argument.
+  - `OrderedSet::of()` / `OrderedSet::any()` take the optional `?Closure $comparator` as their last argument.
+  - `ImmutableSet::fromSet()` and `ImmutableMap::fromMap()` are unchanged.
+- **PHPStan level-9 static analysis** wired into the project. A custom `ExpressionTypeResolverExtension` (`phpstan/CollectionTypeResolver.php`, namespace `Rak200\Collections\PHPStan`) binds each collection's generic parameters from the discriminator strings its constructor/factory receives, mapping pseudo-types (`'int'`, `'string'`, `'bool'`, `'float'`, `'array'`, `'iterable'`, `'callable'`, `'object'`, `'mixed'`) and class-strings to the corresponding PHPStan types. Registered in `phpstan.neon.dist`; `composer phpstan` runs the analysis. `phpstan/phpstan ^2.0` added to `require-dev`.
+- `TypedFactoriesTest` covering the new factory surface. Full suite is now 351 tests / 864 assertions.
+
+### Changed
+- **BREAKING — constructors are now `protected`** on `AbstractCollection`, `Vector`, `Set`, `Stack`, `Map`, `OrderedSet`, `MultiSet`, `PriorityQueue`, `BiMap`, `ObjectMap`, `MultiMap`, `CircularBuffer`, `ImmutableSet`, and `ImmutableMap`. Callers using `new X(...)` must switch to the static factories (`X::of(...)`, `X::any()`, `X::ofInt()`, …). This is the mechanism that makes the element type inferable by IDE tooling.
+- **`Iterator::current()` and `Iterator::key()` return types widened to nullable** (`?T_Value` / `?int` etc.) on the collections that iterate the backing array, so calling them past the end of iteration is well-typed instead of relying on PHP's silent `false`/`null`.
+- `Internal\ValidatesType::checkType()` first parameter relaxed from a `class-string` union to plain `string` (it already dispatched pseudo-type discriminators through a `match`); the class-string arm now guards with `is_object()` before `is_a()`.
+
+### Notes
+- **`LinkedList`, `Queue`, and `Deque` keep public constructors**, marked `@deprecated` (soft) in favor of the factories. They stay public because these collections are composed by others (`Queue`/`Deque` build a `LinkedList` internally, which can't be expressed through the `any()`-returns-`mixed` factory path); the visibility change is deferred to **1.0.0**.
+- `Collection` (the 0.0.2 BC shim) keeps its public, already-`@deprecated` constructor unchanged.
+
 ## [0.4.2] - 2026-05-25
 
 ### Added
@@ -156,7 +184,8 @@ First minor release. Consolidates a wave of API additions and the `object`→`mi
 ### Added
 - Initial release with `Collection<T_Key, T_Object>` — typed generic array container implementing `Iterator`, `ArrayAccess`, `Countable`, and `Rak200\Caster\Contracts\ToArray`.
 
-[Unreleased]: https://github.com/rak200/collections/compare/0.4.2...HEAD
+[Unreleased]: https://github.com/rak200/collections/compare/0.5.0...HEAD
+[0.5.0]: https://github.com/rak200/collections/compare/0.4.2...0.5.0
 [0.4.2]: https://github.com/rak200/collections/compare/0.4.1...0.4.2
 [0.4.1]: https://github.com/rak200/collections/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/rak200/collections/compare/0.3.0...0.4.0

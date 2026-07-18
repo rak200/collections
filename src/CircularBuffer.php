@@ -25,16 +25,17 @@ class CircularBuffer implements \Iterator, \Countable, ToArray {
     private array $buffer = [];
 
     private int $head = 0;
+    /** @var int<0, max> */
     private int $count = 0;
     private int $iterPos = 0;
 
     /**
      * @param int $capacity Maximum number of items the buffer can hold (must be positive).
-     * @param class-string<T_Value>|'mixed'|'object'|'int'|'string'|'bool'|'float'|'array'|'iterable'|'callable' $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
+     * @param string $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
      * @param iterable<T_Value> $items Initial items pushed in order; pushing past $capacity evicts the oldest.
      * @throws InvalidArgumentException When $capacity is not positive, or any item does not satisfy $type.
      */
-    public function __construct(
+    protected function __construct(
         private int $capacity,
         private string $type = 'mixed',
         iterable $items = []
@@ -45,6 +46,34 @@ class CircularBuffer implements \Iterator, \Countable, ToArray {
         foreach ($items as $item) {
             $this->push($item);
         }
+    }
+
+    /**
+     * Factory for an untyped buffer (no runtime type enforcement).
+     *
+     * @param int $capacity Maximum number of items the buffer can hold (must be positive).
+     * @param iterable<mixed> $items Initial items pushed in order; pushing past $capacity evicts the oldest.
+     * @return self<mixed>
+     * @throws \InvalidArgumentException When $capacity is not positive.
+     */
+    public static function any(int $capacity, iterable $items = []): self {
+        return new self($capacity, 'mixed', $items);
+    }
+
+    /**
+     * Typed factory for class instances. Unlike the constructor, the item
+     * type is inferred statically: `CircularBuffer::of(3, Foo::class)` is
+     * `CircularBuffer<Foo>` in both PHPStan and IDE analysis.
+     *
+     * @template T of object
+     * @param int $capacity Maximum number of items the buffer can hold (must be positive).
+     * @param class-string<T> $class Class to enforce on items.
+     * @param iterable<T> $items Initial items pushed in order; pushing past $capacity evicts the oldest.
+     * @return self<T>
+     * @throws InvalidArgumentException When $capacity is not positive or any item does not satisfy $class.
+     */
+    public static function of(int $capacity, string $class, iterable $items = []): self {
+        return new self($capacity, $class, $items);
     }
 
     /**
@@ -131,7 +160,7 @@ class CircularBuffer implements \Iterator, \Countable, ToArray {
         $this->iterPos = 0;
     }
 
-    /** @return T_Value Item at the current iteration position (oldest to newest). */
+    /** @return T_Value|null Item at the current iteration position (oldest to newest), or null past the end. */
     public function current(): mixed {
         if ($this->iterPos >= $this->count) {
             return null;

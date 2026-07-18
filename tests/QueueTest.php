@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Rak200\Collections\Tests;
 
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Rak200\Collections\Queue;
 
 final class QueueTest extends TestCase {
 
     public function testEmptyQueueState(): void {
-        $q = new Queue();
+        $q = Queue::any();
         self::assertCount(0, $q);
         self::assertNull($q->dequeue());
         self::assertNull($q->peek());
@@ -19,7 +20,7 @@ final class QueueTest extends TestCase {
     }
 
     public function testEnqueueAndDequeueAreFIFO(): void {
-        $q = new Queue();
+        $q = Queue::any();
         $a = new \stdClass();
         $b = new \stdClass();
         $c = new \stdClass();
@@ -33,28 +34,28 @@ final class QueueTest extends TestCase {
     }
 
     public function testPeekDoesNotRemove(): void {
-        $q = new Queue();
+        $q = Queue::any();
         $a = new \stdClass();
         $q->enqueue($a);
         self::assertSame($a, $q->peek());
         self::assertCount(1, $q);
     }
 
-    public function testClassTypeRejectsNonObject(): void {
-        $q = new Queue(\stdClass::class);
-        $q->enqueue(new \stdClass());
-        $this->expectException(InvalidArgumentException::class);
-        $q->enqueue('not-an-object');
+    /** @return iterable<string, array{string, mixed}> */
+    public static function rejectedItemProvider(): iterable {
+        yield 'non-object into stdClass queue' => [\stdClass::class, 'not-an-object'];
+        yield 'stdClass into DateTimeImmutable queue' => [\DateTimeImmutable::class, new \stdClass()];
     }
 
-    public function testClassTypeRejectsWrongInstance(): void {
-        $q = new Queue(\DateTimeImmutable::class);
+    #[DataProvider('rejectedItemProvider')]
+    public function testClassTypeRejectsInvalidItem(string $type, mixed $wrong): void {
+        $q = new Queue($type);
         $this->expectException(InvalidArgumentException::class);
-        $q->enqueue(new \stdClass());
+        $q->enqueue($wrong);
     }
 
     public function testMixedAcceptsScalarsAndNull(): void {
-        $q = new Queue('mixed');
+        $q = Queue::any();
         $q->enqueue(42);
         $q->enqueue('hello');
         $q->enqueue(null);
@@ -68,7 +69,7 @@ final class QueueTest extends TestCase {
     public function testInitialItems(): void {
         $a = new \stdClass();
         $b = new \stdClass();
-        $q = new Queue('mixed', [$a, $b]);
+        $q = Queue::any([$a, $b]);
         self::assertCount(2, $q);
         self::assertSame($a, $q->dequeue());
     }
@@ -77,7 +78,7 @@ final class QueueTest extends TestCase {
         $a = new \stdClass();
         $b = new \stdClass();
         $c = new \stdClass();
-        $q = new Queue('mixed', [$a, $b, $c]);
+        $q = Queue::any([$a, $b, $c]);
         $out = [];
         foreach ($q as $item) {
             $out[] = $item;
@@ -86,7 +87,7 @@ final class QueueTest extends TestCase {
     }
 
     public function testIsEmptyAndClear(): void {
-        $q = new Queue();
+        $q = Queue::any();
         self::assertTrue($q->isEmpty());
         $q->enqueue('a');
         $q->enqueue('b');

@@ -46,7 +46,7 @@ trait HashesValues {
      * exceptions to provide a clearer error message when the array contains
      * unserializable values (e.g. resources).
      *
-     * @param array $array
+     * @param array<array-key, mixed> $array
      * @return string Hash of the array contents.
      * @throws InvalidArgumentException When the array cannot be serialized.
      */
