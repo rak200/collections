@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- **BREAKING — `Collection` removed.** The BC shim `@deprecated` since 0.0.2 (a thin `Vector` subclass accepting string keys, triggering `E_USER_DEPRECATED` from its constructor) is gone. Migrate to `Vector` (int-indexed sequences) or `Map` (keyed lookups). Its `CollectionTypeResolver` PHPStan entry and test were dropped as well.
+
 ## [0.5.0] - 2026-07-18
 
 Construction moves from `new` to typed static factories, and constructors are

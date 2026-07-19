@@ -13,7 +13,6 @@ composer require rak200/collections
 | Class                                  | Purpose                                                                |
 |----------------------------------------|------------------------------------------------------------------------|
 | `Rak200\Collections\Vector`            | Int-indexed dynamic array of typed (or mixed) values                   |
-| `Rak200\Collections\Collection`        | **Deprecated** (0.0.2 → 1.0.0). Thin BC shim over `Vector` accepting string keys |
 | `Rak200\Collections\LinkedList`  | Doubly linked list with O(1) insertion/removal at any node             |
 | `Rak200\Collections\Queue`             | FIFO queue (backed by `LinkedList`)                              |
 | `Rak200\Collections\Stack`             | LIFO stack                                                             |

@@ -27,7 +27,6 @@ use PHPStan\Type\Type;
 use PHPStan\Type\TypeCombinator;
 use Rak200\Collections\BiMap;
 use Rak200\Collections\CircularBuffer;
-use Rak200\Collections\Collection;
 use Rak200\Collections\Deque;
 use Rak200\Collections\ImmutableMap;
 use Rak200\Collections\ImmutableSet;
@@ -74,7 +73,6 @@ final class CollectionTypeResolver implements ExpressionTypeResolverExtension {
         Deque::class         => [[0, 'mixed', false]],
         PriorityQueue::class => [[0, 'mixed', false]],
         ImmutableSet::class  => [[0, 'mixed', false]],
-        Collection::class    => [[0, 'mixed', false]],
         CircularBuffer::class => [[1, 'mixed', false]],
         Map::class           => [[0, 'mixed', true], [1, 'mixed', false]],
         ImmutableMap::class  => [[0, 'mixed', true], [1, 'mixed', false]],

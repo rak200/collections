@@ -18,7 +18,6 @@ collections/
 ├── src/
 │   ├── AbstractCollection.php    # Shared base: $items, $type, Iterator/Countable/ToArray, count/toArray/getType
 │   ├── Vector.php                # Int-indexed dynamic array of typed/mixed values
-│   ├── Collection.php            # @deprecated 0.0.2; thin BC shim over Vector (string keys)
 │   ├── LinkedList.php            # Doubly linked list (O(1) ops via node refs)
 │   ├── Queue.php                 # FIFO (backed by LinkedList)
 │   ├── Stack.php                 # LIFO (overrides iteration for top-to-bottom)
@@ -68,7 +67,7 @@ All dispatch lives in `Internal\ValidatesType::checkType()`. `Map`/`BiMap` `$key
 - `X::any(...)` — untyped (`mixed`); on the key/value collections (`Map`, `BiMap`, `MultiMap`, `ObjectMap`, `ImmutableMap`) it means `mixed`/`mixed`.
 - `X::of(...)` — class-typed; declared **inline per class** (a per-call method template doesn't resolve through a trait in IDE analysis). Single-value: `of(Foo::class, $items)`. Key/value: `of($keyType, Foo::class, ...)`. `ObjectMap::of(Key::class, Value::class, ...)`. `CircularBuffer::of($capacity, Foo::class, ...)`. `OrderedSet::of(Foo::class, $items, ?$comparator)`.
 - `X::ofInt()` / `ofString()` / `ofBool()` / `ofFloat()` / `ofObject()` / `ofCallable()` — pseudo-type factories from `Internal\ProvidesValueFactories`, on the ten single-value collections (`Vector`, `Set`, `Stack`, `OrderedSet`, `MultiSet`, `PriorityQueue`, `ImmutableSet`, `LinkedList`, `Queue`, `Deque`). Scalar **value** types on the key/value collections have no factory — use `any()` or the `ConstructsProtected::build()` test helper.
-- `LinkedList`, `Queue`, `Deque` keep **public** (soft-`@deprecated`) constructors because they compose a `LinkedList` internally (whose type can't flow through `any()`); prefer their factories anyway. `Collection` keeps its public deprecated constructor.
+- `LinkedList`, `Queue`, `Deque` keep **public** (soft-`@deprecated`) constructors because they compose a `LinkedList` internally (whose type can't flow through `any()`); prefer their factories anyway.
 
 **Nullable iterators (0.5.0).** On the collections that iterate the backing array, `Iterator::current()` and `Iterator::key()` return types are nullable (`?T_Value` / `?int`), so calling them past the end is well-typed.
 
@@ -86,12 +85,6 @@ All dispatch lives in `Internal\ValidatesType::checkType()`. `Map`/`BiMap` `$key
   - Throws `InvalidArgumentException` if any item is not an instance of `$type`
 - Methods: `add()`, `get()`, `remove()`, plus standard PHP iteration/array-access/counting
 - `toArray()` returns the underlying array
-
-**`Collection<T_Value>`** — *deprecated since 0.0.2, removal in 1.0.0*
-- Thin BC shim extending `Vector` so legacy callers using string keys keep working
-- Overrides `add()`, `get()`, `remove()` with `int|string $offset` (vs. `int` on `Vector`)
-- Triggers `E_USER_DEPRECATED` from its constructor
-- New code should use `Vector` (int-indexed) or `Map` (keyed lookup)
 
 **`LinkedList<T_Value>`**
 - Implements `Iterator`, `Countable`, `ToArray`
@@ -261,23 +254,19 @@ Consumers using `"type": "vcs"` in their `composer.json` resolve versions from g
 
 ## Roadmap
 
-Pending work, without a committed target version. Items 1–2 are **breaking** (they only
-land in a major release); items 3–4 are non-breaking. For the deprecations, the
-`@deprecated` docblocks remain the source of truth per item.
+Pending work, without a committed target version. Item 1 is **breaking** (it only lands
+in a major release); items 2–3 are non-breaking. For the deprecations, the `@deprecated`
+docblocks remain the source of truth per item.
 
-1. **Remove `Collection`** — the BC shim `@deprecated` since 0.0.2 (`src/Collection.php`).
-   It extends `Vector` to keep legacy string-keyed callers working and triggers
-   `E_USER_DEPRECATED` from its constructor. Migration: use `Vector` (int-indexed) or
-   `Map` (keyed lookup).
-2. **Make `LinkedList`, `Queue`, and `Deque` constructors `protected`** — soft-`@deprecated`
+1. **Make `LinkedList`, `Queue`, and `Deque` constructors `protected`** — soft-`@deprecated`
    since 0.5.0 (`src/LinkedList.php`, `src/Queue.php`, `src/Deque.php`). They stay public
    for now because these collections are composed by others (`Queue`/`Deque` build a
    `LinkedList` internally, whose type can't flow through the `any()`-returns-`mixed`
    factory path); the pending change is to close that gap and route all construction
    through the factories.
-3. **Re-add algorithmic complexity documentation** — restore the Big-O complexity notes
+2. **Re-add algorithmic complexity documentation** — restore the Big-O complexity notes
    for each collection's operations (e.g. `push`/`pop`/`enqueue`/`dequeue`/lookup) in the
    method docblocks, so the cost of every operation is documented at the call site.
-4. **Investigate raising PHPStan to `max`** — evaluate moving the analysis from level 9
+3. **Investigate raising PHPStan to `max`** — evaluate moving the analysis from level 9
    to `max` (`phpstan.neon.dist`), assess the new findings, and adopt it if the added
    strictness is worth the churn.
