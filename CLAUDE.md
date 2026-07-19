@@ -258,3 +258,20 @@ When releasing a new version:
 5. Create and push a git tag matching the version: `git tag x.y.z && git push origin x.y.z`
 
 Consumers using `"type": "vcs"` in their `composer.json` resolve versions from git tags.
+
+## Roadmap (1.0.0)
+
+Deprecations already marked in the code, deferred to the first stable release. All are
+**breaking**, so they land only in 1.0.0 (the API is still stabilizing pre-1.0). This is
+the canonical list — the `@deprecated` docblocks are the source of truth per item.
+
+1. **Remove `Collection`** — the BC shim `@deprecated` since 0.0.2 (`src/Collection.php`).
+   It extends `Vector` to keep legacy string-keyed callers working and triggers
+   `E_USER_DEPRECATED` from its constructor. Migration: use `Vector` (int-indexed) or
+   `Map` (keyed lookup).
+2. **Make `LinkedList`, `Queue`, and `Deque` constructors `protected`** — soft-`@deprecated`
+   since 0.5.0 (`src/LinkedList.php`, `src/Queue.php`, `src/Deque.php`). They stay public
+   for now because these collections are composed by others (`Queue`/`Deque` build a
+   `LinkedList` internally, whose type can't flow through the `any()`-returns-`mixed`
+   factory path); the pending visibility change is to close that gap and route all
+   construction through the factories.
