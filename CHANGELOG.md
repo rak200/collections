@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-19
+
+### Added
+- **Big-O complexity documentation across every collection.** Each public operation's docblock now carries a `Complexity: O(...).` note, and every class docblock gains a `Complexity:` block grouping its methods by cost (e.g. `O(1): add / remove / contains`, `O(n): toArray / union / …`) so the right structure can be picked at a glance. Notable call-outs are documented inline: `Set`/`OrderedSet` `key()` resolving the iteration position in O(n) (a keyed `foreach` is O(n²)), `OrderedSet::add()` being O(n log n) with a comparator, `PriorityQueue` `enqueue`/`dequeue` at O(log n), and `MultiMap`/`MultiSet`/`PriorityQueue` iteration building a snapshot on `rewind()`.
+
 ### Removed
 - **BREAKING — `Collection` removed.** The BC shim `@deprecated` since 0.0.2 (a thin `Vector` subclass accepting string keys, triggering `E_USER_DEPRECATED` from its constructor) is gone. Migrate to `Vector` (int-indexed sequences) or `Map` (keyed lookups). Its `CollectionTypeResolver` PHPStan entry and test were dropped as well.
 
@@ -187,7 +192,8 @@ First minor release. Consolidates a wave of API additions and the `object`→`mi
 ### Added
 - Initial release with `Collection<T_Key, T_Object>` — typed generic array container implementing `Iterator`, `ArrayAccess`, `Countable`, and `Rak200\Caster\Contracts\ToArray`.
 
-[Unreleased]: https://github.com/rak200/collections/compare/0.5.0...HEAD
+[Unreleased]: https://github.com/rak200/collections/compare/0.6.0...HEAD
+[0.6.0]: https://github.com/rak200/collections/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/rak200/collections/compare/0.4.2...0.5.0
 [0.4.2]: https://github.com/rak200/collections/compare/0.4.1...0.4.2
 [0.4.1]: https://github.com/rak200/collections/compare/0.4.0...0.4.1

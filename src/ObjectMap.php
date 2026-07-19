@@ -27,6 +27,10 @@ use Rak200\Utils\Arr;
  * domain objects without modifying them, identity-keyed lookups (per-instance
  * state), object → object relations.
  *
+ * Complexity:
+ * - O(1): set / get / has / remove / count / isEmpty / clear / getKeyType / getValueType / iteration
+ * - O(n): keys / values / toArray
+ *
  * @template T_Key of object
  * @template T_Value of object
  * @implements \Iterator<T_Key, T_Value>
@@ -85,18 +89,24 @@ class ObjectMap implements \Iterator, \Countable, ToArray {
         return new self($keyClass, $valueClass, $pairs);
     }
 
-    /** @return string A value class-string, or 'object' for any object. */
+    /**
+     * Configured key type. Complexity: O(1).
+     * @return string A value class-string, or 'object' for any object.
+     */
     public function getKeyType(): string {
         return $this->keyType;
     }
 
-    /** @return string A value class-string, or 'object' for any object. */
+    /**
+     * Configured value type. Complexity: O(1).
+     * @return string A value class-string, or 'object' for any object.
+     */
     public function getValueType(): string {
         return $this->valueType;
     }
 
     /**
-     * Set the value for the given key, overwriting any existing entry.
+     * Set the value for the given key, overwriting any existing entry. Complexity: O(1).
      *
      * @param T_Key $key
      * @param T_Value $value
@@ -111,7 +121,7 @@ class ObjectMap implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Value at the given key, or null if absent.
+     * Value at the given key, or null if absent. Complexity: O(1).
      *
      * @param T_Key $key
      * @return T_Value|null
@@ -121,7 +131,7 @@ class ObjectMap implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Whether the given key exists in the map.
+     * Whether the given key exists in the map. Complexity: O(1).
      *
      * @param T_Key $key
      */
@@ -130,7 +140,7 @@ class ObjectMap implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Remove an entry. Returns true if it was present, false otherwise.
+     * Remove an entry. Returns true if it was present, false otherwise. Complexity: O(1).
      *
      * @param T_Key $key
      */
@@ -143,55 +153,55 @@ class ObjectMap implements \Iterator, \Countable, ToArray {
         return true;
     }
 
-    /** @return list<T_Key> Keys in insertion order. */
+    /** @return list<T_Key> Keys in insertion order. Complexity: O(n). */
     public function keys(): array {
         return Arr::values($this->keys);
     }
 
-    /** @return list<T_Value> Values in insertion order. */
+    /** @return list<T_Value> Values in insertion order. Complexity: O(n). */
     public function values(): array {
         return Arr::values($this->values);
     }
 
-    /** Number of entries currently stored. */
+    /** Number of entries currently stored. Complexity: O(1). */
     public function count(): int {
         return count($this->keys);
     }
 
-    /** Whether the map holds no entries. */
+    /** Whether the map holds no entries. Complexity: O(1). */
     public function isEmpty(): bool {
         return $this->keys === [];
     }
 
-    /** Discard all entries. */
+    /** Discard all entries. Complexity: O(1). */
     public function clear(): void {
         $this->keys = [];
         $this->values = [];
     }
 
-    /** @return T_Value|null Value at the current iteration cursor, or null past the end. */
+    /** @return T_Value|null Value at the current iteration cursor, or null past the end. Complexity: O(1). */
     public function current(): ?object {
         $hash = key($this->values);
         return $hash === null ? null : $this->values[$hash];
     }
 
-    /** @return T_Key|null Key at the current iteration cursor, or null past the end. */
+    /** @return T_Key|null Key at the current iteration cursor, or null past the end. Complexity: O(1). */
     public function key(): ?object {
         $hash = key($this->values);
         return $hash === null ? null : $this->keys[$hash];
     }
 
-    /** Advance the iteration cursor. */
+    /** Advance the iteration cursor. Complexity: O(1). */
     public function next(): void {
         next($this->values);
     }
 
-    /** Reset the iteration cursor to the first entry. */
+    /** Reset the iteration cursor to the first entry. Complexity: O(1). */
     public function rewind(): void {
         reset($this->values);
     }
 
-    /** Whether the iteration cursor still points at a valid entry. */
+    /** Whether the iteration cursor still points at a valid entry. Complexity: O(1). */
     public function valid(): bool {
         return key($this->values) !== null;
     }
@@ -201,6 +211,8 @@ class ObjectMap implements \Iterator, \Countable, ToArray {
      *
      * A plain PHP array cannot represent object keys, so pairs are used
      * instead of a key-indexed array.
+     *
+     * Complexity: O(n).
      *
      * @return list<array{0: T_Key, 1: T_Value}>
      */

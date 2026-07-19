@@ -24,6 +24,11 @@ use Rak200\Collections\Internal\ProvidesValueFactories;
  * event simulation, top-N extraction, "process the most important item next"
  * workflows.
  *
+ * Complexity:
+ * - O(1): peek / count / isEmpty / clear / getType
+ * - O(log n): enqueue / dequeue
+ * - O(n log n): toArray / iteration (rewind builds a sorted snapshot)
+ *
  * @template T_Value
  * @implements \Iterator<int, T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>
@@ -66,13 +71,18 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
         return new self($class, $items);
     }
 
-    /** @return class-string<T_Value>|string */
+    /**
+     * Configured item type. Complexity: O(1).
+     * @return class-string<T_Value>|string
+     */
     public function getType(): string {
         return $this->type;
     }
 
     /**
      * Insert an item with the given priority. Higher priority is served first.
+     *
+     * Complexity: O(log n) — a sift-up over the heap.
      *
      * @param T_Value $item
      * @throws InvalidArgumentException
@@ -90,6 +100,8 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
     /**
      * Remove and return the highest-priority item, or null if empty.
      *
+     * Complexity: O(log n) — a sift-down over the heap.
+     *
      * @return T_Value|null
      */
     public function dequeue(): mixed {
@@ -106,7 +118,7 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Return the highest-priority item without removing it, or null if empty.
+     * Return the highest-priority item without removing it, or null if empty. Complexity: O(1).
      *
      * @return T_Value|null
      */
@@ -114,17 +126,17 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
         return $this->heap[0]['item'] ?? null;
     }
 
-    /** Number of items currently in the queue. */
+    /** Number of items currently in the queue. Complexity: O(1). */
     public function count(): int {
         return count($this->heap);
     }
 
-    /** Whether the queue holds no items. */
+    /** Whether the queue holds no items. Complexity: O(1). */
     public function isEmpty(): bool {
         return $this->heap === [];
     }
 
-    /** Discard all items and reset iteration state. */
+    /** Discard all items and reset iteration state. Complexity: O(1). */
     public function clear(): void {
         $this->heap = [];
         $this->sequence = 0;
@@ -189,28 +201,28 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
         return $items;
     }
 
-    /** @return T_Value|null Item at the current iteration position, or null past the end. */
+    /** @return T_Value|null Item at the current iteration position, or null past the end. Complexity: O(1). */
     public function current(): mixed {
         return $this->iterSnapshot[$this->iterPos] ?? null;
     }
 
-    /** Zero-based position within the sorted snapshot. */
+    /** Zero-based position within the sorted snapshot. Complexity: O(1). */
     public function key(): int {
         return $this->iterPos;
     }
 
-    /** Advance the iteration position. */
+    /** Advance the iteration position. Complexity: O(1). */
     public function next(): void {
         $this->iterPos++;
     }
 
-    /** Build a sorted snapshot and reset the iteration position. */
+    /** Build a sorted snapshot and reset the iteration position. Complexity: O(n log n). */
     public function rewind(): void {
         $this->iterSnapshot = $this->sortedItems();
         $this->iterPos = 0;
     }
 
-    /** Whether the iteration position still points at a snapshotted item. */
+    /** Whether the iteration position still points at a snapshotted item. Complexity: O(1). */
     public function valid(): bool {
         return $this->iterSnapshot !== null && isset($this->iterSnapshot[$this->iterPos]);
     }
@@ -218,6 +230,8 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
     /**
      * Return items in extraction order (highest priority first), without
      * mutating the queue.
+     *
+     * Complexity: O(n log n) — the snapshot is sorted.
      *
      * @return list<T_Value>
      */

@@ -355,7 +355,7 @@ The suite uses PHPUnit 13 and covers every `src/` class. Each class has a paired
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.5.0** — still pre-1.0 while the API stabilizes.
+Follows [Semantic Versioning](https://semver.org). Current version: **0.6.0** — still pre-1.0 while the API stabilizes.
 
 When releasing a new version:
 1. Update `"version"` in `composer.json`

@@ -23,6 +23,11 @@ use Rak200\Collections\Internal\ValidatesType;
  * results, paginated rows), int-indexed sequences where keyed lookup isn't
  * needed.
  *
+ * Complexity:
+ * - O(1): add / get / remove / offsetGet / offsetSet / offsetExists / offsetUnset / count / isEmpty / clear / toArray / iteration
+ *
+ * (For O(1) insertion or removal in the middle, reach for {@see LinkedList}.)
+ *
  * @template T_Value
  * @extends AbstractCollection<T_Value>
  * @implements \ArrayAccess<int, T_Value>
@@ -66,14 +71,18 @@ class Vector extends AbstractCollection implements \ArrayAccess {
         return new self($class, $items);
     }
 
-    /** @return int|null Integer key at the current iteration cursor, or null past the end. */
+    /**
+     * Integer key at the current iteration cursor, or null past the end. Complexity: O(1).
+     *
+     * @return int|null
+     */
     public function key(): ?int {
         $key = key($this->items);
         return is_int($key) ? $key : null;
     }
 
     /**
-     * Whether the given offset is populated.
+     * Whether the given offset is populated. Complexity: O(1).
      *
      * @param int $offset
      */
@@ -82,7 +91,7 @@ class Vector extends AbstractCollection implements \ArrayAccess {
     }
 
     /**
-     * Item at the given offset, or null if absent.
+     * Item at the given offset, or null if absent. Complexity: O(1).
      *
      * @param int $offset
      * @return T_Value|null
@@ -92,7 +101,7 @@ class Vector extends AbstractCollection implements \ArrayAccess {
     }
 
     /**
-     * Set the item at the given offset, or append when $offset is null.
+     * Set the item at the given offset, or append when $offset is null. Complexity: O(1).
      *
      * @param int|null $offset
      * @param T_Value $value
@@ -108,7 +117,7 @@ class Vector extends AbstractCollection implements \ArrayAccess {
     }
 
     /**
-     * Remove the item at the given offset (no-op if absent).
+     * Remove the item at the given offset (no-op if absent). Complexity: O(1).
      *
      * @param int $offset
      */
@@ -117,7 +126,7 @@ class Vector extends AbstractCollection implements \ArrayAccess {
     }
 
     /**
-     * Set the item at the given offset, overwriting any existing entry.
+     * Set the item at the given offset, overwriting any existing entry. Complexity: O(1).
      *
      * @param int $offset
      * @param T_Value $item
@@ -129,7 +138,7 @@ class Vector extends AbstractCollection implements \ArrayAccess {
     }
 
     /**
-     * Remove the item at the given offset (no-op if absent).
+     * Remove the item at the given offset (no-op if absent). Complexity: O(1).
      *
      * @param int $offset
      */
@@ -138,7 +147,7 @@ class Vector extends AbstractCollection implements \ArrayAccess {
     }
 
     /**
-     * Item at the given offset, or null if absent.
+     * Item at the given offset, or null if absent. Complexity: O(1).
      *
      * @param int $offset
      * @return T_Value|null

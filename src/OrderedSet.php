@@ -25,6 +25,13 @@ use Rak200\Collections\Internal\ProvidesValueFactories;
  * ordered membership tracking when you also want stable `first()` / `last()`,
  * UI-facing sorted-distinct lists.
  *
+ * Complexity:
+ * - O(1): contains / remove / first / last / count / isEmpty / clear / getType
+ * - O(n): toArray / union / intersection / difference / isSubsetOf / isSupersetOf
+ * - add: O(1) in insertion order, O(n log n) with a comparator (re-sorted on every add)
+ *
+ * (Note: like {@see Set}, key() resolves the iteration position in O(n).)
+ *
  * @template T_Value
  * @extends AbstractCollection<T_Value>
  * @phpstan-consistent-constructor
@@ -83,6 +90,8 @@ use HashesValues;
     /**
      * Zero-based position of the current item within the set. The internal
      * hash key is hidden so the `Iterator<int, T_Value>` contract holds.
+     *
+     * Complexity: O(n) — a linear scan maps the hash key to its position.
      */
     public function key(): ?int {
         $pos = array_search(parent::key(), Arr::keys($this->items), true);
@@ -91,6 +100,9 @@ use HashesValues;
 
     /**
      * Add an item. Returns true if newly added, false if already present.
+     *
+     * Complexity: O(1) with insertion order; O(n log n) when a comparator is
+     * set, since the backing array is re-sorted on every add.
      *
      * @param T_Value $item
      * @throws InvalidArgumentException
@@ -109,7 +121,7 @@ use HashesValues;
     }
 
     /**
-     * Remove an item. Returns true if it was present, false otherwise.
+     * Remove an item. Returns true if it was present, false otherwise. Complexity: O(1).
      *
      * @param T_Value $item
      */
@@ -122,13 +134,20 @@ use HashesValues;
         return true;
     }
 
-    /** @param T_Value $item */
+    /**
+     * Whether the set contains $item. Complexity: O(1).
+     *
+     * @param T_Value $item
+     */
     public function contains(mixed $item): bool {
         return Arr::has($this->items, self::hashValue($item));
     }
 
     /**
      * Return a new set containing items from both. Preserves $this's comparator.
+     *
+     * Complexity: O(n + m) with insertion order (n = |$this|, m = |$other|);
+     * higher when a comparator re-sorts on each add.
      *
      * @param self<T_Value> $other
      * @return static
@@ -148,6 +167,9 @@ use HashesValues;
     /**
      * Return a new set containing only items present in both. Preserves $this's comparator.
      *
+     * Complexity: O(n) with insertion order (n = |$this|); higher when a
+     * comparator re-sorts on each add.
+     *
      * @param self<T_Value> $other
      * @return static
      */
@@ -163,6 +185,9 @@ use HashesValues;
 
     /**
      * Return a new set containing items in $this not present in $other. Preserves $this's comparator.
+     *
+     * Complexity: O(n) with insertion order (n = |$this|); higher when a
+     * comparator re-sorts on each add.
      *
      * @param self<T_Value> $other
      * @return static
@@ -180,6 +205,8 @@ use HashesValues;
     /**
      * Whether every item in $this is also in $other.
      *
+     * Complexity: O(n), where n = |$this|.
+     *
      * @param self<T_Value> $other
      */
     public function isSubsetOf(self $other): bool {
@@ -194,6 +221,8 @@ use HashesValues;
     /**
      * Whether every item in $other is also in $this.
      *
+     * Complexity: O(m), where m = |$other|.
+     *
      * @param self<T_Value> $other
      */
     public function isSupersetOf(self $other): bool {
@@ -201,7 +230,7 @@ use HashesValues;
     }
 
     /**
-     * First item in the current order, or null if empty.
+     * First item in the current order, or null if empty. Complexity: O(1).
      *
      * @return T_Value|null
      */
@@ -213,7 +242,7 @@ use HashesValues;
     }
 
     /**
-     * Last item in the current order, or null if empty.
+     * Last item in the current order, or null if empty. Complexity: O(1).
      *
      * @return T_Value|null
      */
@@ -227,6 +256,8 @@ use HashesValues;
     /**
      * Return the items as a zero-indexed array in the current order
      * (hash keys discarded).
+     *
+     * Complexity: O(n).
      *
      * @return T_Value[]
      */

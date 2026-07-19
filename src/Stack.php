@@ -19,6 +19,9 @@ use Rak200\Collections\Internal\ValidatesType;
  * Common cases: undo / redo stacks, DFS / backtracking traversals, parser
  * scopes, expression evaluation, function-call frames.
  *
+ * Complexity:
+ * - O(1): push / pop / peek / getType / count / isEmpty / clear / toArray / iteration
+ *
  * @template T_Value
  * @extends AbstractCollection<T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>
@@ -57,7 +60,7 @@ class Stack extends AbstractCollection {
     }
 
     /**
-     * Push onto the top.
+     * Push onto the top. Complexity: O(1).
      *
      * @param T_Value $item
      * @throws InvalidArgumentException
@@ -68,7 +71,7 @@ class Stack extends AbstractCollection {
     }
 
     /**
-     * Remove and return the top, or null if empty.
+     * Remove and return the top, or null if empty. Complexity: O(1).
      *
      * @return T_Value|null
      */
@@ -77,7 +80,7 @@ class Stack extends AbstractCollection {
     }
 
     /**
-     * Return the top without removing it, or null if empty.
+     * Return the top without removing it, or null if empty. Complexity: O(1).
      *
      * @return T_Value|null
      */
@@ -86,33 +89,33 @@ class Stack extends AbstractCollection {
         return $count === 0 ? null : $this->items[$count - 1];
     }
 
-    /** Discard all items and reset the iteration cursor. */
+    /** Discard all items and reset the iteration cursor. Complexity: O(1). */
     public function clear(): void {
         parent::clear();
         $this->position = 0;
     }
 
-    /** @return T_Value Item at the current iteration position (top-to-bottom). */
+    /** @return T_Value Item at the current iteration position (top-to-bottom). Complexity: O(1). */
     public function current(): mixed {
         return $this->items[count($this->items) - 1 - $this->position];
     }
 
-    /** Zero-based offset from the top of the stack. */
+    /** Zero-based offset from the top of the stack. Complexity: O(1). */
     public function key(): int {
         return $this->position;
     }
 
-    /** Advance the iteration cursor one step toward the bottom. */
+    /** Advance the iteration cursor one step toward the bottom. Complexity: O(1). */
     public function next(): void {
         $this->position++;
     }
 
-    /** Reset the iteration cursor to the top of the stack. */
+    /** Reset the iteration cursor to the top of the stack. Complexity: O(1). */
     public function rewind(): void {
         $this->position = 0;
     }
 
-    /** Whether the iteration cursor still points at a valid item. */
+    /** Whether the iteration cursor still points at a valid item. Complexity: O(1). */
     public function valid(): bool {
         return $this->position < count($this->items);
     }

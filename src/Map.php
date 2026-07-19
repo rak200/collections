@@ -21,6 +21,10 @@ use Rak200\Utils\Arr;
  * in-memory indexes and caches, runtime configuration / option bags with
  * type guarantees on the values.
  *
+ * Complexity:
+ * - O(1): set / get / has / remove / offsetGet / offsetSet / offsetExists / offsetUnset / count / isEmpty / clear / getKeyType / getValueType / toArray / iteration
+ * - O(n): keys / values
+ *
  * @template T_Key of int|string
  * @template T_Value
  * @extends AbstractCollection<T_Value>
@@ -73,12 +77,18 @@ class Map extends AbstractCollection implements \ArrayAccess {
         return new self($keyType, $valueClass, $items);
     }
 
-    /** @return 'int'|'string'|'mixed' */
+    /**
+     * Configured key type. Complexity: O(1).
+     * @return 'int'|'string'|'mixed'
+     */
     public function getKeyType(): string {
         return $this->keyType;
     }
 
-    /** @return class-string<T_Value>|string */
+    /**
+     * Configured value type. Complexity: O(1).
+     * @return class-string<T_Value>|string
+     */
     public function getValueType(): string {
         return $this->type;
     }
@@ -102,7 +112,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
     }
 
     /**
-     * Set the value for the given key, overwriting any existing entry.
+     * Set the value for the given key, overwriting any existing entry. Complexity: O(1).
      *
      * @param T_Key $key
      * @param T_Value $value
@@ -115,7 +125,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
     }
 
     /**
-     * Value at the given key, or null if absent.
+     * Value at the given key, or null if absent. Complexity: O(1).
      *
      * @param T_Key $key
      * @return T_Value|null
@@ -125,7 +135,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
     }
 
     /**
-     * Whether the given key exists in the map.
+     * Whether the given key exists in the map. Complexity: O(1).
      *
      * @param T_Key $key
      */
@@ -134,7 +144,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
     }
 
     /**
-     * Remove an entry. Returns true if it was present, false otherwise.
+     * Remove an entry. Returns true if it was present, false otherwise. Complexity: O(1).
      *
      * @param T_Key $key
      */
@@ -146,23 +156,23 @@ class Map extends AbstractCollection implements \ArrayAccess {
         return true;
     }
 
-    /** @return list<int|string> Keys in insertion order. */
+    /** @return list<int|string> Keys in insertion order. Complexity: O(n). */
     public function keys(): array {
         return Arr::keys($this->items);
     }
 
-    /** @return T_Value[] Values in insertion order. */
+    /** @return T_Value[] Values in insertion order. Complexity: O(n). */
     public function values(): array {
         return Arr::values($this->items);
     }
 
-    /** @return T_Value|null Value at the current iteration cursor, or null past the end. */
+    /** @return T_Value|null Value at the current iteration cursor, or null past the end. Complexity: O(1). */
     public function current(): mixed {
         return parent::current();
     }
 
     /**
-     * Whether the given key exists in the map.
+     * Whether the given key exists in the map. Complexity: O(1).
      *
      * @param T_Key $offset
      */
@@ -171,7 +181,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
     }
 
     /**
-     * Value at the given key, or null if absent.
+     * Value at the given key, or null if absent. Complexity: O(1).
      *
      * @param T_Key $offset
      * @return T_Value|null
@@ -183,6 +193,8 @@ class Map extends AbstractCollection implements \ArrayAccess {
     /**
      * Set the value at the given key. When $offset is null, the value is
      * appended with the next available int key (`count`-based, like PHP arrays).
+     *
+     * Complexity: O(1).
      *
      * @param T_Key|null $offset
      * @param T_Value $value
@@ -201,7 +213,7 @@ class Map extends AbstractCollection implements \ArrayAccess {
     }
 
     /**
-     * Remove the entry at the given key (no-op if absent).
+     * Remove the entry at the given key (no-op if absent). Complexity: O(1).
      *
      * @param T_Key $offset
      */

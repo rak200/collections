@@ -27,6 +27,10 @@ use Rak200\Collections\Internal\ProvidesValueFactories;
  * any element out in constant time), playlists / undo-redo chains, and the
  * backing store for the higher-level {@see Queue} and {@see Deque}.
  *
+ * Complexity:
+ * - O(1): push / unshift / pop / shift / insertBefore / insertAfter / remove / head / tail / getType / count / isEmpty / clear / iteration
+ * - O(n): fromVector / toArray
+ *
  * @template T_Value
  * @implements \Iterator<int, T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>
@@ -78,6 +82,8 @@ class LinkedList implements \Iterator, \Countable, ToArray {
     /**
      * Build a new list from a {@see Vector}, preserving its type and order.
      *
+     * Complexity: O(n) in the size of the vector.
+     *
      * @param Vector<T_Value> $vector
      * @return self<T_Value>
      */
@@ -86,7 +92,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Get the configured type of this list.
+     * Get the configured type of this list. Complexity: O(1).
      * @return class-string<T_Value>|string
      */
     public function getType(): string {
@@ -94,7 +100,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Append at the tail.
+     * Append at the tail. Complexity: O(1).
      *
      * @param T_Value $item
      * @return LinkedNode<T_Value>
@@ -114,7 +120,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Prepend at the head.
+     * Prepend at the head. Complexity: O(1).
      *
      * @param T_Value $item
      * @return LinkedNode<T_Value>
@@ -134,7 +140,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Remove and return the tail value, or null if empty.
+     * Remove and return the tail value, or null if empty. Complexity: O(1).
      *
      * @return T_Value|null
      */
@@ -148,7 +154,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Remove and return the head value, or null if empty.
+     * Remove and return the head value, or null if empty. Complexity: O(1).
      *
      * @return T_Value|null
      */
@@ -162,7 +168,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Insert a new node immediately before the given node.
+     * Insert a new node immediately before the given node. Complexity: O(1).
      *
      * @param LinkedNode<T_Value> $node
      * @param T_Value $item
@@ -183,7 +189,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Insert a new node immediately after the given node.
+     * Insert a new node immediately after the given node. Complexity: O(1).
      *
      * @param LinkedNode<T_Value> $node
      * @param T_Value $item
@@ -206,6 +212,8 @@ class LinkedList implements \Iterator, \Countable, ToArray {
     /**
      * Unlink the given node from the list. Caller must pass a node that
      * belongs to this list; passing a foreign node corrupts both lists.
+     *
+     * Complexity: O(1) — the node handle removes the need to search.
      *
      * @param LinkedNode<T_Value> $node
      */
@@ -230,7 +238,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Node at the head of the list, or null if empty.
+     * Node at the head of the list, or null if empty. Complexity: O(1).
      *
      * @return LinkedNode<T_Value>|null
      */
@@ -239,7 +247,7 @@ class LinkedList implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Node at the tail of the list, or null if empty.
+     * Node at the tail of the list, or null if empty. Complexity: O(1).
      *
      * @return LinkedNode<T_Value>|null
      */
@@ -247,17 +255,17 @@ class LinkedList implements \Iterator, \Countable, ToArray {
         return $this->tail;
     }
 
-    /** Number of nodes currently stored. */
+    /** Number of nodes currently stored. Complexity: O(1). */
     public function count(): int {
         return $this->count;
     }
 
-    /** Whether the list has no nodes. */
+    /** Whether the list has no nodes. Complexity: O(1). */
     public function isEmpty(): bool {
         return $this->head === null;
     }
 
-    /** Discard all nodes and reset the iteration cursor. */
+    /** Discard all nodes and reset the iteration cursor. Complexity: O(1). */
     public function clear(): void {
         $this->head = null;
         $this->tail = null;
@@ -266,34 +274,34 @@ class LinkedList implements \Iterator, \Countable, ToArray {
         $this->count = 0;
     }
 
-    /** @return T_Value|null Value at the current iteration cursor, or null past the end. */
+    /** @return T_Value|null Value at the current iteration cursor, or null past the end. Complexity: O(1). */
     public function current(): mixed {
         return $this->cursor?->value;
     }
 
-    /** Zero-based offset from the head of the list. */
+    /** Zero-based offset from the head of the list. Complexity: O(1). */
     public function key(): int {
         return $this->position;
     }
 
-    /** Advance the iteration cursor one node toward the tail. */
+    /** Advance the iteration cursor one node toward the tail. Complexity: O(1). */
     public function next(): void {
         $this->cursor = $this->cursor?->next;
         $this->position++;
     }
 
-    /** Reset the iteration cursor to the head of the list. */
+    /** Reset the iteration cursor to the head of the list. Complexity: O(1). */
     public function rewind(): void {
         $this->cursor = $this->head;
         $this->position = 0;
     }
 
-    /** Whether the iteration cursor still points at a valid node. */
+    /** Whether the iteration cursor still points at a valid node. Complexity: O(1). */
     public function valid(): bool {
         return $this->cursor !== null;
     }
 
-    /** @return T_Value[] Values from head to tail. */
+    /** @return T_Value[] Values from head to tail. Complexity: O(n). */
     public function toArray(): array {
         $result = [];
         for ($node = $this->head; $node !== null; $node = $node->next) {

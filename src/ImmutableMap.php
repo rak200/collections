@@ -24,6 +24,10 @@ use Rak200\Utils\Arr;
  * once at boot, defensive returns from getters that want to forbid caller
  * mutation, value-object property bags.
  *
+ * Complexity:
+ * - O(1): get / has / offsetGet / offsetExists / count / isEmpty / getKeyType / getValueType / toArray / iteration
+ * - O(n): keys / values
+ *
  * @template T_Key of int|string
  * @template T_Value
  * @implements \Iterator<T_Key, T_Value>
@@ -92,12 +96,18 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
         return new self($map->getKeyType(), $map->getValueType(), $map->toArray());
     }
 
-    /** @return 'int'|'string'|'mixed' */
+    /**
+     * Configured key type. Complexity: O(1).
+     * @return 'int'|'string'|'mixed'
+     */
     public function getKeyType(): string {
         return $this->keyType;
     }
 
-    /** @return class-string<T_Value>|string */
+    /**
+     * Configured value type. Complexity: O(1).
+     * @return class-string<T_Value>|string
+     */
     public function getValueType(): string {
         return $this->valueType;
     }
@@ -121,7 +131,7 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
     }
 
     /**
-     * Value at the given key, or null if absent.
+     * Value at the given key, or null if absent. Complexity: O(1).
      *
      * @param T_Key $key
      * @return T_Value|null
@@ -131,7 +141,7 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
     }
 
     /**
-     * Whether the given key exists in the map.
+     * Whether the given key exists in the map. Complexity: O(1).
      *
      * @param T_Key $key
      */
@@ -139,54 +149,54 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
         return Arr::has($this->items, $key);
     }
 
-    /** @return T_Key[] Keys in insertion order. */
+    /** @return T_Key[] Keys in insertion order. Complexity: O(n). */
     public function keys(): array {
         return Arr::keys($this->items);
     }
 
-    /** @return T_Value[] Values in insertion order. */
+    /** @return T_Value[] Values in insertion order. Complexity: O(n). */
     public function values(): array {
         return Arr::values($this->items);
     }
 
-    /** Number of entries currently stored. */
+    /** Number of entries currently stored. Complexity: O(1). */
     public function count(): int {
         return count($this->items);
     }
 
-    /** Whether the map holds no entries. */
+    /** Whether the map holds no entries. Complexity: O(1). */
     public function isEmpty(): bool {
         return $this->items === [];
     }
 
-    /** @return T_Value|null Value at the current iteration cursor, or null past the end. */
+    /** @return T_Value|null Value at the current iteration cursor, or null past the end. Complexity: O(1). */
     public function current(): mixed {
         $key = key($this->items);
         return $key === null ? null : $this->items[$key];
     }
 
-    /** Key at the current iteration cursor. */
+    /** Key at the current iteration cursor. Complexity: O(1). */
     public function key(): int|string|null {
         return key($this->items);
     }
 
-    /** Advance the iteration cursor. */
+    /** Advance the iteration cursor. Complexity: O(1). */
     public function next(): void {
         next($this->items);
     }
 
-    /** Reset the iteration cursor to the first entry. */
+    /** Reset the iteration cursor to the first entry. Complexity: O(1). */
     public function rewind(): void {
         reset($this->items);
     }
 
-    /** Whether the iteration cursor still points at a valid entry. */
+    /** Whether the iteration cursor still points at a valid entry. Complexity: O(1). */
     public function valid(): bool {
         return key($this->items) !== null;
     }
 
     /**
-     * Whether the given key exists in the map.
+     * Whether the given key exists in the map. Complexity: O(1).
      *
      * @param T_Key $offset
      */
@@ -195,7 +205,7 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
     }
 
     /**
-     * Value at the given key, or null if absent.
+     * Value at the given key, or null if absent. Complexity: O(1).
      *
      * @param T_Key $offset
      * @return T_Value|null
@@ -205,7 +215,7 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
     }
 
     /**
-     * Always throws — the map is immutable.
+     * Always throws — the map is immutable. Complexity: O(1).
      *
      * @throws BadMethodCallException
      */
@@ -214,7 +224,7 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
     }
 
     /**
-     * Always throws — the map is immutable.
+     * Always throws — the map is immutable. Complexity: O(1).
      *
      * @throws BadMethodCallException
      */
@@ -222,7 +232,7 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
         throw new BadMethodCallException('ImmutableMap cannot be modified.');
     }
 
-    /** @return array<T_Key, T_Value> Entries in insertion order. */
+    /** @return array<T_Key, T_Value> Entries in insertion order. Complexity: O(1) (returned directly; PHP copies on write). */
     public function toArray(): array {
         return $this->items;
     }

@@ -255,7 +255,7 @@ Consumers using `"type": "vcs"` in their `composer.json` resolve versions from g
 ## Roadmap
 
 Pending work, without a committed target version. Item 1 is **breaking** (it only lands
-in a major release); items 2–3 are non-breaking. For the deprecations, the `@deprecated`
+in a major release); item 2 is non-breaking. For the deprecations, the `@deprecated`
 docblocks remain the source of truth per item.
 
 1. **Make `LinkedList`, `Queue`, and `Deque` constructors `protected`** — soft-`@deprecated`
@@ -264,9 +264,12 @@ docblocks remain the source of truth per item.
    `LinkedList` internally, whose type can't flow through the `any()`-returns-`mixed`
    factory path); the pending change is to close that gap and route all construction
    through the factories.
-2. **Re-add algorithmic complexity documentation** — restore the Big-O complexity notes
-   for each collection's operations (e.g. `push`/`pop`/`enqueue`/`dequeue`/lookup) in the
-   method docblocks, so the cost of every operation is documented at the call site.
-3. **Investigate raising PHPStan to `max`** — evaluate moving the analysis from level 9
-   to `max` (`phpstan.neon.dist`), assess the new findings, and adopt it if the added
-   strictness is worth the churn.
+2. **Adopt the shared rak200 PHP conventions** (`@~/.claude/rak200-php-conventions.md`) —
+   import the shared file from this `CLAUDE.md` and close the current gaps against the
+   cross-library standard:
+   - **php-cs-fixer** on the `@PhpCsFixer` preset (`.php-cs-fixer.dist.php`, `composer cs-check` / `cs-fix`).
+   - **PHPStan at `level: max`** (currently 9) — assess the new findings and adopt if the added strictness is worth the churn.
+   - **Infection** mutation testing (`infection.json5.dist`, `minMsi: 100`, `composer infection`).
+   - **`docs/` reference** — one page per class plus a `docs/README.md` index, in the fixed layout.
+   - **CI** (`.github/workflows/ci.yml`) — matrix over the composer floor + next PHP minor, running cs-check / phpstan / test / infection.
+   - **README badges** and `failOnWarning` / `failOnRisky` in `phpunit.xml`; `.git-blame-ignore-revs` for bulk reformat commits.

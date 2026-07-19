@@ -27,6 +27,10 @@ use Rak200\Collections\Internal\ProvidesValueFactories;
  * Common cases: allow-lists / deny-lists, value-object membership tables,
  * read-only snapshots returned from APIs, frozen configuration sets.
  *
+ * Complexity:
+ * - O(1): contains / count / isEmpty / getType / iteration
+ * - O(n): toArray / union / intersection / difference / isSubsetOf / isSupersetOf
+ *
  * @template T_Value
  * @implements \Iterator<int, T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>
@@ -82,13 +86,17 @@ use HashesValues;
         return new self($set->getType(), $set);
     }
 
-    /** @return class-string<T_Value>|string */
+    /**
+     * Configured type discriminator. Complexity: O(1).
+     *
+     * @return class-string<T_Value>|string
+     */
     public function getType(): string {
         return $this->type;
     }
 
     /**
-     * Whether the set contains $item.
+     * Whether the set contains $item. Complexity: O(1).
      *
      * @param T_Value $item
      */
@@ -98,6 +106,8 @@ use HashesValues;
 
     /**
      * Return a new immutable set containing items from both. Resulting type matches $this.
+     *
+     * Complexity: O(n + m), where n = |$this| and m = |$other|.
      *
      * @param self<T_Value>|Set<T_Value> $other
      * @return self<T_Value>
@@ -109,6 +119,8 @@ use HashesValues;
 
     /**
      * Return a new immutable set containing only items present in both.
+     *
+     * Complexity: O(n), where n = |$this| (each membership test is O(1)).
      *
      * @param self<T_Value>|Set<T_Value> $other
      * @return self<T_Value>
@@ -126,6 +138,8 @@ use HashesValues;
     /**
      * Return a new immutable set containing items in $this not present in $other.
      *
+     * Complexity: O(n), where n = |$this| (each membership test is O(1)).
+     *
      * @param self<T_Value>|Set<T_Value> $other
      * @return self<T_Value>
      */
@@ -142,6 +156,8 @@ use HashesValues;
     /**
      * Whether every item in $this is also in $other.
      *
+     * Complexity: O(n), where n = |$this|.
+     *
      * @param self<T_Value>|Set<T_Value> $other
      */
     public function isSubsetOf(self|Set $other): bool {
@@ -156,6 +172,8 @@ use HashesValues;
     /**
      * Whether every item in $other is also in $this.
      *
+     * Complexity: O(m), where m = |$other|.
+     *
      * @param self<T_Value>|Set<T_Value> $other
      */
     public function isSupersetOf(self|Set $other): bool {
@@ -167,46 +185,48 @@ use HashesValues;
         return true;
     }
 
-    /** Number of items currently stored. */
+    /** Number of items currently stored. Complexity: O(1). */
     public function count(): int {
         return count($this->items);
     }
 
-    /** Whether the set holds no items. */
+    /** Whether the set holds no items. Complexity: O(1). */
     public function isEmpty(): bool {
         return $this->items === [];
     }
 
-    /** @return T_Value|null Item at the current iteration cursor, or null past the end. */
+    /** @return T_Value|null Item at the current iteration cursor, or null past the end. Complexity: O(1). */
     public function current(): mixed {
         $key = key($this->items);
         return $key === null ? null : $this->items[$key];
     }
 
-    /** Zero-based position within the set. */
+    /** Zero-based position within the set. Complexity: O(1). */
     public function key(): int {
         return $this->iterPos;
     }
 
-    /** Advance the iteration cursor. */
+    /** Advance the iteration cursor. Complexity: O(1). */
     public function next(): void {
         next($this->items);
         $this->iterPos++;
     }
 
-    /** Reset the iteration cursor to the first item. */
+    /** Reset the iteration cursor to the first item. Complexity: O(1). */
     public function rewind(): void {
         reset($this->items);
         $this->iterPos = 0;
     }
 
-    /** Whether the iteration cursor still points at a valid item. */
+    /** Whether the iteration cursor still points at a valid item. Complexity: O(1). */
     public function valid(): bool {
         return key($this->items) !== null;
     }
 
     /**
      * Return the items as a zero-indexed array (hash keys discarded).
+     *
+     * Complexity: O(n).
      *
      * @return T_Value[]
      */

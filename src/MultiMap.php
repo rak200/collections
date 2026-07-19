@@ -19,6 +19,11 @@ use Rak200\Utils\Arr;
  * held on the instance, so nested `foreach` loops over the same map interfere
  * with each other.
  *
+ * Complexity (n = distinct keys, V = total values, k = values under one key):
+ * - O(1): add / get / getFirst / has / remove / countKey / count / isEmpty / clear / toArray
+ * - O(k): hasValue / removeValue
+ * - O(n) or O(V): set / keys / values / total / iteration (rewind snapshots every value)
+ *
  * @template T_Key of int|string
  * @template T_Value
  * @implements \Iterator<T_Key, T_Value>
@@ -68,12 +73,18 @@ class MultiMap implements \Iterator, \Countable, ToArray {
         return new self($keyType, $valueClass);
     }
 
-    /** @return 'int'|'string'|'mixed' */
+    /**
+     * Configured key type. Complexity: O(1).
+     * @return 'int'|'string'|'mixed'
+     */
     public function getKeyType(): string {
         return $this->keyType;
     }
 
-    /** @return class-string<T_Value>|string */
+    /**
+     * Configured value type. Complexity: O(1).
+     * @return class-string<T_Value>|string
+     */
     public function getValueType(): string {
         return $this->valueType;
     }
@@ -99,6 +110,8 @@ class MultiMap implements \Iterator, \Countable, ToArray {
     /**
      * Append a value to the list for the given key. Creates the entry if absent.
      *
+     * Complexity: O(1).
+     *
      * @param T_Key $key
      * @param T_Value $value
      * @throws InvalidArgumentException When the key or value violates its type.
@@ -111,6 +124,8 @@ class MultiMap implements \Iterator, \Countable, ToArray {
 
     /**
      * Replace all values for the given key.
+     *
+     * Complexity: O(m), where m is the number of values supplied.
      *
      * @param T_Key $key
      * @param list<T_Value> $values
@@ -127,6 +142,8 @@ class MultiMap implements \Iterator, \Countable, ToArray {
     /**
      * All values for the given key in insertion order, or an empty list if absent.
      *
+     * Complexity: O(1) (the list is returned as-is; PHP copies on write).
+     *
      * @param T_Key $key
      * @return list<T_Value>
      */
@@ -135,7 +152,7 @@ class MultiMap implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * First value for the given key, or null if the key has no values.
+     * First value for the given key, or null if the key has no values. Complexity: O(1).
      *
      * @param T_Key $key
      * @return T_Value|null
@@ -145,7 +162,7 @@ class MultiMap implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Whether the given key has any associated values.
+     * Whether the given key has any associated values. Complexity: O(1).
      *
      * @param T_Key $key
      */
@@ -155,6 +172,9 @@ class MultiMap implements \Iterator, \Countable, ToArray {
 
     /**
      * Whether the given key holds the given value (strict comparison).
+     *
+     * Complexity: O(k), where k is the number of values under $key
+     * (linear scan of the key's list).
      *
      * @param T_Key $key
      * @param T_Value $value
@@ -167,7 +187,7 @@ class MultiMap implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Remove every value associated with the given key.
+     * Remove every value associated with the given key. Complexity: O(1).
      *
      * @param T_Key $key
      * @return bool True if the key was present, false otherwise.
@@ -183,6 +203,9 @@ class MultiMap implements \Iterator, \Countable, ToArray {
     /**
      * Remove the first occurrence of $value under $key. If the key's list
      * becomes empty, the key itself is dropped.
+     *
+     * Complexity: O(k), where k is the number of values under $key
+     * (linear search plus a splice that re-indexes the tail).
      *
      * @param T_Key $key
      * @param T_Value $value
@@ -203,12 +226,12 @@ class MultiMap implements \Iterator, \Countable, ToArray {
         return true;
     }
 
-    /** @return list<T_Key> Keys in insertion order (each key once). */
+    /** @return list<T_Key> Keys in insertion order (each key once). Complexity: O(n) in the number of distinct keys. */
     public function keys(): array {
         return Arr::keys($this->items);
     }
 
-    /** @return list<T_Value> Flat list of every stored value in insertion order. */
+    /** @return list<T_Value> Flat list of every stored value in insertion order. Complexity: O(V) in the total number of values. */
     public function values(): array {
         $flat = [];
         foreach ($this->items as $values) {
@@ -220,7 +243,7 @@ class MultiMap implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Number of values associated with the given key.
+     * Number of values associated with the given key. Complexity: O(1).
      *
      * @param T_Key $key
      */
@@ -228,12 +251,12 @@ class MultiMap implements \Iterator, \Countable, ToArray {
         return isset($this->items[$key]) ? count($this->items[$key]) : 0;
     }
 
-    /** Number of distinct keys currently stored. */
+    /** Number of distinct keys currently stored. Complexity: O(1). */
     public function count(): int {
         return count($this->items);
     }
 
-    /** Total number of values across all keys. */
+    /** Total number of values across all keys. Complexity: O(n) in the number of distinct keys. */
     public function total(): int {
         $sum = 0;
         foreach ($this->items as $list) {
@@ -242,12 +265,12 @@ class MultiMap implements \Iterator, \Countable, ToArray {
         return $sum;
     }
 
-    /** Whether the map holds no entries. */
+    /** Whether the map holds no entries. Complexity: O(1). */
     public function isEmpty(): bool {
         return $this->items === [];
     }
 
-    /** Discard all entries and reset iteration state. */
+    /** Discard all entries and reset iteration state. Complexity: O(1). */
     public function clear(): void {
         $this->items = [];
         $this->iterSnapshot = null;
@@ -265,33 +288,33 @@ class MultiMap implements \Iterator, \Countable, ToArray {
         return $out;
     }
 
-    /** @return T_Value|null Value at the current iteration position, or null past the end. */
+    /** @return T_Value|null Value at the current iteration position, or null past the end. Complexity: O(1). */
     public function current(): mixed {
         return $this->iterSnapshot[$this->iterPos][1] ?? null;
     }
 
-    /** @return T_Key Key at the current iteration position. */
+    /** @return T_Key Key at the current iteration position. Complexity: O(1). */
     public function key(): int|string|null {
         return $this->iterSnapshot[$this->iterPos][0] ?? null;
     }
 
-    /** Advance the iteration position. */
+    /** Advance the iteration position. Complexity: O(1). */
     public function next(): void {
         $this->iterPos++;
     }
 
-    /** Build a flattened snapshot and reset the iteration position. */
+    /** Build a flattened snapshot and reset the iteration position. Complexity: O(V) in the total number of values. */
     public function rewind(): void {
         $this->iterSnapshot = $this->flattenSnapshot();
         $this->iterPos = 0;
     }
 
-    /** Whether the iteration position still points at a snapshotted pair. */
+    /** Whether the iteration position still points at a snapshotted pair. Complexity: O(1). */
     public function valid(): bool {
         return $this->iterSnapshot !== null && isset($this->iterSnapshot[$this->iterPos]);
     }
 
-    /** @return array<T_Key, list<T_Value>> Entries indexed by key, in insertion order. */
+    /** @return array<T_Key, list<T_Value>> Entries indexed by key, in insertion order. Complexity: O(1) (returned directly; PHP copies on write). */
     public function toArray(): array {
         return $this->items;
     }

@@ -24,6 +24,11 @@ use Rak200\Collections\Internal\ProvidesValueFactories;
  * Common cases: frequency tables, word counts, histograms, vote tallies,
  * inventory / stock counts, any "how many of each?" tally.
  *
+ * Complexity (d = number of distinct items):
+ * - O(1): add / remove / setCount / countOf / contains / distinct / isEmpty / clear / getType
+ * - O(d): unique / count / toArray / iteration (rewind)
+ * - O(d log d): mostCommon
+ *
  * @template T_Value
  * @implements \Iterator<int, T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>
@@ -70,13 +75,16 @@ use HashesValues;
         return new self($class, $items);
     }
 
-    /** @return class-string<T_Value>|string */
+    /**
+     * Configured item type. Complexity: O(1).
+     * @return class-string<T_Value>|string
+     */
     public function getType(): string {
         return $this->type;
     }
 
     /**
-     * Add $count occurrences of $item. Returns the new occurrence count.
+     * Add $count occurrences of $item. Returns the new occurrence count. Complexity: O(1).
      *
      * @param T_Value $item
      * @param int $count Number of occurrences to add (must be positive).
@@ -100,6 +108,8 @@ use HashesValues;
      * Remove $count occurrences of $item. Drops the item entirely when its
      * count reaches zero. Returns the remaining occurrence count (0 if absent
      * or fully removed).
+     *
+     * Complexity: O(1).
      *
      * @param T_Value $item
      * @param int $count Number of occurrences to remove (must be positive).
@@ -125,6 +135,8 @@ use HashesValues;
      * Set the occurrence count for $item directly. Removes the item when
      * $count is zero.
      *
+     * Complexity: O(1).
+     *
      * @param T_Value $item
      * @param int $count New count (must be non-negative).
      * @throws InvalidArgumentException When $item violates $type, or $count is negative.
@@ -146,7 +158,7 @@ use HashesValues;
     }
 
     /**
-     * Occurrence count for $item, or 0 if absent.
+     * Occurrence count for $item, or 0 if absent. Complexity: O(1).
      *
      * @param T_Value $item
      */
@@ -155,7 +167,7 @@ use HashesValues;
     }
 
     /**
-     * Whether $item has at least one occurrence in the bag.
+     * Whether $item has at least one occurrence in the bag. Complexity: O(1).
      *
      * @param T_Value $item
      */
@@ -163,13 +175,15 @@ use HashesValues;
         return isset($this->counts[self::hashValue($item)]);
     }
 
-    /** Number of distinct items in the bag. */
+    /** Number of distinct items in the bag. Complexity: O(1). */
     public function distinct(): int {
         return count($this->items);
     }
 
     /**
      * Unique items in insertion order (each appearing once regardless of count).
+     *
+     * Complexity: O(d) in the number of distinct items.
      *
      * @return list<T_Value>
      */
@@ -179,6 +193,8 @@ use HashesValues;
 
     /**
      * Top-$n items by occurrence count (descending). Ties keep insertion order.
+     *
+     * Complexity: O(d log d) in the number of distinct items (a full sort).
      *
      * @param int $n Maximum number of items to return (must be non-negative).
      * @return list<array{0: T_Value, 1: int}> Pairs of `[item, count]`.
@@ -208,7 +224,7 @@ use HashesValues;
         return $result;
     }
 
-    /** Total number of occurrences across every item in the bag. */
+    /** Total number of occurrences across every item in the bag. Complexity: O(d) in the number of distinct items. */
     public function count(): int {
         $sum = 0;
         foreach ($this->counts as $c) {
@@ -217,12 +233,12 @@ use HashesValues;
         return max(0, $sum);
     }
 
-    /** Whether the bag holds no items. */
+    /** Whether the bag holds no items. Complexity: O(1). */
     public function isEmpty(): bool {
         return $this->items === [];
     }
 
-    /** Discard every item and reset iteration state. */
+    /** Discard every item and reset iteration state. Complexity: O(1). */
     public function clear(): void {
         $this->items = [];
         $this->counts = [];
@@ -230,7 +246,7 @@ use HashesValues;
         $this->iterPos = 0;
     }
 
-    /** @return T_Value|null Item at the current iteration position, or null past the end. */
+    /** @return T_Value|null Item at the current iteration position, or null past the end. Complexity: O(1). */
     public function current(): mixed {
         if ($this->iterKeys === null || !isset($this->iterKeys[$this->iterPos])) {
             return null;
@@ -238,7 +254,7 @@ use HashesValues;
         return $this->items[$this->iterKeys[$this->iterPos]];
     }
 
-    /** Occurrence count at the current iteration position, exposed as the key. */
+    /** Occurrence count at the current iteration position, exposed as the key. Complexity: O(1). */
     public function key(): int {
         if ($this->iterKeys === null || !isset($this->iterKeys[$this->iterPos])) {
             return 0;
@@ -246,18 +262,18 @@ use HashesValues;
         return $this->counts[$this->iterKeys[$this->iterPos]];
     }
 
-    /** Advance the iteration position. */
+    /** Advance the iteration position. Complexity: O(1). */
     public function next(): void {
         $this->iterPos++;
     }
 
-    /** Snapshot the current insertion order and reset the iteration position. */
+    /** Snapshot the current insertion order and reset the iteration position. Complexity: O(d) in the number of distinct items. */
     public function rewind(): void {
         $this->iterKeys = Arr::keys($this->items);
         $this->iterPos = 0;
     }
 
-    /** Whether the iteration position still points at a snapshotted item. */
+    /** Whether the iteration position still points at a snapshotted item. Complexity: O(1). */
     public function valid(): bool {
         return $this->iterKeys !== null && isset($this->iterKeys[$this->iterPos]);
     }
@@ -267,6 +283,8 @@ use HashesValues;
      *
      * A plain associative array would be ambiguous because object items aren't
      * representable as array keys, so pairs are used uniformly.
+     *
+     * Complexity: O(d) in the number of distinct items.
      *
      * @return list<array{0: T_Value, 1: int}>
      */

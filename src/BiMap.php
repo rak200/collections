@@ -23,6 +23,9 @@ use function count, get_debug_type, is_int, is_string, key, next, reset, var_exp
  * Common cases: session-id ↔ user mappings, slug ↔ entity lookups, enum code
  * ↔ label tables, any one-to-one relation you want to query from either side.
  *
+ * Complexity:
+ * - O(1): put / forcePut / getByKey / getByValue / hasKey / hasValue / removeByKey / removeByValue / count / isEmpty / clear / getKeyType / getValueType / toArray / iteration
+ *
  * @template T_Key of int|string
  * @template T_Value
  * @implements \Iterator<T_Key, T_Value>
@@ -72,12 +75,18 @@ class BiMap implements \Iterator, \Countable, ToArray {
         return new self($keyType, $valueClass);
     }
 
-    /** @return 'int'|'string'|'mixed' */
+    /**
+     * Configured key type. Complexity: O(1).
+     * @return 'int'|'string'|'mixed'
+     */
     public function getKeyType(): string {
         return $this->keyType;
     }
 
-    /** @return class-string<T_Value>|string */
+    /**
+     * Configured value type. Complexity: O(1).
+     * @return class-string<T_Value>|string
+     */
     public function getValueType(): string {
         return $this->valueType;
     }
@@ -104,6 +113,8 @@ class BiMap implements \Iterator, \Countable, ToArray {
      * Insert a key/value pair. Throws if the key or the value is already
      * mapped on either side. Use {@see forcePut()} to overwrite.
      *
+     * Complexity: O(1).
+     *
      * @param T_Key $key
      * @param T_Value $value
      * @throws InvalidArgumentException
@@ -125,6 +136,8 @@ class BiMap implements \Iterator, \Countable, ToArray {
     /**
      * Insert a key/value pair, removing any existing mapping for either side first.
      *
+     * Complexity: O(1).
+     *
      * @param T_Key $key
      * @param T_Value $value
      * @throws InvalidArgumentException
@@ -139,7 +152,7 @@ class BiMap implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Value mapped to the given key, or null if absent.
+     * Value mapped to the given key, or null if absent. Complexity: O(1).
      *
      * @param T_Key $key
      * @return T_Value|null
@@ -149,7 +162,7 @@ class BiMap implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Key mapped to the given value, or null if absent.
+     * Key mapped to the given value, or null if absent. Complexity: O(1) reverse lookup.
      *
      * @param T_Value $value
      * @return T_Key|null
@@ -159,7 +172,7 @@ class BiMap implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Whether the given key is mapped.
+     * Whether the given key is mapped. Complexity: O(1).
      *
      * @param T_Key $key
      */
@@ -168,7 +181,7 @@ class BiMap implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Whether the given value is mapped.
+     * Whether the given value is mapped. Complexity: O(1).
      *
      * @param T_Value $value
      */
@@ -177,7 +190,7 @@ class BiMap implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Remove the entry by key. Returns true if it was present, false otherwise.
+     * Remove the entry by key. Returns true if it was present, false otherwise. Complexity: O(1).
      *
      * @param T_Key $key
      */
@@ -191,7 +204,7 @@ class BiMap implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Remove the entry by value. Returns true if it was present, false otherwise.
+     * Remove the entry by value. Returns true if it was present, false otherwise. Complexity: O(1).
      *
      * @param T_Value $value
      */
@@ -205,49 +218,49 @@ class BiMap implements \Iterator, \Countable, ToArray {
         return true;
     }
 
-    /** Number of mappings currently stored. */
+    /** Number of mappings currently stored. Complexity: O(1). */
     public function count(): int {
         return count($this->keyToValue);
     }
 
-    /** Whether the map holds no mappings. */
+    /** Whether the map holds no mappings. Complexity: O(1). */
     public function isEmpty(): bool {
         return $this->keyToValue === [];
     }
 
-    /** Discard all mappings. */
+    /** Discard all mappings. Complexity: O(1). */
     public function clear(): void {
         $this->keyToValue = [];
         $this->valueHashToKey = [];
     }
 
-    /** @return T_Value|null Value at the current iteration cursor, or null past the end. */
+    /** @return T_Value|null Value at the current iteration cursor, or null past the end. Complexity: O(1). */
     public function current(): mixed {
         $key = key($this->keyToValue);
         return $key === null ? null : $this->keyToValue[$key];
     }
 
-    /** @return T_Key|null Key at the current iteration cursor, or null past the end. */
+    /** @return T_Key|null Key at the current iteration cursor, or null past the end. Complexity: O(1). */
     public function key(): int|string|null {
         return key($this->keyToValue);
     }
 
-    /** Advance the iteration cursor. */
+    /** Advance the iteration cursor. Complexity: O(1). */
     public function next(): void {
         next($this->keyToValue);
     }
 
-    /** Reset the iteration cursor to the first entry. */
+    /** Reset the iteration cursor to the first entry. Complexity: O(1). */
     public function rewind(): void {
         reset($this->keyToValue);
     }
 
-    /** Whether the iteration cursor still points at a valid entry. */
+    /** Whether the iteration cursor still points at a valid entry. Complexity: O(1). */
     public function valid(): bool {
         return key($this->keyToValue) !== null;
     }
 
-    /** @return array<T_Key, T_Value> Entries indexed by key, in insertion order. */
+    /** @return array<T_Key, T_Value> Entries indexed by key, in insertion order. Complexity: O(1) (returned directly; PHP copies on write). */
     public function toArray(): array {
         return $this->keyToValue;
     }

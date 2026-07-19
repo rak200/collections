@@ -19,6 +19,14 @@ use Rak200\Utils\Arr;
  * Common cases: membership tests, deduplication of inputs, visited-node
  * tracking in graph traversals, tag / permission collections.
  *
+ * Complexity:
+ * - O(1): add / remove / contains / count / isEmpty / clear / getType
+ * - O(n): toArray / union / intersection / difference / isSubsetOf / isSupersetOf
+ *
+ * (Note: during iteration key() resolves the position in O(n), so a keyed
+ * foreach is O(n²); iterate values, or use toArray(), when the position
+ * isn't needed.)
+ *
  * @template T_Value
  * @extends AbstractCollection<T_Value>
  * @phpstan-consistent-constructor
@@ -58,6 +66,8 @@ class Set extends AbstractCollection {
     /**
      * Zero-based position of the current item within the set. The internal
      * hash key is hidden so the `Iterator<int, T_Value>` contract holds.
+     *
+     * Complexity: O(n) — a linear scan maps the hash key to its position.
      */
     public function key(): ?int {
         $pos = array_search(parent::key(), Arr::keys($this->items), true);
@@ -65,7 +75,7 @@ class Set extends AbstractCollection {
     }
 
     /**
-     * Add an item. Returns true if newly added, false if already present.
+     * Add an item. Returns true if newly added, false if already present. Complexity: O(1).
      *
      * @param T_Value $item
      * @throws InvalidArgumentException
@@ -81,7 +91,7 @@ class Set extends AbstractCollection {
     }
 
     /**
-     * Remove an item. Returns true if it was present, false otherwise.
+     * Remove an item. Returns true if it was present, false otherwise. Complexity: O(1).
      *
      * @param T_Value $item
      */
@@ -94,13 +104,19 @@ class Set extends AbstractCollection {
         return true;
     }
 
-    /** @param T_Value $item */
+    /**
+     * Whether the set contains $item. Complexity: O(1).
+     *
+     * @param T_Value $item
+     */
     public function contains(mixed $item): bool {
         return Arr::has($this->items, self::hashValue($item));
     }
 
     /**
      * Return a new set containing items from both. Resulting type matches $this.
+     *
+     * Complexity: O(n + m), where n = |$this| and m = |$other|.
      *
      * @param self<T_Value> $other
      * @return static
@@ -120,6 +136,8 @@ class Set extends AbstractCollection {
     /**
      * Return a new set containing only items present in both.
      *
+     * Complexity: O(n), where n = |$this| (each membership test is O(1)).
+     *
      * @param self<T_Value> $other
      * @return static
      */
@@ -135,6 +153,8 @@ class Set extends AbstractCollection {
 
     /**
      * Return a new set containing items in $this not present in $other.
+     *
+     * Complexity: O(n), where n = |$this| (each membership test is O(1)).
      *
      * @param self<T_Value> $other
      * @return static
@@ -152,6 +172,8 @@ class Set extends AbstractCollection {
     /**
      * Whether every item in $this is also in $other.
      *
+     * Complexity: O(n), where n = |$this|.
+     *
      * @param self<T_Value> $other
      */
     public function isSubsetOf(self $other): bool {
@@ -166,6 +188,8 @@ class Set extends AbstractCollection {
     /**
      * Whether every item in $other is also in $this.
      *
+     * Complexity: O(m), where m = |$other|.
+     *
      * @param self<T_Value> $other
      */
     public function isSupersetOf(self $other): bool {
@@ -174,6 +198,8 @@ class Set extends AbstractCollection {
 
     /**
      * Return the items as a zero-indexed array (hash keys discarded).
+     *
+     * Complexity: O(n).
      *
      * @return T_Value[]
      */

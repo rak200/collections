@@ -15,6 +15,10 @@ use InvalidArgumentException;
  * evicts the oldest item to make room. Useful for sliding windows, log
  * ringbuffers, and any "keep the last N" workflow.
  *
+ * Complexity:
+ * - O(1): push / pop / peek / capacity / isFull / count / isEmpty / clear / getType / iteration
+ * - O(n): toArray
+ *
  * @template T_Value
  * @implements \Iterator<int, T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>
@@ -77,19 +81,19 @@ class CircularBuffer implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Get the configured type of this buffer.
+     * Get the configured type of this buffer. Complexity: O(1).
      * @return class-string<T_Value>|string
      */
     public function getType(): string {
         return $this->type;
     }
 
-    /** Maximum number of items the buffer can hold. */
+    /** Maximum number of items the buffer can hold. Complexity: O(1). */
     public function capacity(): int {
         return $this->capacity;
     }
 
-    /** Whether the buffer is at capacity. The next push will evict the oldest item. */
+    /** Whether the buffer is at capacity. The next push will evict the oldest item. Complexity: O(1). */
     public function isFull(): bool {
         return $this->count === $this->capacity;
     }
@@ -97,6 +101,8 @@ class CircularBuffer implements \Iterator, \Countable, ToArray {
     /**
      * Append an item. When the buffer is full, the oldest item is evicted and
      * returned; otherwise returns null.
+     *
+     * Complexity: O(1).
      *
      * @param T_Value $item
      * @return T_Value|null Evicted item, or null if the buffer had room.
@@ -118,7 +124,7 @@ class CircularBuffer implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Remove and return the oldest item, or null if empty.
+     * Remove and return the oldest item, or null if empty. Complexity: O(1).
      *
      * @return T_Value|null
      */
@@ -134,7 +140,7 @@ class CircularBuffer implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Return the oldest item without removing it, or null if empty.
+     * Return the oldest item without removing it, or null if empty. Complexity: O(1).
      *
      * @return T_Value|null
      */
@@ -142,17 +148,17 @@ class CircularBuffer implements \Iterator, \Countable, ToArray {
         return $this->count === 0 ? null : $this->buffer[$this->head];
     }
 
-    /** Number of items currently in the buffer. */
+    /** Number of items currently in the buffer. Complexity: O(1). */
     public function count(): int {
         return $this->count;
     }
 
-    /** Whether the buffer holds no items. */
+    /** Whether the buffer holds no items. Complexity: O(1). */
     public function isEmpty(): bool {
         return $this->count === 0;
     }
 
-    /** Discard all items and reset iteration state. */
+    /** Discard all items and reset iteration state. Complexity: O(1). */
     public function clear(): void {
         $this->buffer = [];
         $this->head = 0;
@@ -160,7 +166,7 @@ class CircularBuffer implements \Iterator, \Countable, ToArray {
         $this->iterPos = 0;
     }
 
-    /** @return T_Value|null Item at the current iteration position (oldest to newest), or null past the end. */
+    /** @return T_Value|null Item at the current iteration position (oldest to newest), or null past the end. Complexity: O(1). */
     public function current(): mixed {
         if ($this->iterPos >= $this->count) {
             return null;
@@ -168,27 +174,27 @@ class CircularBuffer implements \Iterator, \Countable, ToArray {
         return $this->buffer[($this->head + $this->iterPos) % $this->capacity];
     }
 
-    /** Zero-based offset from the oldest item. */
+    /** Zero-based offset from the oldest item. Complexity: O(1). */
     public function key(): int {
         return $this->iterPos;
     }
 
-    /** Advance the iteration position one step toward the newest item. */
+    /** Advance the iteration position one step toward the newest item. Complexity: O(1). */
     public function next(): void {
         $this->iterPos++;
     }
 
-    /** Reset the iteration position to the oldest item. */
+    /** Reset the iteration position to the oldest item. Complexity: O(1). */
     public function rewind(): void {
         $this->iterPos = 0;
     }
 
-    /** Whether the iteration position still points at a valid item. */
+    /** Whether the iteration position still points at a valid item. Complexity: O(1). */
     public function valid(): bool {
         return $this->iterPos < $this->count;
     }
 
-    /** @return list<T_Value> Items from oldest to newest. */
+    /** @return list<T_Value> Items from oldest to newest. Complexity: O(n). */
     public function toArray(): array {
         $out = [];
         for ($i = 0; $i < $this->count; $i++) {

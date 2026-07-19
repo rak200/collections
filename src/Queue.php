@@ -14,6 +14,10 @@ use Rak200\Collections\Internal\ProvidesValueFactories;
  * Common cases: background job queues, BFS frontiers, producer / consumer
  * buffers, request pipelines — anywhere "first in, first out" is the rule.
  *
+ * Complexity:
+ * - O(1): enqueue / dequeue / peek / getType / count / isEmpty / clear / iteration
+ * - O(n): toArray
+ *
  * @template T_Value
  * @implements \Iterator<int, T_Value>
  * @author rak200 <rak.ricardo@windowslive.com>
@@ -55,7 +59,7 @@ class Queue implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Get the configured type of this queue.
+     * Get the configured type of this queue. Complexity: O(1).
      * @return class-string<T_Value>|string
      */
     public function getType(): string {
@@ -63,7 +67,7 @@ class Queue implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Append at the tail.
+     * Append at the tail. Complexity: O(1).
      *
      * @param T_Value $item
      * @throws InvalidArgumentException
@@ -73,7 +77,7 @@ class Queue implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Remove and return the head, or null if empty.
+     * Remove and return the head, or null if empty. Complexity: O(1).
      *
      * @return T_Value|null
      */
@@ -82,7 +86,7 @@ class Queue implements \Iterator, \Countable, ToArray {
     }
 
     /**
-     * Return the head without removing it, or null if empty.
+     * Return the head without removing it, or null if empty. Complexity: O(1).
      *
      * @return T_Value|null
      */
@@ -90,47 +94,47 @@ class Queue implements \Iterator, \Countable, ToArray {
         return $this->list->head()?->value;
     }
 
-    /** Number of items currently in the queue. */
+    /** Number of items currently in the queue. Complexity: O(1). */
     public function count(): int {
         return $this->list->count();
     }
 
-    /** Whether the queue holds no items. */
+    /** Whether the queue holds no items. Complexity: O(1). */
     public function isEmpty(): bool {
         return $this->list->isEmpty();
     }
 
-    /** Discard all items. */
+    /** Discard all items. Complexity: O(1). */
     public function clear(): void {
         $this->list->clear();
     }
 
-    /** @return T_Value|null Item at the current iteration cursor, or null past the end. */
+    /** @return T_Value|null Item at the current iteration cursor, or null past the end. Complexity: O(1). */
     public function current(): mixed {
         return $this->list->current();
     }
 
-    /** Zero-based offset from the head of the queue. */
+    /** Zero-based offset from the head of the queue. Complexity: O(1). */
     public function key(): int {
         return $this->list->key();
     }
 
-    /** Advance the iteration cursor one step toward the tail. */
+    /** Advance the iteration cursor one step toward the tail. Complexity: O(1). */
     public function next(): void {
         $this->list->next();
     }
 
-    /** Reset the iteration cursor to the head of the queue. */
+    /** Reset the iteration cursor to the head of the queue. Complexity: O(1). */
     public function rewind(): void {
         $this->list->rewind();
     }
 
-    /** Whether the iteration cursor still points at a valid item. */
+    /** Whether the iteration cursor still points at a valid item. Complexity: O(1). */
     public function valid(): bool {
         return $this->list->valid();
     }
 
-    /** @return T_Value[] Items from head to tail. */
+    /** @return T_Value[] Items from head to tail. Complexity: O(n). */
     public function toArray(): array {
         return $this->list->toArray();
     }
