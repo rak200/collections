@@ -259,11 +259,11 @@ When releasing a new version:
 
 Consumers using `"type": "vcs"` in their `composer.json` resolve versions from git tags.
 
-## Roadmap (1.0.0)
+## Roadmap
 
-Deprecations already marked in the code, deferred to the first stable release. All are
-**breaking**, so they land only in 1.0.0 (the API is still stabilizing pre-1.0). This is
-the canonical list — the `@deprecated` docblocks are the source of truth per item.
+Pending work, without a committed target version. Items 1–2 are **breaking** (they only
+land in a major release); items 3–4 are non-breaking. For the deprecations, the
+`@deprecated` docblocks remain the source of truth per item.
 
 1. **Remove `Collection`** — the BC shim `@deprecated` since 0.0.2 (`src/Collection.php`).
    It extends `Vector` to keep legacy string-keyed callers working and triggers
@@ -273,5 +273,11 @@ the canonical list — the `@deprecated` docblocks are the source of truth per i
    since 0.5.0 (`src/LinkedList.php`, `src/Queue.php`, `src/Deque.php`). They stay public
    for now because these collections are composed by others (`Queue`/`Deque` build a
    `LinkedList` internally, whose type can't flow through the `any()`-returns-`mixed`
-   factory path); the pending visibility change is to close that gap and route all
-   construction through the factories.
+   factory path); the pending change is to close that gap and route all construction
+   through the factories.
+3. **Re-add algorithmic complexity documentation** — restore the Big-O complexity notes
+   for each collection's operations (e.g. `push`/`pop`/`enqueue`/`dequeue`/lookup) in the
+   method docblocks, so the cost of every operation is documented at the call site.
+4. **Investigate raising PHPStan to `max`** — evaluate moving the analysis from level 9
+   to `max` (`phpstan.neon.dist`), assess the new findings, and adopt it if the added
+   strictness is worth the churn.
