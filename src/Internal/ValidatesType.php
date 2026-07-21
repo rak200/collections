@@ -5,7 +5,23 @@ declare(strict_types=1);
 namespace Rak200\Collections\Internal;
 
 use InvalidArgumentException;
-use function get_debug_type, is_a, is_array, is_bool, is_callable, is_float, is_int, is_iterable, is_object, is_string;
+use Rak200\Collections\AbstractCollection;
+use Rak200\Collections\BiMap;
+use Rak200\Collections\LinkedList;
+use Rak200\Collections\Map;
+use Rak200\Collections\ObjectMap;
+use Rak200\Collections\PriorityQueue;
+
+use function get_debug_type;
+use function is_a;
+use function is_array;
+use function is_bool;
+use function is_callable;
+use function is_float;
+use function is_int;
+use function is_iterable;
+use function is_object;
+use function is_string;
 
 /**
  * Static helpers for validating values against a configured `$type` discriminator.
@@ -21,15 +37,17 @@ use function get_debug_type, is_a, is_array, is_bool, is_callable, is_float, is_
  * Callers pass their own type as the first argument; the helper has no
  * knowledge of the containing class or its property layout.
  *
- * Used across the library by {@see \Rak200\Collections\AbstractCollection}
- * subclasses, {@see \Rak200\Collections\LinkedList},
- * {@see \Rak200\Collections\PriorityQueue}, {@see \Rak200\Collections\BiMap},
- * {@see \Rak200\Collections\Map}, and {@see \Rak200\Collections\ObjectMap}.
+ * Used across the library by {@see AbstractCollection}
+ * subclasses, {@see LinkedList},
+ * {@see PriorityQueue}, {@see BiMap},
+ * {@see Map}, and {@see ObjectMap}.
  *
- * @internal Not part of the public API; subject to change.
+ * @internal not part of the public API; subject to change
+ *
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
-abstract class ValidatesType {
-
+abstract class ValidatesType
+{
     /**
      * Throw if $value does not satisfy $type.
      *
@@ -37,11 +55,13 @@ abstract class ValidatesType {
      * The `$label` is interpolated into the error message so callers can
      * distinguish between items, keys, and values.
      *
-     * @param string $type A class-string or one of the pseudo-type discriminators listed in the class docblock.
+     * @param string $type  a class-string or one of the pseudo-type discriminators listed in the class docblock
      * @param string $label Used in the error message (e.g. `'Item'`, `'Key'`, `'Value'`).
-     * @throws InvalidArgumentException When $value does not satisfy $type.
+     *
+     * @throws InvalidArgumentException when $value does not satisfy $type
      */
-    public static function checkType(string $type, mixed $value, string $label = 'Item'): void {
+    public static function checkType(string $type, mixed $value, string $label = 'Item'): void
+    {
         $valid = match ($type) {
             'mixed' => true,
             'object' => is_object($value),

@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function array_search;
 use InvalidArgumentException;
 use Rak200\Collections\Internal\HashesValues;
 use Rak200\Collections\Internal\ProvidesValueFactories;
 use Rak200\Collections\Internal\ValidatesType;
 use Rak200\Utils\Arr;
+
+use function array_search;
 
 /**
  * Unique-element set. Identity is hybrid:
@@ -28,39 +29,48 @@ use Rak200\Utils\Arr;
  * isn't needed.)
  *
  * @template T_Value
+ *
  * @extends AbstractCollection<T_Value>
+ *
  * @phpstan-consistent-constructor
+ *
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-class Set extends AbstractCollection {
-
+class Set extends AbstractCollection
+{
     use HashesValues;
     use ProvidesValueFactories;
+
+    /**
+     * @param string            $type  class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip
+     * @param iterable<T_Value> $items initial items added in order; duplicates are ignored
+     *
+     * @throws InvalidArgumentException when any item does not satisfy $type
+     */
+    protected function __construct(string $type = 'mixed', iterable $items = [])
+    {
+        parent::__construct($type);
+        foreach ($items as $item) {
+            $this->add($item);
+        }
+    }
 
     /**
      * Collection of instances of the given class, with the element type
      * inferred statically: `Set::of(Foo::class)` is `Set<Foo>`.
      *
      * @template T of object
-     * @param class-string<T> $class Class to enforce on items.
-     * @param iterable<T> $items Initial items added in order; duplicates are ignored.
+     *
+     * @param class-string<T> $class class to enforce on items
+     * @param iterable<T>     $items initial items added in order; duplicates are ignored
+     *
      * @return self<T>
-     * @throws InvalidArgumentException When any item is not an instance of $class.
+     *
+     * @throws InvalidArgumentException when any item is not an instance of $class
      */
-    public static function of(string $class, iterable $items = []): self {
+    public static function of(string $class, iterable $items = []): self
+    {
         return new self($class, $items);
-    }
-
-    /**
-     * @param string $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
-     * @param iterable<T_Value> $items Initial items added in order; duplicates are ignored.
-     * @throws InvalidArgumentException When any item does not satisfy $type.
-     */
-    protected function __construct(string $type = 'mixed', iterable $items = []) {
-        parent::__construct($type);
-        foreach ($items as $item) {
-            $this->add($item);
-        }
     }
 
     /**
@@ -69,8 +79,10 @@ class Set extends AbstractCollection {
      *
      * Complexity: O(n) — a linear scan maps the hash key to its position.
      */
-    public function key(): ?int {
+    public function key(): ?int
+    {
         $pos = array_search(parent::key(), Arr::keys($this->items), true);
+
         return $pos === false ? null : $pos;
     }
 
@@ -78,15 +90,18 @@ class Set extends AbstractCollection {
      * Add an item. Returns true if newly added, false if already present. Complexity: O(1).
      *
      * @param T_Value $item
+     *
      * @throws InvalidArgumentException
      */
-    public function add(mixed $item): bool {
+    public function add(mixed $item): bool
+    {
         ValidatesType::checkType($this->type, $item);
         $hash = self::hashValue($item);
         if (Arr::has($this->items, $hash)) {
             return false;
         }
         $this->items[$hash] = $item;
+
         return true;
     }
 
@@ -95,12 +110,14 @@ class Set extends AbstractCollection {
      *
      * @param T_Value $item
      */
-    public function remove(mixed $item): bool {
+    public function remove(mixed $item): bool
+    {
         $hash = self::hashValue($item);
         if (!isset($this->items[$hash])) {
             return false;
         }
         unset($this->items[$hash]);
+
         return true;
     }
 
@@ -109,7 +126,8 @@ class Set extends AbstractCollection {
      *
      * @param T_Value $item
      */
-    public function contains(mixed $item): bool {
+    public function contains(mixed $item): bool
+    {
         return Arr::has($this->items, self::hashValue($item));
     }
 
@@ -119,10 +137,11 @@ class Set extends AbstractCollection {
      * Complexity: O(n + m), where n = |$this| and m = |$other|.
      *
      * @param self<T_Value> $other
-     * @return static
-     * @throws InvalidArgumentException When $other has items incompatible with $this->type.
+     *
+     * @throws InvalidArgumentException when $other has items incompatible with $this->type
      */
-    public function union(self $other): static {
+    public function union(self $other): static
+    {
         $result = new static($this->type);
         foreach ($this->items as $item) {
             $result->add($item);
@@ -130,6 +149,7 @@ class Set extends AbstractCollection {
         foreach ($other->items as $item) {
             $result->add($item);
         }
+
         return $result;
     }
 
@@ -139,15 +159,16 @@ class Set extends AbstractCollection {
      * Complexity: O(n), where n = |$this| (each membership test is O(1)).
      *
      * @param self<T_Value> $other
-     * @return static
      */
-    public function intersection(self $other): static {
+    public function intersection(self $other): static
+    {
         $result = new static($this->type);
         foreach ($this->items as $item) {
             if ($other->contains($item)) {
                 $result->add($item);
             }
         }
+
         return $result;
     }
 
@@ -157,15 +178,16 @@ class Set extends AbstractCollection {
      * Complexity: O(n), where n = |$this| (each membership test is O(1)).
      *
      * @param self<T_Value> $other
-     * @return static
      */
-    public function difference(self $other): static {
+    public function difference(self $other): static
+    {
         $result = new static($this->type);
         foreach ($this->items as $item) {
             if (!$other->contains($item)) {
                 $result->add($item);
             }
         }
+
         return $result;
     }
 
@@ -176,12 +198,14 @@ class Set extends AbstractCollection {
      *
      * @param self<T_Value> $other
      */
-    public function isSubsetOf(self $other): bool {
+    public function isSubsetOf(self $other): bool
+    {
         foreach ($this->items as $item) {
             if (!$other->contains($item)) {
                 return false;
             }
         }
+
         return true;
     }
 
@@ -192,7 +216,8 @@ class Set extends AbstractCollection {
      *
      * @param self<T_Value> $other
      */
-    public function isSupersetOf(self $other): bool {
+    public function isSupersetOf(self $other): bool
+    {
         return $other->isSubsetOf($this);
     }
 
@@ -203,7 +228,8 @@ class Set extends AbstractCollection {
      *
      * @return T_Value[]
      */
-    public function toArray(): array {
+    public function toArray(): array
+    {
         return Arr::values($this->items);
     }
 }

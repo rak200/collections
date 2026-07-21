@@ -4,12 +4,22 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
+use Countable;
+use InvalidArgumentException;
+use Iterator;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\HashesValues;
 use Rak200\Collections\Internal\ValidatesType;
 use Rak200\Utils\Arr;
-use InvalidArgumentException;
-use function count, get_debug_type, is_int, is_string, key, next, reset, var_export;
+
+use function count;
+use function get_debug_type;
+use function is_int;
+use function is_string;
+use function key;
+use function next;
+use function reset;
+use function var_export;
 
 /**
  * Bidirectional map with unique keys AND unique values.
@@ -28,11 +38,13 @@ use function count, get_debug_type, is_int, is_string, key, next, reset, var_exp
  *
  * @template T_Key of int|string
  * @template T_Value
- * @implements \Iterator<T_Key, T_Value>
+ *
+ * @implements Iterator<T_Key, T_Value>
+ *
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-class BiMap implements \Iterator, \Countable, ToArray {
-
+class BiMap implements Iterator, Countable, ToArray
+{
     use HashesValues;
 
     /** @var array<T_Key, T_Value> */
@@ -42,8 +54,8 @@ class BiMap implements \Iterator, \Countable, ToArray {
     private array $valueHashToKey = [];
 
     /**
-     * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
-     * @param string $valueType Class name or built-in pseudo-type to enforce on values, or `'mixed'` to skip.
+     * @param 'int'|'mixed'|'string' $keyType   key type to enforce
+     * @param string                 $valueType class name or built-in pseudo-type to enforce on values, or `'mixed'` to skip
      */
     protected function __construct(
         private string $keyType = 'mixed',
@@ -55,7 +67,8 @@ class BiMap implements \Iterator, \Countable, ToArray {
      *
      * @return self<int|string, mixed>
      */
-    public static function any(): self {
+    public static function any(): self
+    {
         return new self();
     }
 
@@ -66,47 +79,37 @@ class BiMap implements \Iterator, \Countable, ToArray {
      * provided by the PHPStan extension for direct `new` calls.
      *
      * @template T of object
-     * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
-     * @param class-string<T> $valueClass Class to enforce on values.
+     *
+     * @param 'int'|'mixed'|'string' $keyType    key type to enforce
+     * @param class-string<T>        $valueClass class to enforce on values
+     *
      * @return self<int|string, T>
-     * @throws InvalidArgumentException When any key or value violates its type.
+     *
+     * @throws InvalidArgumentException when any key or value violates its type
      */
-    public static function of(string $keyType, string $valueClass): self {
+    public static function of(string $keyType, string $valueClass): self
+    {
         return new self($keyType, $valueClass);
     }
 
     /**
      * Configured key type. Complexity: O(1).
-     * @return 'int'|'string'|'mixed'
+     *
+     * @return 'int'|'mixed'|'string'
      */
-    public function getKeyType(): string {
+    public function getKeyType(): string
+    {
         return $this->keyType;
     }
 
     /**
      * Configured value type. Complexity: O(1).
+     *
      * @return class-string<T_Value>|string
      */
-    public function getValueType(): string {
+    public function getValueType(): string
+    {
         return $this->valueType;
-    }
-
-    /**
-     * Validate that $key matches the configured key type.
-     *
-     * @param T_Key $key
-     * @throws InvalidArgumentException When the key does not match $this->keyType.
-     */
-    private function checkKey(int|string $key): void {
-        if ($this->keyType === 'mixed') {
-            return;
-        }
-        if ($this->keyType === 'int' && !is_int($key)) {
-            throw new InvalidArgumentException('Key must be of type int. Got: ' . get_debug_type($key));
-        }
-        if ($this->keyType === 'string' && !is_string($key)) {
-            throw new InvalidArgumentException('Key must be of type string. Got: ' . get_debug_type($key));
-        }
     }
 
     /**
@@ -115,11 +118,13 @@ class BiMap implements \Iterator, \Countable, ToArray {
      *
      * Complexity: O(1).
      *
-     * @param T_Key $key
+     * @param T_Key   $key
      * @param T_Value $value
+     *
      * @throws InvalidArgumentException
      */
-    public function put(int|string $key, mixed $value): void {
+    public function put(int|string $key, mixed $value): void
+    {
         $this->checkKey($key);
         ValidatesType::checkType($this->valueType, $value, 'Value');
         if (Arr::has($this->keyToValue, $key)) {
@@ -138,11 +143,13 @@ class BiMap implements \Iterator, \Countable, ToArray {
      *
      * Complexity: O(1).
      *
-     * @param T_Key $key
+     * @param T_Key   $key
      * @param T_Value $value
+     *
      * @throws InvalidArgumentException
      */
-    public function forcePut(int|string $key, mixed $value): void {
+    public function forcePut(int|string $key, mixed $value): void
+    {
         $this->checkKey($key);
         ValidatesType::checkType($this->valueType, $value, 'Value');
         $this->removeByKey($key);
@@ -155,9 +162,11 @@ class BiMap implements \Iterator, \Countable, ToArray {
      * Value mapped to the given key, or null if absent. Complexity: O(1).
      *
      * @param T_Key $key
-     * @return T_Value|null
+     *
+     * @return null|T_Value
      */
-    public function getByKey(int|string $key): mixed {
+    public function getByKey(int|string $key): mixed
+    {
         return $this->keyToValue[$key] ?? null;
     }
 
@@ -165,9 +174,11 @@ class BiMap implements \Iterator, \Countable, ToArray {
      * Key mapped to the given value, or null if absent. Complexity: O(1) reverse lookup.
      *
      * @param T_Value $value
-     * @return T_Key|null
+     *
+     * @return null|T_Key
      */
-    public function getByValue(mixed $value): int|string|null {
+    public function getByValue(mixed $value): int|string|null
+    {
         return $this->valueHashToKey[self::hashValue($value)] ?? null;
     }
 
@@ -176,7 +187,8 @@ class BiMap implements \Iterator, \Countable, ToArray {
      *
      * @param T_Key $key
      */
-    public function hasKey(int|string $key): bool {
+    public function hasKey(int|string $key): bool
+    {
         return Arr::has($this->keyToValue, $key);
     }
 
@@ -185,7 +197,8 @@ class BiMap implements \Iterator, \Countable, ToArray {
      *
      * @param T_Value $value
      */
-    public function hasValue(mixed $value): bool {
+    public function hasValue(mixed $value): bool
+    {
         return isset($this->valueHashToKey[self::hashValue($value)]);
     }
 
@@ -194,12 +207,14 @@ class BiMap implements \Iterator, \Countable, ToArray {
      *
      * @param T_Key $key
      */
-    public function removeByKey(int|string $key): bool {
+    public function removeByKey(int|string $key): bool
+    {
         if (!Arr::has($this->keyToValue, $key)) {
             return false;
         }
         $value = $this->keyToValue[$key];
         unset($this->keyToValue[$key], $this->valueHashToKey[self::hashValue($value)]);
+
         return true;
     }
 
@@ -208,60 +223,96 @@ class BiMap implements \Iterator, \Countable, ToArray {
      *
      * @param T_Value $value
      */
-    public function removeByValue(mixed $value): bool {
+    public function removeByValue(mixed $value): bool
+    {
         $valueHash = self::hashValue($value);
         if (!isset($this->valueHashToKey[$valueHash])) {
             return false;
         }
         $key = $this->valueHashToKey[$valueHash];
         unset($this->valueHashToKey[$valueHash], $this->keyToValue[$key]);
+
         return true;
     }
 
     /** Number of mappings currently stored. Complexity: O(1). */
-    public function count(): int {
+    public function count(): int
+    {
         return count($this->keyToValue);
     }
 
     /** Whether the map holds no mappings. Complexity: O(1). */
-    public function isEmpty(): bool {
+    public function isEmpty(): bool
+    {
         return $this->keyToValue === [];
     }
 
     /** Discard all mappings. Complexity: O(1). */
-    public function clear(): void {
+    public function clear(): void
+    {
         $this->keyToValue = [];
         $this->valueHashToKey = [];
     }
 
-    /** @return T_Value|null Value at the current iteration cursor, or null past the end. Complexity: O(1). */
-    public function current(): mixed {
+    /** @return null|T_Value Value at the current iteration cursor, or null past the end. Complexity: O(1). */
+    public function current(): mixed
+    {
         $key = key($this->keyToValue);
+
         return $key === null ? null : $this->keyToValue[$key];
     }
 
-    /** @return T_Key|null Key at the current iteration cursor, or null past the end. Complexity: O(1). */
-    public function key(): int|string|null {
+    /** @return null|T_Key Key at the current iteration cursor, or null past the end. Complexity: O(1). */
+    public function key(): int|string|null
+    {
         return key($this->keyToValue);
     }
 
     /** Advance the iteration cursor. Complexity: O(1). */
-    public function next(): void {
+    public function next(): void
+    {
         next($this->keyToValue);
     }
 
     /** Reset the iteration cursor to the first entry. Complexity: O(1). */
-    public function rewind(): void {
+    public function rewind(): void
+    {
         reset($this->keyToValue);
     }
 
     /** Whether the iteration cursor still points at a valid entry. Complexity: O(1). */
-    public function valid(): bool {
+    public function valid(): bool
+    {
         return key($this->keyToValue) !== null;
     }
 
     /** @return array<T_Key, T_Value> Entries indexed by key, in insertion order. Complexity: O(1) (returned directly; PHP copies on write). */
-    public function toArray(): array {
+    public function toArray(): array
+    {
         return $this->keyToValue;
+    }
+
+    /**
+     * Validate that $key matches the configured key type.
+     *
+     * @param T_Key $key
+     *
+     * @throws InvalidArgumentException when the key does not match $this->keyType
+     */
+    private function checkKey(int|string $key): void
+    {
+        if ($this->keyType === 'mixed') {
+            // @infection-ignore-all Equivalent mutant: removing this return still
+            // exits with no throw, because the two checks below can only match
+            // when $this->keyType is 'int' or 'string' — mutually exclusive with
+            // 'mixed' here.
+            return;
+        }
+        if ($this->keyType === 'int' && !is_int($key)) {
+            throw new InvalidArgumentException('Key must be of type int. Got: ' . get_debug_type($key));
+        }
+        if ($this->keyType === 'string' && !is_string($key)) {
+            throw new InvalidArgumentException('Key must be of type string. Got: ' . get_debug_type($key));
+        }
     }
 }

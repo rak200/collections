@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function count, key, next, reset;
+use Countable;
+use Iterator;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\ValidatesType;
+
+use function count;
+use function key;
+use function next;
+use function reset;
 
 /**
  * Base class for typed collections. Provides shared mechanics:
@@ -24,11 +30,13 @@ use Rak200\Collections\Internal\ValidatesType;
  * - O(1): getType / count / isEmpty / clear / toArray / iteration
  *
  * @template T_Value
- * @implements \Iterator<int|string, T_Value>
+ *
+ * @implements Iterator<int|string, T_Value>
+ *
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-abstract class AbstractCollection implements \Iterator, \Countable, ToArray {
-
+abstract class AbstractCollection implements Iterator, Countable, ToArray
+{
     /** @var array<int|string, T_Value> */
     protected array $items = [];
 
@@ -42,56 +50,64 @@ abstract class AbstractCollection implements \Iterator, \Countable, ToArray {
      *
      * @return class-string<T_Value>|string
      */
-    public function getType(): string {
+    public function getType(): string
+    {
         return $this->type;
     }
 
     /** Number of items currently stored. Complexity: O(1). */
-    public function count(): int {
+    public function count(): int
+    {
         return count($this->items);
     }
 
     /** Whether the collection holds no items. Complexity: O(1). */
-    public function isEmpty(): bool {
+    public function isEmpty(): bool
+    {
         return $this->items === [];
     }
 
     /** Discard all items. Subclasses with extra state should override. Complexity: O(1). */
-    public function clear(): void {
+    public function clear(): void
+    {
         $this->items = [];
     }
 
     /**
      * Value at the current iteration cursor, or null past the end. Complexity: O(1).
      *
-     * @return T_Value|null
+     * @return null|T_Value
      */
-    public function current(): mixed {
+    public function current(): mixed
+    {
         $key = key($this->items);
+
         return $key === null ? null : $this->items[$key];
     }
 
     /**
      * Key at the current iteration cursor, or null past the end. Complexity: O(1).
-     *
-     * @return int|string|null
      */
-    public function key(): int|string|null {
+    public function key(): int|string|null
+    {
         return key($this->items);
     }
 
     /** Advance the iteration cursor. Complexity: O(1). */
-    public function next(): void {
+    public function next(): void
+    {
         next($this->items);
     }
 
     /** Reset the iteration cursor to the first item. Complexity: O(1). */
-    public function rewind(): void {
+    public function rewind(): void
+    {
         reset($this->items);
     }
 
     /** Whether the iteration cursor still points at a valid item. Complexity: O(1). */
-    public function valid(): bool {
+    public function valid(): bool
+    {
         return key($this->items) !== null;
     }
 
@@ -100,7 +116,8 @@ abstract class AbstractCollection implements \Iterator, \Countable, ToArray {
      *
      * @return array<int|string, T_Value>
      */
-    public function toArray(): array {
+    public function toArray(): array
+    {
         return $this->items;
     }
 }

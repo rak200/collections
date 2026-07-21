@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function count, key, next, reset;
+use Countable;
 use InvalidArgumentException;
+use Iterator;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\HashesValues;
 use Rak200\Collections\Internal\ValidatesType;
 use Rak200\Utils\Arr;
+
+use function count;
+use function key;
+use function next;
+use function reset;
 
 /**
  * Ordered map keyed by objects.
@@ -33,24 +39,27 @@ use Rak200\Utils\Arr;
  *
  * @template T_Key of object
  * @template T_Value of object
- * @implements \Iterator<T_Key, T_Value>
+ *
+ * @implements Iterator<T_Key, T_Value>
+ *
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-class ObjectMap implements \Iterator, \Countable, ToArray {
-
+class ObjectMap implements Iterator, Countable, ToArray
+{
     use HashesValues;
 
     /** @var array<string, T_Key> Hash → original key object. */
     private array $keys = [];
 
-    /** @var array<string, T_Value> Hash → value (parallel to $keys). */
+    /** @var array<string, T_Value> Hash → value (parallel to). */
     private array $values = [];
 
     /**
-     * @param string $keyType Key class to enforce, or 'object' to accept any object.
-     * @param string $valueType Value class to enforce, or 'object' to accept any object.
-     * @param iterable<array{0: T_Key, 1: T_Value}> $pairs Initial entries as `[key, value]` pairs.
-     * @throws InvalidArgumentException When any key or value violates its type.
+     * @param string                                $keyType   key class to enforce, or 'object' to accept any object
+     * @param string                                $valueType value class to enforce, or 'object' to accept any object
+     * @param iterable<array{0: T_Key, 1: T_Value}> $pairs     initial entries as `[key, value]` pairs
+     *
+     * @throws InvalidArgumentException when any key or value violates its type
      */
     protected function __construct(
         private string $keyType = 'object',
@@ -65,10 +74,12 @@ class ObjectMap implements \Iterator, \Countable, ToArray {
     /**
      * Factory for a map accepting any objects as keys and values.
      *
-     * @param iterable<array{0: object, 1: object}> $pairs Initial entries as `[key, value]` pairs.
+     * @param iterable<array{0: object, 1: object}> $pairs initial entries as `[key, value]` pairs
+     *
      * @return self<object, object>
      */
-    public static function any(iterable $pairs = []): self {
+    public static function any(iterable $pairs = []): self
+    {
         return new self('object', 'object', $pairs);
     }
 
@@ -79,40 +90,50 @@ class ObjectMap implements \Iterator, \Countable, ToArray {
      *
      * @template TK of object
      * @template TV of object
-     * @param class-string<TK> $keyClass Key class to enforce.
-     * @param class-string<TV> $valueClass Value class to enforce.
-     * @param iterable<array{0: TK, 1: TV}> $pairs Initial entries as `[key, value]` pairs.
+     *
+     * @param class-string<TK>              $keyClass   key class to enforce
+     * @param class-string<TV>              $valueClass value class to enforce
+     * @param iterable<array{0: TK, 1: TV}> $pairs      initial entries as `[key, value]` pairs
+     *
      * @return self<TK, TV>
-     * @throws InvalidArgumentException When any key or value violates its type.
+     *
+     * @throws InvalidArgumentException when any key or value violates its type
      */
-    public static function of(string $keyClass, string $valueClass, iterable $pairs = []): self {
+    public static function of(string $keyClass, string $valueClass, iterable $pairs = []): self
+    {
         return new self($keyClass, $valueClass, $pairs);
     }
 
     /**
      * Configured key type. Complexity: O(1).
-     * @return string A value class-string, or 'object' for any object.
+     *
+     * @return string a value class-string, or 'object' for any object
      */
-    public function getKeyType(): string {
+    public function getKeyType(): string
+    {
         return $this->keyType;
     }
 
     /**
      * Configured value type. Complexity: O(1).
-     * @return string A value class-string, or 'object' for any object.
+     *
+     * @return string a value class-string, or 'object' for any object
      */
-    public function getValueType(): string {
+    public function getValueType(): string
+    {
         return $this->valueType;
     }
 
     /**
      * Set the value for the given key, overwriting any existing entry. Complexity: O(1).
      *
-     * @param T_Key $key
+     * @param T_Key   $key
      * @param T_Value $value
-     * @throws InvalidArgumentException When the key or value violates its type.
+     *
+     * @throws InvalidArgumentException when the key or value violates its type
      */
-    public function set(object $key, object $value): void {
+    public function set(object $key, object $value): void
+    {
         ValidatesType::checkType($this->keyType, $key, 'Key');
         ValidatesType::checkType($this->valueType, $value, 'Value');
         $hash = self::hashValue($key);
@@ -124,9 +145,11 @@ class ObjectMap implements \Iterator, \Countable, ToArray {
      * Value at the given key, or null if absent. Complexity: O(1).
      *
      * @param T_Key $key
-     * @return T_Value|null
+     *
+     * @return null|T_Value
      */
-    public function get(object $key): ?object {
+    public function get(object $key): ?object
+    {
         return $this->values[self::hashValue($key)] ?? null;
     }
 
@@ -135,7 +158,8 @@ class ObjectMap implements \Iterator, \Countable, ToArray {
      *
      * @param T_Key $key
      */
-    public function has(object $key): bool {
+    public function has(object $key): bool
+    {
         return isset($this->keys[self::hashValue($key)]);
     }
 
@@ -144,65 +168,79 @@ class ObjectMap implements \Iterator, \Countable, ToArray {
      *
      * @param T_Key $key
      */
-    public function remove(object $key): bool {
+    public function remove(object $key): bool
+    {
         $hash = self::hashValue($key);
         if (!isset($this->keys[$hash])) {
             return false;
         }
         unset($this->keys[$hash], $this->values[$hash]);
+
         return true;
     }
 
     /** @return list<T_Key> Keys in insertion order. Complexity: O(n). */
-    public function keys(): array {
+    public function keys(): array
+    {
         return Arr::values($this->keys);
     }
 
     /** @return list<T_Value> Values in insertion order. Complexity: O(n). */
-    public function values(): array {
+    public function values(): array
+    {
         return Arr::values($this->values);
     }
 
     /** Number of entries currently stored. Complexity: O(1). */
-    public function count(): int {
+    public function count(): int
+    {
         return count($this->keys);
     }
 
     /** Whether the map holds no entries. Complexity: O(1). */
-    public function isEmpty(): bool {
+    public function isEmpty(): bool
+    {
         return $this->keys === [];
     }
 
     /** Discard all entries. Complexity: O(1). */
-    public function clear(): void {
+    public function clear(): void
+    {
         $this->keys = [];
         $this->values = [];
     }
 
-    /** @return T_Value|null Value at the current iteration cursor, or null past the end. Complexity: O(1). */
-    public function current(): ?object {
+    /** @return null|T_Value Value at the current iteration cursor, or null past the end. Complexity: O(1). */
+    public function current(): ?object
+    {
         $hash = key($this->values);
+
         return $hash === null ? null : $this->values[$hash];
     }
 
-    /** @return T_Key|null Key at the current iteration cursor, or null past the end. Complexity: O(1). */
-    public function key(): ?object {
+    /** @return null|T_Key Key at the current iteration cursor, or null past the end. Complexity: O(1). */
+    public function key(): ?object
+    {
         $hash = key($this->values);
+
         return $hash === null ? null : $this->keys[$hash];
     }
 
     /** Advance the iteration cursor. Complexity: O(1). */
-    public function next(): void {
+    public function next(): void
+    {
         next($this->values);
     }
 
     /** Reset the iteration cursor to the first entry. Complexity: O(1). */
-    public function rewind(): void {
+    public function rewind(): void
+    {
         reset($this->values);
     }
 
     /** Whether the iteration cursor still points at a valid entry. Complexity: O(1). */
-    public function valid(): bool {
+    public function valid(): bool
+    {
         return key($this->values) !== null;
     }
 
@@ -216,11 +254,13 @@ class ObjectMap implements \Iterator, \Countable, ToArray {
      *
      * @return list<array{0: T_Key, 1: T_Value}>
      */
-    public function toArray(): array {
+    public function toArray(): array
+    {
         $out = [];
         foreach ($this->values as $hash => $value) {
             $out[] = [$this->keys[$hash], $value];
         }
+
         return $out;
     }
 }

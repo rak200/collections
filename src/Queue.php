@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use Rak200\Caster\Contracts\ToArray;
+use Countable;
 use InvalidArgumentException;
+use Iterator;
+use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\ProvidesValueFactories;
 
 /**
@@ -19,11 +21,13 @@ use Rak200\Collections\Internal\ProvidesValueFactories;
  * - O(n): toArray
  *
  * @template T_Value
- * @implements \Iterator<int, T_Value>
+ *
+ * @implements Iterator<int, T_Value>
+ *
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-class Queue implements \Iterator, \Countable, ToArray {
-
+class Queue implements Iterator, Countable, ToArray
+{
     use ProvidesValueFactories;
 
     /** @var LinkedList<T_Value> */
@@ -32,11 +36,13 @@ class Queue implements \Iterator, \Countable, ToArray {
     /**
      * @deprecated soft-deprecated in 0.5.0 — prefer the static factories ({@see self::of()}, {@see self::ofInt()}, {@see self::any()}, …). Stays public because this collection is composed by others; will be revisited in 1.0.0.
      *
-     * @param string $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
-     * @param iterable<T_Value> $items Initial items enqueued in order.
-     * @throws InvalidArgumentException When any item does not satisfy $type.
+     * @param string            $type  class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip
+     * @param iterable<T_Value> $items initial items enqueued in order
+     *
+     * @throws InvalidArgumentException when any item does not satisfy $type
      */
-    public function __construct(private string $type = 'mixed', iterable $items = []) {
+    public function __construct(private string $type = 'mixed', iterable $items = [])
+    {
         $this->list = new LinkedList($type);
         foreach ($items as $item) {
             $this->enqueue($item);
@@ -49,20 +55,26 @@ class Queue implements \Iterator, \Countable, ToArray {
      * in both PHPStan and IDE analysis.
      *
      * @template T of object
-     * @param class-string<T> $class Class to enforce on items.
-     * @param iterable<T> $items Initial items enqueued in order.
+     *
+     * @param class-string<T> $class class to enforce on items
+     * @param iterable<T>     $items initial items enqueued in order
+     *
      * @return self<T>
-     * @throws InvalidArgumentException When any item does not satisfy $class.
+     *
+     * @throws InvalidArgumentException when any item does not satisfy $class
      */
-    public static function of(string $class, iterable $items = []): self {
+    public static function of(string $class, iterable $items = []): self
+    {
         return new self($class, $items);
     }
 
     /**
      * Get the configured type of this queue. Complexity: O(1).
+     *
      * @return class-string<T_Value>|string
      */
-    public function getType(): string {
+    public function getType(): string
+    {
         return $this->type;
     }
 
@@ -70,72 +82,85 @@ class Queue implements \Iterator, \Countable, ToArray {
      * Append at the tail. Complexity: O(1).
      *
      * @param T_Value $item
+     *
      * @throws InvalidArgumentException
      */
-    public function enqueue(mixed $item): void {
+    public function enqueue(mixed $item): void
+    {
         $this->list->push($item);
     }
 
     /**
      * Remove and return the head, or null if empty. Complexity: O(1).
      *
-     * @return T_Value|null
+     * @return null|T_Value
      */
-    public function dequeue(): mixed {
+    public function dequeue(): mixed
+    {
         return $this->list->shift();
     }
 
     /**
      * Return the head without removing it, or null if empty. Complexity: O(1).
      *
-     * @return T_Value|null
+     * @return null|T_Value
      */
-    public function peek(): mixed {
+    public function peek(): mixed
+    {
         return $this->list->head()?->value;
     }
 
     /** Number of items currently in the queue. Complexity: O(1). */
-    public function count(): int {
+    public function count(): int
+    {
         return $this->list->count();
     }
 
     /** Whether the queue holds no items. Complexity: O(1). */
-    public function isEmpty(): bool {
+    public function isEmpty(): bool
+    {
         return $this->list->isEmpty();
     }
 
     /** Discard all items. Complexity: O(1). */
-    public function clear(): void {
+    public function clear(): void
+    {
         $this->list->clear();
     }
 
-    /** @return T_Value|null Item at the current iteration cursor, or null past the end. Complexity: O(1). */
-    public function current(): mixed {
+    /** @return null|T_Value Item at the current iteration cursor, or null past the end. Complexity: O(1). */
+    public function current(): mixed
+    {
         return $this->list->current();
     }
 
     /** Zero-based offset from the head of the queue. Complexity: O(1). */
-    public function key(): int {
+    public function key(): int
+    {
         return $this->list->key();
     }
 
     /** Advance the iteration cursor one step toward the tail. Complexity: O(1). */
-    public function next(): void {
+    public function next(): void
+    {
         $this->list->next();
     }
 
     /** Reset the iteration cursor to the head of the queue. Complexity: O(1). */
-    public function rewind(): void {
+    public function rewind(): void
+    {
         $this->list->rewind();
     }
 
     /** Whether the iteration cursor still points at a valid item. Complexity: O(1). */
-    public function valid(): bool {
+    public function valid(): bool
+    {
         return $this->list->valid();
     }
 
     /** @return T_Value[] Items from head to tail. Complexity: O(n). */
-    public function toArray(): array {
+    public function toArray(): array
+    {
         return $this->list->toArray();
     }
 }

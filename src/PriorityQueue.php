@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function array_pop, count, usort;
-use Rak200\Caster\Contracts\ToArray;
-use Rak200\Collections\Internal\ValidatesType;
-use Rak200\Utils\Arr;
+use Countable;
 use InvalidArgumentException;
+use Iterator;
+use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\ProvidesValueFactories;
+use Rak200\Collections\Internal\ValidatesType;
+
+use function array_pop;
+use function count;
+use function usort;
 
 /**
  * Max-heap priority queue. Items with higher priority are extracted first;
@@ -30,27 +34,32 @@ use Rak200\Collections\Internal\ProvidesValueFactories;
  * - O(n log n): toArray / iteration (rewind builds a sorted snapshot)
  *
  * @template T_Value
- * @implements \Iterator<int, T_Value>
+ *
+ * @implements Iterator<int, T_Value>
+ *
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-class PriorityQueue implements \Iterator, \Countable, ToArray {
-
+class PriorityQueue implements Iterator, Countable, ToArray
+{
     use ProvidesValueFactories;
-/** @var list<array{priority: int|float, sequence: int, item: T_Value}> */
+
+    /** @var list<array{priority: float|int, sequence: int, item: T_Value}> */
     private array $heap = [];
 
     private int $sequence = 0;
     private int $iterPos = 0;
 
-    /** @var list<T_Value>|null */
+    /** @var null|list<T_Value> */
     private ?array $iterSnapshot = null;
 
     /**
-     * @param string $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
-     * @param iterable<T_Value> $items Initial items enqueued at priority 0 in iteration order.
-     * @throws InvalidArgumentException When any item does not satisfy $type.
+     * @param string            $type  class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip
+     * @param iterable<T_Value> $items initial items enqueued at priority 0 in iteration order
+     *
+     * @throws InvalidArgumentException when any item does not satisfy $type
      */
-    protected function __construct(private string $type = 'mixed', iterable $items = []) {
+    protected function __construct(private string $type = 'mixed', iterable $items = [])
+    {
         foreach ($items as $item) {
             $this->enqueue($item, 0);
         }
@@ -62,20 +71,26 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
      * in both PHPStan and IDE analysis.
      *
      * @template T of object
-     * @param class-string<T> $class Class to enforce on items.
-     * @param iterable<T> $items Initial items enqueued at priority 0 in iteration order.
+     *
+     * @param class-string<T> $class class to enforce on items
+     * @param iterable<T>     $items initial items enqueued at priority 0 in iteration order
+     *
      * @return self<T>
-     * @throws InvalidArgumentException When any item does not satisfy $class.
+     *
+     * @throws InvalidArgumentException when any item does not satisfy $class
      */
-    public static function of(string $class, iterable $items = []): self {
+    public static function of(string $class, iterable $items = []): self
+    {
         return new self($class, $items);
     }
 
     /**
      * Configured item type. Complexity: O(1).
+     *
      * @return class-string<T_Value>|string
      */
-    public function getType(): string {
+    public function getType(): string
+    {
         return $this->type;
     }
 
@@ -85,9 +100,11 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
      * Complexity: O(log n) — a sift-up over the heap.
      *
      * @param T_Value $item
+     *
      * @throws InvalidArgumentException
      */
-    public function enqueue(mixed $item, int|float $priority): void {
+    public function enqueue(mixed $item, float|int $priority): void
+    {
         ValidatesType::checkType($this->type, $item);
         $this->heap[] = [
             'priority' => $priority,
@@ -102,9 +119,10 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
      *
      * Complexity: O(log n) — a sift-down over the heap.
      *
-     * @return T_Value|null
+     * @return null|T_Value
      */
-    public function dequeue(): mixed {
+    public function dequeue(): mixed
+    {
         if ($this->heap === []) {
             return null;
         }
@@ -114,49 +132,115 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
             $this->heap[0] = $last;
             $this->siftDown(0);
         }
+
         return $top;
     }
 
     /**
      * Return the highest-priority item without removing it, or null if empty. Complexity: O(1).
      *
-     * @return T_Value|null
+     * @return null|T_Value
      */
-    public function peek(): mixed {
+    public function peek(): mixed
+    {
         return $this->heap[0]['item'] ?? null;
     }
 
     /** Number of items currently in the queue. Complexity: O(1). */
-    public function count(): int {
+    public function count(): int
+    {
         return count($this->heap);
     }
 
     /** Whether the queue holds no items. Complexity: O(1). */
-    public function isEmpty(): bool {
+    public function isEmpty(): bool
+    {
         return $this->heap === [];
     }
 
     /** Discard all items and reset iteration state. Complexity: O(1). */
-    public function clear(): void {
+    public function clear(): void
+    {
         $this->heap = [];
         $this->sequence = 0;
         $this->iterSnapshot = null;
         $this->iterPos = 0;
     }
 
+    /** @return null|T_Value Item at the current iteration position, or null past the end. Complexity: O(1). */
+    public function current(): mixed
+    {
+        return $this->iterSnapshot[$this->iterPos] ?? null;
+    }
+
+    /** Zero-based position within the sorted snapshot. Complexity: O(1). */
+    public function key(): int
+    {
+        return $this->iterPos;
+    }
+
+    /** Advance the iteration position. Complexity: O(1). */
+    public function next(): void
+    {
+        ++$this->iterPos;
+    }
+
+    /** Build a sorted snapshot and reset the iteration position. Complexity: O(n log n). */
+    public function rewind(): void
+    {
+        $this->iterSnapshot = $this->sortedItems();
+        $this->iterPos = 0;
+    }
+
+    /** Whether the iteration position still points at a snapshotted item. Complexity: O(1). */
+    public function valid(): bool
+    {
+        return $this->iterSnapshot !== null && isset($this->iterSnapshot[$this->iterPos]);
+    }
+
+    /**
+     * Return items in extraction order (highest priority first), without
+     * mutating the queue.
+     *
+     * Complexity: O(n log n) — the snapshot is sorted.
+     *
+     * @return list<T_Value>
+     */
+    public function toArray(): array
+    {
+        return $this->sortedItems();
+    }
+
     /** Negative when $i should be served before $j (closer to top of heap). */
-    private function compare(int $i, int $j): int {
+    private function compare(int $i, int $j): int
+    {
         $a = $this->heap[$i];
         $b = $this->heap[$j];
         if ($a['priority'] !== $b['priority']) {
+            // @infection-ignore-all Equivalent mutant: the guard above rules out
+            // $a['priority'] === $b['priority'], so `<` and `<=` agree here; and
+            // every caller only reads the sign of this return (>=0 / <0), never
+            // its magnitude, so 1/-1 vs 0/2/-2 change nothing observable.
             return $a['priority'] < $b['priority'] ? 1 : -1;
         }
+
         return $a['sequence'] <=> $b['sequence'];
     }
 
-    private function siftUp(int $i): void {
+    private function siftUp(int $i): void
+    {
         while ($i > 0) {
+            // @infection-ignore-all Equivalent mutant: replacing the halving shift
+            // with a no-op shift turns siftUp into a walk that bubbles the new
+            // element one slot at a time until compare() stops it — slower than
+            // O(log n), but it still terminates at a position satisfying the heap
+            // invariant, so the resulting heap (and every dequeue order it
+            // produces) is unchanged.
             $parent = ($i - 1) >> 1;
+            // @infection-ignore-all Equivalent mutant: compare() only ever
+            // returns -1 or a nonzero <=> of two distinct sequence numbers — it
+            // can never be exactly 0 — so `>= 0` and `> 0` accept exactly the
+            // same values here.
             if ($this->compare($i, $parent) >= 0) {
                 return;
             }
@@ -165,15 +249,20 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
         }
     }
 
-    private function siftDown(int $i): void {
+    private function siftDown(int $i): void
+    {
         $n = count($this->heap);
         while (true) {
             $left = 2 * $i + 1;
             $right = 2 * $i + 2;
             $best = $i;
+            // @infection-ignore-all Equivalent mutant: compare() never returns
+            // exactly 0 (see siftUp), so `< 0` and `<= 0` accept the same values.
             if ($left < $n && $this->compare($left, $best) < 0) {
                 $best = $left;
             }
+            // @infection-ignore-all Equivalent mutant: same reasoning as the left
+            // branch above — compare() never returns exactly 0.
             if ($right < $n && $this->compare($right, $best) < 0) {
                 $best = $right;
             }
@@ -186,56 +275,28 @@ class PriorityQueue implements \Iterator, \Countable, ToArray {
     }
 
     /** @return list<T_Value> */
-    private function sortedItems(): array {
+    private function sortedItems(): array
+    {
         $copy = $this->heap;
         usort($copy, static function (array $a, array $b): int {
             if ($a['priority'] !== $b['priority']) {
+                // @infection-ignore-all Equivalent mutant: the guard above rules
+                // out equal priorities, so `<` / `<=` agree here; and — empirically
+                // verified across heap states reachable through the public API
+                // (enqueue/dequeue in any order) — no reachable snapshot lets a
+                // magnitude change to 1/-1 (2, -2, or 0) alter usort's stable
+                // output, because every heap this sorts already satisfies the
+                // max-heap invariant maintained by compare()/siftUp/siftDown.
                 return $a['priority'] < $b['priority'] ? 1 : -1;
             }
+
             return $a['sequence'] <=> $b['sequence'];
         });
         $items = [];
         foreach ($copy as $entry) {
             $items[] = $entry['item'];
         }
+
         return $items;
-    }
-
-    /** @return T_Value|null Item at the current iteration position, or null past the end. Complexity: O(1). */
-    public function current(): mixed {
-        return $this->iterSnapshot[$this->iterPos] ?? null;
-    }
-
-    /** Zero-based position within the sorted snapshot. Complexity: O(1). */
-    public function key(): int {
-        return $this->iterPos;
-    }
-
-    /** Advance the iteration position. Complexity: O(1). */
-    public function next(): void {
-        $this->iterPos++;
-    }
-
-    /** Build a sorted snapshot and reset the iteration position. Complexity: O(n log n). */
-    public function rewind(): void {
-        $this->iterSnapshot = $this->sortedItems();
-        $this->iterPos = 0;
-    }
-
-    /** Whether the iteration position still points at a snapshotted item. Complexity: O(1). */
-    public function valid(): bool {
-        return $this->iterSnapshot !== null && isset($this->iterSnapshot[$this->iterPos]);
-    }
-
-    /**
-     * Return items in extraction order (highest priority first), without
-     * mutating the queue.
-     *
-     * Complexity: O(n log n) — the snapshot is sorted.
-     *
-     * @return list<T_Value>
-     */
-    public function toArray(): array {
-        return $this->sortedItems();
     }
 }

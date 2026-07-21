@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function array_key_first, array_key_last, array_search, uasort;
 use Closure;
 use InvalidArgumentException;
 use Rak200\Collections\Internal\HashesValues;
+use Rak200\Collections\Internal\ProvidesValueFactories;
 use Rak200\Collections\Internal\ValidatesType;
 use Rak200\Utils\Arr;
-use Rak200\Collections\Internal\ProvidesValueFactories;
+
+use function array_key_first;
+use function array_key_last;
+use function array_search;
+use function uasort;
 
 /**
  * Unique-element set with a predictable iteration order.
@@ -33,20 +37,24 @@ use Rak200\Collections\Internal\ProvidesValueFactories;
  * (Note: like {@see Set}, key() resolves the iteration position in O(n).)
  *
  * @template T_Value
+ *
  * @extends AbstractCollection<T_Value>
+ *
  * @phpstan-consistent-constructor
+ *
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-class OrderedSet extends AbstractCollection {
-
+class OrderedSet extends AbstractCollection
+{
     use ProvidesValueFactories;
-use HashesValues;
+    use HashesValues;
 
     /**
-     * @param string $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
-     * @param (Closure(T_Value, T_Value): int)|null $comparator Sort callback; null = insertion order.
-     * @param iterable<T_Value> $items Initial items added in order; duplicates are ignored.
-     * @throws InvalidArgumentException When any item does not satisfy $type.
+     * @param string                                $type       class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip
+     * @param null|(Closure(T_Value, T_Value): int) $comparator sort callback; null = insertion order
+     * @param iterable<T_Value>                     $items      initial items added in order; duplicates are ignored
+     *
+     * @throws InvalidArgumentException when any item does not satisfy $type
      */
     protected function __construct(
         string $type = 'mixed',
@@ -65,13 +73,17 @@ use HashesValues;
      * `OrderedSet<Foo>` in both PHPStan and IDE analysis.
      *
      * @template T of object
-     * @param class-string<T> $class Class to enforce on items.
-     * @param iterable<T> $items Initial items added in order; duplicates are ignored.
-     * @param (Closure(T, T): int)|null $comparator Sort callback; null = insertion order.
+     *
+     * @param class-string<T>           $class      class to enforce on items
+     * @param iterable<T>               $items      initial items added in order; duplicates are ignored
+     * @param null|(Closure(T, T): int) $comparator sort callback; null = insertion order
+     *
      * @return self<T>
-     * @throws InvalidArgumentException When any item does not satisfy $class.
+     *
+     * @throws InvalidArgumentException when any item does not satisfy $class
      */
-    public static function of(string $class, iterable $items = [], ?Closure $comparator = null): self {
+    public static function of(string $class, iterable $items = [], ?Closure $comparator = null): self
+    {
         return new self($class, $items, $comparator);
     }
 
@@ -79,11 +91,13 @@ use HashesValues;
      * Untyped ordered set (no runtime type enforcement), optionally sorted.
      * Overrides {@see ProvidesValueFactories::any()} to carry a comparator.
      *
-     * @param iterable<mixed> $items
-     * @param (Closure(mixed, mixed): int)|null $comparator Sort callback; null = insertion order.
+     * @param iterable<mixed>                   $items
+     * @param null|(Closure(mixed, mixed): int) $comparator sort callback; null = insertion order
+     *
      * @return self<mixed>
      */
-    public static function any(iterable $items = [], ?Closure $comparator = null): self {
+    public static function any(iterable $items = [], ?Closure $comparator = null): self
+    {
         return new self('mixed', $items, $comparator);
     }
 
@@ -93,8 +107,10 @@ use HashesValues;
      *
      * Complexity: O(n) — a linear scan maps the hash key to its position.
      */
-    public function key(): ?int {
+    public function key(): ?int
+    {
         $pos = array_search(parent::key(), Arr::keys($this->items), true);
+
         return $pos === false ? null : $pos;
     }
 
@@ -105,9 +121,11 @@ use HashesValues;
      * set, since the backing array is re-sorted on every add.
      *
      * @param T_Value $item
+     *
      * @throws InvalidArgumentException
      */
-    public function add(mixed $item): bool {
+    public function add(mixed $item): bool
+    {
         ValidatesType::checkType($this->type, $item);
         $hash = self::hashValue($item);
         if (Arr::has($this->items, $hash)) {
@@ -117,6 +135,7 @@ use HashesValues;
         if ($this->comparator !== null) {
             uasort($this->items, $this->comparator);
         }
+
         return true;
     }
 
@@ -125,12 +144,14 @@ use HashesValues;
      *
      * @param T_Value $item
      */
-    public function remove(mixed $item): bool {
+    public function remove(mixed $item): bool
+    {
         $hash = self::hashValue($item);
         if (!isset($this->items[$hash])) {
             return false;
         }
         unset($this->items[$hash]);
+
         return true;
     }
 
@@ -139,7 +160,8 @@ use HashesValues;
      *
      * @param T_Value $item
      */
-    public function contains(mixed $item): bool {
+    public function contains(mixed $item): bool
+    {
         return Arr::has($this->items, self::hashValue($item));
     }
 
@@ -150,10 +172,11 @@ use HashesValues;
      * higher when a comparator re-sorts on each add.
      *
      * @param self<T_Value> $other
-     * @return static
-     * @throws InvalidArgumentException When $other has items incompatible with $this->type.
+     *
+     * @throws InvalidArgumentException when $other has items incompatible with $this->type
      */
-    public function union(self $other): static {
+    public function union(self $other): static
+    {
         $result = new static($this->type, comparator: $this->comparator);
         foreach ($this->items as $item) {
             $result->add($item);
@@ -161,6 +184,7 @@ use HashesValues;
         foreach ($other->items as $item) {
             $result->add($item);
         }
+
         return $result;
     }
 
@@ -171,15 +195,16 @@ use HashesValues;
      * comparator re-sorts on each add.
      *
      * @param self<T_Value> $other
-     * @return static
      */
-    public function intersection(self $other): static {
+    public function intersection(self $other): static
+    {
         $result = new static($this->type, comparator: $this->comparator);
         foreach ($this->items as $item) {
             if ($other->contains($item)) {
                 $result->add($item);
             }
         }
+
         return $result;
     }
 
@@ -190,15 +215,16 @@ use HashesValues;
      * comparator re-sorts on each add.
      *
      * @param self<T_Value> $other
-     * @return static
      */
-    public function difference(self $other): static {
+    public function difference(self $other): static
+    {
         $result = new static($this->type, comparator: $this->comparator);
         foreach ($this->items as $item) {
             if (!$other->contains($item)) {
                 $result->add($item);
             }
         }
+
         return $result;
     }
 
@@ -209,12 +235,14 @@ use HashesValues;
      *
      * @param self<T_Value> $other
      */
-    public function isSubsetOf(self $other): bool {
+    public function isSubsetOf(self $other): bool
+    {
         foreach ($this->items as $item) {
             if (!$other->contains($item)) {
                 return false;
             }
         }
+
         return true;
     }
 
@@ -225,31 +253,36 @@ use HashesValues;
      *
      * @param self<T_Value> $other
      */
-    public function isSupersetOf(self $other): bool {
+    public function isSupersetOf(self $other): bool
+    {
         return $other->isSubsetOf($this);
     }
 
     /**
      * First item in the current order, or null if empty. Complexity: O(1).
      *
-     * @return T_Value|null
+     * @return null|T_Value
      */
-    public function first(): mixed {
+    public function first(): mixed
+    {
         if ($this->items === []) {
             return null;
         }
+
         return $this->items[array_key_first($this->items)];
     }
 
     /**
      * Last item in the current order, or null if empty. Complexity: O(1).
      *
-     * @return T_Value|null
+     * @return null|T_Value
      */
-    public function last(): mixed {
+    public function last(): mixed
+    {
         if ($this->items === []) {
             return null;
         }
+
         return $this->items[array_key_last($this->items)];
     }
 
@@ -261,7 +294,8 @@ use HashesValues;
      *
      * @return T_Value[]
      */
-    public function toArray(): array {
+    public function toArray(): array
+    {
         return Arr::values($this->items);
     }
 }

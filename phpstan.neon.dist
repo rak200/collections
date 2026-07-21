@@ -1,9 +1,10 @@
 parameters:
-    level: 9
+    level: max
     paths:
         - phpstan
         - src
         - tests
+    tmpDir: .phpstan.cache
 
 services:
     -

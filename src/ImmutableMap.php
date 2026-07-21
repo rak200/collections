@@ -4,12 +4,23 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function count, get_debug_type, is_int, is_string, key, next, reset, sprintf;
+use ArrayAccess;
 use BadMethodCallException;
+use Countable;
 use InvalidArgumentException;
+use Iterator;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\ValidatesType;
 use Rak200\Utils\Arr;
+
+use function count;
+use function get_debug_type;
+use function is_int;
+use function is_string;
+use function key;
+use function next;
+use function reset;
+use function sprintf;
 
 /**
  * Read-only counterpart to {@see Map}. Entries are fixed at construction;
@@ -30,22 +41,25 @@ use Rak200\Utils\Arr;
  *
  * @template T_Key of int|string
  * @template T_Value
- * @implements \Iterator<T_Key, T_Value>
- * @implements \ArrayAccess<T_Key, T_Value>
+ *
+ * @implements Iterator<T_Key, T_Value>
+ * @implements ArrayAccess<T_Key, T_Value>
+ *
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray {
-
+final class ImmutableMap implements Iterator, ArrayAccess, Countable, ToArray
+{
     /** @var array<T_Key, T_Value> */
     private array $items = [];
 
     /**
-     * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
-     * @param string $valueType Class name or built-in pseudo-type to enforce on values, or `'mixed'` to skip.
-     * @param iterable<T_Key, T_Value> $items Initial entries (final).
-     * @throws InvalidArgumentException When any key or value violates its type.
+     * @param 'int'|'mixed'|'string'   $keyType   key type to enforce
+     * @param string                   $valueType class name or built-in pseudo-type to enforce on values, or `'mixed'` to skip
+     * @param iterable<T_Key, T_Value> $items     initial entries (final)
+     *
+     * @throws InvalidArgumentException when any key or value violates its type
      */
-    protected function __construct(
+    private function __construct(
         private string $keyType = 'mixed',
         private string $valueType = 'mixed',
         iterable $items = []
@@ -60,10 +74,12 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
     /**
      * Factory for an untyped map (no runtime type enforcement).
      *
-     * @param iterable<int|string, mixed> $items Initial entries (final).
+     * @param iterable<int|string, mixed> $items initial entries (final)
+     *
      * @return self<int|string, mixed>
      */
-    public static function any(iterable $items = []): self {
+    public static function any(iterable $items = []): self
+    {
         return new self('mixed', 'mixed', $items);
     }
 
@@ -74,13 +90,17 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
      * provided by the PHPStan extension for direct `new` calls.
      *
      * @template T of object
-     * @param 'int'|'string'|'mixed' $keyType Key type to enforce.
-     * @param class-string<T> $valueClass Class to enforce on values.
-     * @param iterable<int|string, T> $items Initial entries (final).
+     *
+     * @param 'int'|'mixed'|'string'  $keyType    key type to enforce
+     * @param class-string<T>         $valueClass class to enforce on values
+     * @param iterable<int|string, T> $items      initial entries (final)
+     *
      * @return self<int|string, T>
-     * @throws InvalidArgumentException When any key or value violates its type.
+     *
+     * @throws InvalidArgumentException when any key or value violates its type
      */
-    public static function of(string $keyType, string $valueClass, iterable $items = []): self {
+    public static function of(string $keyType, string $valueClass, iterable $items = []): self
+    {
         return new self($keyType, $valueClass, $items);
     }
 
@@ -89,54 +109,45 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
      *
      * @template TK of int|string
      * @template TV
+     *
      * @param Map<TK, TV> $map
+     *
      * @return self<int|string, TV>
      */
-    public static function fromMap(Map $map): self {
+    public static function fromMap(Map $map): self
+    {
         return new self($map->getKeyType(), $map->getValueType(), $map->toArray());
     }
 
     /**
      * Configured key type. Complexity: O(1).
-     * @return 'int'|'string'|'mixed'
+     *
+     * @return 'int'|'mixed'|'string'
      */
-    public function getKeyType(): string {
+    public function getKeyType(): string
+    {
         return $this->keyType;
     }
 
     /**
      * Configured value type. Complexity: O(1).
+     *
      * @return class-string<T_Value>|string
      */
-    public function getValueType(): string {
+    public function getValueType(): string
+    {
         return $this->valueType;
-    }
-
-    /**
-     * Validate that $key matches the configured key type.
-     *
-     * @param int|string $key
-     * @throws InvalidArgumentException When the key does not match $this->keyType.
-     */
-    private function checkKey(int|string $key): void {
-        if ($this->keyType === 'mixed') {
-            return;
-        }
-        if ($this->keyType === 'int' && !is_int($key)) {
-            throw new InvalidArgumentException(sprintf('Key must be of type int. Got: %s', get_debug_type($key)));
-        }
-        if ($this->keyType === 'string' && !is_string($key)) {
-            throw new InvalidArgumentException(sprintf('Key must be of type string. Got: %s', get_debug_type($key)));
-        }
     }
 
     /**
      * Value at the given key, or null if absent. Complexity: O(1).
      *
      * @param T_Key $key
-     * @return T_Value|null
+     *
+     * @return null|T_Value
      */
-    public function get(int|string $key): mixed {
+    public function get(int|string $key): mixed
+    {
         return $this->items[$key] ?? null;
     }
 
@@ -145,53 +156,64 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
      *
      * @param T_Key $key
      */
-    public function has(int|string $key): bool {
+    public function has(int|string $key): bool
+    {
         return Arr::has($this->items, $key);
     }
 
     /** @return T_Key[] Keys in insertion order. Complexity: O(n). */
-    public function keys(): array {
+    public function keys(): array
+    {
         return Arr::keys($this->items);
     }
 
     /** @return T_Value[] Values in insertion order. Complexity: O(n). */
-    public function values(): array {
+    public function values(): array
+    {
         return Arr::values($this->items);
     }
 
     /** Number of entries currently stored. Complexity: O(1). */
-    public function count(): int {
+    public function count(): int
+    {
         return count($this->items);
     }
 
     /** Whether the map holds no entries. Complexity: O(1). */
-    public function isEmpty(): bool {
+    public function isEmpty(): bool
+    {
         return $this->items === [];
     }
 
-    /** @return T_Value|null Value at the current iteration cursor, or null past the end. Complexity: O(1). */
-    public function current(): mixed {
+    /** @return null|T_Value Value at the current iteration cursor, or null past the end. Complexity: O(1). */
+    public function current(): mixed
+    {
         $key = key($this->items);
+
         return $key === null ? null : $this->items[$key];
     }
 
     /** Key at the current iteration cursor. Complexity: O(1). */
-    public function key(): int|string|null {
+    public function key(): int|string|null
+    {
         return key($this->items);
     }
 
     /** Advance the iteration cursor. Complexity: O(1). */
-    public function next(): void {
+    public function next(): void
+    {
         next($this->items);
     }
 
     /** Reset the iteration cursor to the first entry. Complexity: O(1). */
-    public function rewind(): void {
+    public function rewind(): void
+    {
         reset($this->items);
     }
 
     /** Whether the iteration cursor still points at a valid entry. Complexity: O(1). */
-    public function valid(): bool {
+    public function valid(): bool
+    {
         return key($this->items) !== null;
     }
 
@@ -200,7 +222,8 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
      *
      * @param T_Key $offset
      */
-    public function offsetExists(mixed $offset): bool {
+    public function offsetExists(mixed $offset): bool
+    {
         return isset($this->items[$offset]);
     }
 
@@ -208,9 +231,11 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
      * Value at the given key, or null if absent. Complexity: O(1).
      *
      * @param T_Key $offset
-     * @return T_Value|null
+     *
+     * @return null|T_Value
      */
-    public function offsetGet(mixed $offset): mixed {
+    public function offsetGet(mixed $offset): mixed
+    {
         return $this->items[$offset] ?? null;
     }
 
@@ -219,7 +244,8 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
      *
      * @throws BadMethodCallException
      */
-    public function offsetSet(mixed $offset, mixed $value): void {
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
         throw new BadMethodCallException('ImmutableMap cannot be modified.');
     }
 
@@ -228,12 +254,36 @@ final class ImmutableMap implements \Iterator, \ArrayAccess, \Countable, ToArray
      *
      * @throws BadMethodCallException
      */
-    public function offsetUnset(mixed $offset): void {
+    public function offsetUnset(mixed $offset): void
+    {
         throw new BadMethodCallException('ImmutableMap cannot be modified.');
     }
 
     /** @return array<T_Key, T_Value> Entries in insertion order. Complexity: O(1) (returned directly; PHP copies on write). */
-    public function toArray(): array {
+    public function toArray(): array
+    {
         return $this->items;
+    }
+
+    /**
+     * Validate that $key matches the configured key type.
+     *
+     * @throws InvalidArgumentException when the key does not match $this->keyType
+     */
+    private function checkKey(int|string $key): void
+    {
+        if ($this->keyType === 'mixed') {
+            // @infection-ignore-all Equivalent mutant: removing this return still
+            // exits with no throw, because the two checks below can only match
+            // when $this->keyType is 'int' or 'string' — mutually exclusive with
+            // 'mixed' here.
+            return;
+        }
+        if ($this->keyType === 'int' && !is_int($key)) {
+            throw new InvalidArgumentException(sprintf('Key must be of type int. Got: %s', get_debug_type($key)));
+        }
+        if ($this->keyType === 'string' && !is_string($key)) {
+            throw new InvalidArgumentException(sprintf('Key must be of type string. Got: %s', get_debug_type($key)));
+        }
     }
 }

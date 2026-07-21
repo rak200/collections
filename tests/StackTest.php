@@ -4,15 +4,22 @@ declare(strict_types=1);
 
 namespace Rak200\Collections\Tests;
 
+use DateTimeImmutable;
 use InvalidArgumentException;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Rak200\Collections\AbstractCollection;
 use Rak200\Collections\Stack;
+use stdClass;
 
-final class StackTest extends TestCase {
-
-    public function testEmptyStackState(): void {
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
+final class StackTest extends TestCase
+{
+    public function testEmptyStackState(): void
+    {
         $s = Stack::any();
         self::assertCount(0, $s);
         self::assertNull($s->pop());
@@ -20,11 +27,12 @@ final class StackTest extends TestCase {
         self::assertSame([], $s->toArray());
     }
 
-    public function testPushPopIsLIFO(): void {
+    public function testPushPopIsLIFO(): void
+    {
         $s = Stack::any();
-        $a = new \stdClass();
-        $b = new \stdClass();
-        $c = new \stdClass();
+        $a = new stdClass();
+        $b = new stdClass();
+        $c = new stdClass();
         $s->push($a);
         $s->push($b);
         $s->push($c);
@@ -34,21 +42,23 @@ final class StackTest extends TestCase {
         self::assertNull($s->pop());
     }
 
-    public function testPeekReturnsTopWithoutRemoving(): void {
+    public function testPeekReturnsTopWithoutRemoving(): void
+    {
         $s = Stack::any();
-        $a = new \stdClass();
-        $b = new \stdClass();
+        $a = new stdClass();
+        $b = new stdClass();
         $s->push($a);
         $s->push($b);
         self::assertSame($b, $s->peek());
         self::assertCount(2, $s);
     }
 
-    public function testIterationIsTopToBottom(): void {
+    public function testIterationIsTopToBottom(): void
+    {
         $s = Stack::any();
-        $a = new \stdClass();
-        $b = new \stdClass();
-        $c = new \stdClass();
+        $a = new stdClass();
+        $b = new stdClass();
+        $c = new stdClass();
         $s->push($a);
         $s->push($b);
         $s->push($c);
@@ -59,25 +69,29 @@ final class StackTest extends TestCase {
         self::assertSame([0 => $c, 1 => $b, 2 => $a], $out);
     }
 
-    public function testTypeEnforcementRejectsWrongInstance(): void {
-        $s = Stack::of(\DateTimeImmutable::class);
+    public function testTypeEnforcementRejectsWrongInstance(): void
+    {
+        $s = Stack::of(DateTimeImmutable::class);
         $this->expectException(InvalidArgumentException::class);
-        $s->push(new \stdClass()); // @phpstan-ignore argument.type (runtime rejection test)
+        $s->push(new stdClass()); // @phpstan-ignore argument.type (runtime rejection test)
     }
 
-    public function testInitialItemsArePushedInOrder(): void {
-        $a = new \stdClass();
-        $b = new \stdClass();
+    public function testInitialItemsArePushedInOrder(): void
+    {
+        $a = new stdClass();
+        $b = new stdClass();
         $s = Stack::any([$a, $b]);
         self::assertSame($b, $s->peek());
         self::assertCount(2, $s);
     }
 
-    public function testIsAbstractCollection(): void {
+    public function testIsAbstractCollection(): void
+    {
         self::assertInstanceOf(AbstractCollection::class, Stack::any());
     }
 
-    public function testMixedAcceptsScalarsAndNull(): void {
+    public function testMixedAcceptsScalarsAndNull(): void
+    {
         $s = Stack::any();
         $s->push(42);
         $s->push('top');
@@ -88,7 +102,8 @@ final class StackTest extends TestCase {
         self::assertSame(42, $s->pop());
     }
 
-    public function testIsEmptyAndClear(): void {
+    public function testIsEmptyAndClear(): void
+    {
         $s = Stack::any();
         self::assertTrue($s->isEmpty());
         $s->push('a');
@@ -99,5 +114,12 @@ final class StackTest extends TestCase {
         self::assertNull($s->peek());
         $s->push('x');
         self::assertSame('x', $s->peek());
+    }
+
+    public function testClearResetsIterationPosition(): void
+    {
+        $s = Stack::any(['a', 'b']);
+        $s->clear();
+        self::assertSame(0, $s->key());
     }
 }

@@ -4,14 +4,22 @@ declare(strict_types=1);
 
 namespace Rak200\Collections\Tests;
 
+use DateTimeImmutable;
 use InvalidArgumentException;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Rak200\Collections\PriorityQueue;
+use ReflectionProperty;
+use stdClass;
 
-final class PriorityQueueTest extends TestCase {
-
-    public function testEmptyQueueState(): void {
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
+final class PriorityQueueTest extends TestCase
+{
+    public function testEmptyQueueState(): void
+    {
         $pq = PriorityQueue::any();
         self::assertCount(0, $pq);
         self::assertNull($pq->peek());
@@ -19,11 +27,12 @@ final class PriorityQueueTest extends TestCase {
         self::assertSame([], $pq->toArray());
     }
 
-    public function testHigherPriorityIsExtractedFirst(): void {
+    public function testHigherPriorityIsExtractedFirst(): void
+    {
         $pq = PriorityQueue::any();
-        $low = new \stdClass();
-        $mid = new \stdClass();
-        $high = new \stdClass();
+        $low = new stdClass();
+        $mid = new stdClass();
+        $high = new stdClass();
         $pq->enqueue($low, 1);
         $pq->enqueue($high, 10);
         $pq->enqueue($mid, 5);
@@ -32,11 +41,12 @@ final class PriorityQueueTest extends TestCase {
         self::assertSame($low, $pq->dequeue());
     }
 
-    public function testTiesBreakFIFOByInsertionOrder(): void {
+    public function testTiesBreakFIFOByInsertionOrder(): void
+    {
         $pq = PriorityQueue::any();
-        $a = new \stdClass();
-        $b = new \stdClass();
-        $c = new \stdClass();
+        $a = new stdClass();
+        $b = new stdClass();
+        $c = new stdClass();
         $pq->enqueue($a, 5);
         $pq->enqueue($b, 5);
         $pq->enqueue($c, 5);
@@ -45,35 +55,39 @@ final class PriorityQueueTest extends TestCase {
         self::assertSame($c, $pq->dequeue());
     }
 
-    public function testPeekDoesNotMutate(): void {
+    public function testPeekDoesNotMutate(): void
+    {
         $pq = PriorityQueue::any();
-        $a = new \stdClass();
+        $a = new stdClass();
         $pq->enqueue($a, 1);
         self::assertSame($a, $pq->peek());
         self::assertCount(1, $pq);
     }
 
-    public function testFloatPrioritiesWork(): void {
+    public function testFloatPrioritiesWork(): void
+    {
         $pq = PriorityQueue::any();
-        $a = new \stdClass();
-        $b = new \stdClass();
+        $a = new stdClass();
+        $b = new stdClass();
         $pq->enqueue($a, 1.5);
         $pq->enqueue($b, 2.7);
         self::assertSame($b, $pq->dequeue());
         self::assertSame($a, $pq->dequeue());
     }
 
-    public function testTypeEnforcement(): void {
-        $pq = PriorityQueue::of(\DateTimeImmutable::class);
+    public function testTypeEnforcement(): void
+    {
+        $pq = PriorityQueue::of(DateTimeImmutable::class);
         $this->expectException(InvalidArgumentException::class);
-        $pq->enqueue(new \stdClass(), 1); // @phpstan-ignore argument.type (runtime rejection test)
+        $pq->enqueue(new stdClass(), 1); // @phpstan-ignore argument.type (runtime rejection test)
     }
 
-    public function testIterationIsNonDestructiveAndInPriorityOrder(): void {
+    public function testIterationIsNonDestructiveAndInPriorityOrder(): void
+    {
         $pq = PriorityQueue::any();
-        $low = new \stdClass();
-        $high = new \stdClass();
-        $mid = new \stdClass();
+        $low = new stdClass();
+        $high = new stdClass();
+        $mid = new stdClass();
         $pq->enqueue($low, 1);
         $pq->enqueue($high, 10);
         $pq->enqueue($mid, 5);
@@ -92,17 +106,61 @@ final class PriorityQueueTest extends TestCase {
         self::assertCount(3, $pq);
     }
 
-    public function testToArrayReturnsExtractionOrderWithoutMutating(): void {
+    public function testToArrayTiesBreakFIFOByInsertionOrder(): void
+    {
         $pq = PriorityQueue::any();
-        $a = new \stdClass();
-        $b = new \stdClass();
+        $a = new stdClass();
+        $b = new stdClass();
+        $c = new stdClass();
+        $pq->enqueue($a, 5);
+        $pq->enqueue($b, 5);
+        $pq->enqueue($c, 5);
+        self::assertSame([$a, $b, $c], $pq->toArray());
+    }
+
+    public function testToArrayReturnsExtractionOrderWithoutMutating(): void
+    {
+        $pq = PriorityQueue::any();
+        $a = new stdClass();
+        $b = new stdClass();
         $pq->enqueue($a, 1);
         $pq->enqueue($b, 9);
         self::assertSame([$b, $a], $pq->toArray());
         self::assertCount(2, $pq);
     }
 
-    public function testMixedAcceptsScalars(): void {
+    public function testSeededItemsUsePriorityZero(): void
+    {
+        $pq = PriorityQueue::ofString(['seeded']);
+        $pq->enqueue('higher', 0.5);
+        $pq->enqueue('lower', -0.5);
+        self::assertSame('higher', $pq->dequeue());
+        self::assertSame('seeded', $pq->dequeue());
+        self::assertSame('lower', $pq->dequeue());
+    }
+
+    public function testClearResetsIterationKeyPosition(): void
+    {
+        $pq = PriorityQueue::any(['a', 'b']);
+        $pq->rewind();
+        $pq->next();
+        $pq->clear();
+        self::assertSame(0, $pq->key());
+    }
+
+    public function testClearResetsSequenceCounter(): void
+    {
+        $pq = PriorityQueue::any();
+        $pq->enqueue('a', 1);
+        $pq->enqueue('b', 1);
+        $pq->clear();
+
+        $sequence = new ReflectionProperty(PriorityQueue::class, 'sequence');
+        self::assertSame(0, $sequence->getValue($pq));
+    }
+
+    public function testMixedAcceptsScalars(): void
+    {
         $pq = PriorityQueue::any();
         $pq->enqueue('low', 1);
         $pq->enqueue('high', 10);
@@ -118,7 +176,8 @@ final class PriorityQueueTest extends TestCase {
      * "undefined", but defensive null/value handling is safer. If this test
      * passes, A5 is fixed.
      */
-    public function testCurrentBeforeRewindDoesNotCrash(): void {
+    public function testCurrentBeforeRewindDoesNotCrash(): void
+    {
         $pq = PriorityQueue::any();
         $pq->enqueue('a', 1);
         // Should return null or the top value gracefully — not throw TypeError
@@ -126,7 +185,8 @@ final class PriorityQueueTest extends TestCase {
         self::assertTrue($result === null || $result === 'a');
     }
 
-    public function testIsEmptyAndClear(): void {
+    public function testIsEmptyAndClear(): void
+    {
         $pq = PriorityQueue::any();
         self::assertTrue($pq->isEmpty());
         $pq->enqueue('x', 1);
@@ -140,11 +200,12 @@ final class PriorityQueueTest extends TestCase {
         self::assertSame('z', $pq->dequeue());
     }
 
-    public function testManyOperationsPreserveHeapInvariant(): void {
+    public function testManyOperationsPreserveHeapInvariant(): void
+    {
         $pq = PriorityQueue::any();
         $items = [];
-        for ($i = 0; $i < 50; $i++) {
-            $obj = new \stdClass();
+        for ($i = 0; $i < 50; ++$i) {
+            $obj = new stdClass();
             $obj->n = $i;
             $items[] = [$obj, rand(0, 100)];
             $pq->enqueue($obj, $items[$i][1]);
@@ -158,10 +219,11 @@ final class PriorityQueueTest extends TestCase {
                 if ($obj === $item) {
                     self::assertLessThanOrEqual($prev, $prio);
                     $prev = $prio;
+
                     break;
                 }
             }
-            $drained++;
+            ++$drained;
         }
         self::assertSame(50, $drained);
     }

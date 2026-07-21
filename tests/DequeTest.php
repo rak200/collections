@@ -8,10 +8,17 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Rak200\Collections\Deque;
+use stdClass;
 
-final class DequeTest extends TestCase {
-
-    public function testEmptyState(): void {
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
+final class DequeTest extends TestCase
+{
+    public function testEmptyState(): void
+    {
         $d = Deque::any();
         self::assertCount(0, $d);
         self::assertTrue($d->isEmpty());
@@ -23,7 +30,8 @@ final class DequeTest extends TestCase {
         self::assertSame('mixed', $d->getType());
     }
 
-    public function testPushBackAndPopFrontIsFIFO(): void {
+    public function testPushBackAndPopFrontIsFIFO(): void
+    {
         $d = Deque::any();
         $d->pushBack('a');
         $d->pushBack('b');
@@ -34,7 +42,8 @@ final class DequeTest extends TestCase {
         self::assertNull($d->popFront());
     }
 
-    public function testPushFrontAndPopFrontIsLIFO(): void {
+    public function testPushFrontAndPopFrontIsLIFO(): void
+    {
         $d = Deque::any();
         $d->pushFront('a');
         $d->pushFront('b');
@@ -44,7 +53,8 @@ final class DequeTest extends TestCase {
         self::assertSame('a', $d->popFront());
     }
 
-    public function testPopBackRemovesFromTheBack(): void {
+    public function testPopBackRemovesFromTheBack(): void
+    {
         $d = Deque::any();
         $d->pushBack('a');
         $d->pushBack('b');
@@ -54,7 +64,8 @@ final class DequeTest extends TestCase {
         self::assertSame('a', $d->popBack());
     }
 
-    public function testPeekDoesNotRemove(): void {
+    public function testPeekDoesNotRemove(): void
+    {
         $d = Deque::any();
         $d->pushBack('a');
         $d->pushBack('b');
@@ -63,27 +74,31 @@ final class DequeTest extends TestCase {
         self::assertCount(2, $d);
     }
 
-    /** @return iterable<string, array{string, mixed}> */
-    public static function rejectedItemProvider(): iterable {
-        yield 'non-object into stdClass deque' => [\stdClass::class, 'not-an-object'];
-    }
-
     #[DataProvider('rejectedItemProvider')]
-    public function testTypeEnforcement(string $type, mixed $wrong): void {
+    public function testTypeEnforcement(string $type, mixed $wrong): void
+    {
         $d = new Deque($type);
-        $d->pushBack(new \stdClass());
+        $d->pushBack(new stdClass());
         $this->expectException(InvalidArgumentException::class);
         $d->pushFront($wrong);
     }
 
-    public function testInitialItemsPushedToBack(): void {
+    /** @return iterable<string, array{string, mixed}> */
+    public static function rejectedItemProvider(): iterable
+    {
+        yield 'non-object into stdClass deque' => [stdClass::class, 'not-an-object'];
+    }
+
+    public function testInitialItemsPushedToBack(): void
+    {
         $d = Deque::any(['a', 'b', 'c']);
         self::assertSame('a', $d->peekFront());
         self::assertSame('c', $d->peekBack());
         self::assertSame(['a', 'b', 'c'], $d->toArray());
     }
 
-    public function testIteration(): void {
+    public function testIteration(): void
+    {
         $d = Deque::any(['a', 'b']);
         $d->pushFront('z');
         $out = [];
@@ -93,14 +108,16 @@ final class DequeTest extends TestCase {
         self::assertSame(['z', 'a', 'b'], $out);
     }
 
-    public function testClear(): void {
+    public function testClear(): void
+    {
         $d = Deque::any(['a', 'b']);
         $d->clear();
         self::assertTrue($d->isEmpty());
         self::assertNull($d->peekFront());
     }
 
-    public function testMixedAcceptsScalarsAndNull(): void {
+    public function testMixedAcceptsScalarsAndNull(): void
+    {
         $d = Deque::any();
         $d->pushBack(1);
         $d->pushBack('two');

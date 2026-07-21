@@ -1,0 +1,4 @@
+# Revisions to skip in `git blame` — bulk, no-behaviour-change reformatting.
+# Enable locally with:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+# GitHub picks this file up automatically.

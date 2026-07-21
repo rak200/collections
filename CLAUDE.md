@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+@~/.claude/rak200-php-conventions.md
+
 ## Project Overview
 
 **rak200/collections** is a standalone PHP 8.4+ library providing typed generic collection types. It depends on `rak200/caster` for the `ToArray` contract.
@@ -12,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 collections/
 ├── composer.json
 ├── phpunit.xml
-├── phpstan.neon.dist            # PHPStan level 9 config; registers the type-resolver extension
+├── phpstan.neon.dist            # PHPStan level max config; registers the type-resolver extension
 ├── phpstan/
 │   └── CollectionTypeResolver.php  # ExpressionTypeResolverExtension: binds generics from discriminator strings
 ├── src/
@@ -38,7 +40,8 @@ collections/
 │       ├── ProvidesValueFactories.php  # Trait: any()/ofInt()/ofString()/… factories for single-value collections
 │       ├── ValidatesType.php     # Static utility (abstract class): checkType($type, $value, $label)
 │       └── LinkedNode.php        # Node used by LinkedList (was Rak200\Collections\LinkedNode in 0.0.x)
-└── tests/                        # PHPUnit suites mirroring each src/ class (+ ConstructsProtected trait, TypedFactoriesTest)
+├── tests/                        # PHPUnit suites mirroring each src/ class (+ ConstructsProtected trait, TypedFactoriesTest, ConstructorVisibilityTest, HashesValuesTest)
+└── docs/                         # Per-class reference (docs/README.md index + one page per class)
 ```
 
 All classes live under the `Rak200\Collections` namespace (PSR-4 from `src/`); tests under `Rak200\Collections\Tests` (PSR-4 from `tests/`).
@@ -47,9 +50,13 @@ All classes live under the `Rak200\Collections` namespace (PSR-4 from `src/`); t
 
 `composer test` (or `vendor/bin/phpunit`) runs the suite. PHPUnit 13 is required (in `require-dev`). Each `src/X.php` has a paired `tests/XTest.php` covering construction, type enforcement, public API, interface compliance, and edge cases (empty operations, null returns, duplicates).
 
-`composer phpstan` runs PHPStan level 9 (`phpstan/phpstan ^2.0`, in `require-dev`) over `phpstan/`, `src/`, and `tests/`. The project ships an `ExpressionTypeResolverExtension` — `Rak200\Collections\PHPStan\CollectionTypeResolver` in `phpstan/CollectionTypeResolver.php` — that binds each collection's generic parameters from the discriminator strings passed to its factory/constructor (`'int'` → `int`, `Foo::class` → `Foo`, etc.), so `Vector::ofInt()` resolves to `Vector<int>` even though the tooling can't otherwise infer a type from a runtime string. It's registered in `phpstan.neon.dist`; PHPStan runs the extension but the IDE (DEVSENSE) does not, which is why the factories carry plain `@return self<int>` docblocks that both understand.
+`composer phpstan` runs PHPStan at `level: max` (`phpstan/phpstan ^2.0`, in `require-dev`) over `phpstan/`, `src/`, and `tests/`. The project ships an `ExpressionTypeResolverExtension` — `Rak200\Collections\PHPStan\CollectionTypeResolver` in `phpstan/CollectionTypeResolver.php` — that binds each collection's generic parameters from the discriminator strings passed to its factory/constructor (`'int'` → `int`, `Foo::class` → `Foo`, etc.), so `Vector::ofInt()` resolves to `Vector<int>` even though the tooling can't otherwise infer a type from a runtime string. It's registered in `phpstan.neon.dist`; PHPStan runs the extension but the IDE (DEVSENSE) does not, which is why the factories carry plain `@return self<int>` docblocks that both understand.
 
 Test construction: constructors are `protected` (see below), so tests build through the public factories. The few cases with no factory — the `'array'`/`'iterable'` discriminators, pseudo-typed map values, partially-typed object maps — go through the `tests/ConstructsProtected.php` trait's `build(Cls::class, ...$args)` helper (Reflection: `newInstanceWithoutConstructor()` + `getConstructor()?->invokeArgs()`, so the protected constructor's validation still fires). Negative type-rejection tests deliberately violate the static types and carry a `// @phpstan-ignore` on the offending line.
+
+Two cross-cutting test files aren't paired 1:1 with a `src/` class: `tests/ConstructorVisibilityTest.php` reflects on every collection's constructor to pin it as `protected` (not `private` — that's what lets a consumer subclass a collection and still call `parent::__construct()`), and `tests/HashesValuesTest.php` pins the exact string format `Internal\HashesValues::hashValue()` produces per type (via `Set` as the reflection target), since the type-prefix format is what keeps values like `1` and `'1'` from colliding.
+
+`composer cs-check` runs PHP-CS-Fixer (`@PhpCsFixer` preset, dry-run) over `phpstan/`, `src/`, and `tests/`; `composer cs-fix` applies it. `composer infection` runs mutation testing (`infection.json5.dist`, `minMsi`/`minCoveredMsi: 100`) over `src/`. Genuinely equivalent mutants (a change Infection can generate but no test can ever observe) are marked in-source with `@infection-ignore-all` rather than chased with a test — see e.g. the `checkKey()` early-return in `Map`/`BiMap`/`MultiMap`/`ImmutableMap`, or the heap-comparator ternaries in `PriorityQueue`, each with a comment explaining why no input can distinguish the mutant.
 
 ## Classes
 
@@ -238,25 +245,20 @@ When adding a new collection type:
 2. Implement appropriate PHP SPL interfaces (`Iterator`, `Countable`, etc.) where it makes sense
 3. Implement `Rak200\Caster\Contracts\ToArray` for consistency
 4. Use generics in docblocks (`@template T of object`)
+5. Add complexity notation in every public method
+6. Add method reference in class description, groupped by complexity
+7. Add a `docs/<class>.md` page (per the shared conventions' fixed layout) and link it from `docs/README.md`'s index table
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.5.0** — still pre-1.0 while the API stabilizes. 
-
-When releasing a new version:
-1. Update `"version"` in `composer.json`
-2. Update `CHANGELOG.md`: add a new `## [x.y.z] - YYYY-MM-DD` section with `### Added / Changed / Fixed / Removed` entries and a comparison link at the bottom
-3. Update the version reference in `README.md`
-4. Commit and push
-5. Create and push a git tag matching the version: `git tag x.y.z && git push origin x.y.z`
+Follows [Semantic Versioning](https://semver.org) — still pre-1.0 while the API stabilizes. The release checklist is the shared one (`@~/.claude/rak200-php-conventions.md` → "Release checklist"); the README needs no manual version edit, its `Latest tag` badge tracks the pushed git tag.
 
 Consumers using `"type": "vcs"` in their `composer.json` resolve versions from git tags.
 
 ## Roadmap
 
-Pending work, without a committed target version. Item 1 is **breaking** (it only lands
-in a major release); item 2 is non-breaking. For the deprecations, the `@deprecated`
-docblocks remain the source of truth per item.
+Pending work, without a committed target version. **Breaking** — only lands in a major
+release. The `@deprecated` docblocks remain the source of truth.
 
 1. **Make `LinkedList`, `Queue`, and `Deque` constructors `protected`** — soft-`@deprecated`
    since 0.5.0 (`src/LinkedList.php`, `src/Queue.php`, `src/Deque.php`). They stay public
@@ -264,12 +266,3 @@ docblocks remain the source of truth per item.
    `LinkedList` internally, whose type can't flow through the `any()`-returns-`mixed`
    factory path); the pending change is to close that gap and route all construction
    through the factories.
-2. **Adopt the shared rak200 PHP conventions** (`@~/.claude/rak200-php-conventions.md`) —
-   import the shared file from this `CLAUDE.md` and close the current gaps against the
-   cross-library standard:
-   - **php-cs-fixer** on the `@PhpCsFixer` preset (`.php-cs-fixer.dist.php`, `composer cs-check` / `cs-fix`).
-   - **PHPStan at `level: max`** (currently 9) — assess the new findings and adopt if the added strictness is worth the churn.
-   - **Infection** mutation testing (`infection.json5.dist`, `minMsi: 100`, `composer infection`).
-   - **`docs/` reference** — one page per class plus a `docs/README.md` index, in the fixed layout.
-   - **CI** (`.github/workflows/ci.yml`) — matrix over the composer floor + next PHP minor, running cs-check / phpstan / test / infection.
-   - **README badges** and `failOnWarning` / `failOnRisky` in `phpunit.xml`; `.git-blame-ignore-revs` for bulk reformat commits.

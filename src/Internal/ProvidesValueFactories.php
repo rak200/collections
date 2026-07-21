@@ -18,17 +18,21 @@ use InvalidArgumentException;
  * per-call method template (`class-string<T>` → `self<T>`) does not resolve
  * through a trait in IDE analysis, so each class declares `of()` inline.
  *
- * @internal Used by the concrete collection classes; not a public contract.
+ * @internal used by the concrete collection classes; not a public contract
+ *
+ * @author rak200 <rak.ricardo@windowslive.com>
  */
-trait ProvidesValueFactories {
-
+trait ProvidesValueFactories
+{
     /**
      * Untyped collection (no runtime type enforcement).
      *
      * @param iterable<array-key, mixed> $items
+     *
      * @return self<mixed>
      */
-    public static function any(iterable $items = []): self {
+    public static function any(iterable $items = []): self
+    {
         return new self('mixed', $items);
     }
 
@@ -36,55 +40,73 @@ trait ProvidesValueFactories {
      * Collection of any objects (`'object'` discriminator).
      *
      * @param iterable<array-key, object> $items
+     *
      * @return self<object>
-     * @throws InvalidArgumentException When any item is not an object.
+     *
+     * @throws InvalidArgumentException when any item is not an object
      */
-    public static function ofObject(iterable $items = []): self {
+    public static function ofObject(iterable $items = []): self
+    {
         return new self('object', $items);
     }
 
     /**
      * @param iterable<array-key, mixed> $items
+     *
      * @return self<int>
-     * @throws InvalidArgumentException When any item is not an int.
+     *
+     * @throws InvalidArgumentException when any item is not an int
      */
-    public static function ofInt(iterable $items = []): self {
+    public static function ofInt(iterable $items = []): self
+    {
         return new self('int', $items);
     }
 
     /**
      * @param iterable<array-key, mixed> $items
+     *
      * @return self<string>
-     * @throws InvalidArgumentException When any item is not a string.
+     *
+     * @throws InvalidArgumentException when any item is not a string
      */
-    public static function ofString(iterable $items = []): self {
+    public static function ofString(iterable $items = []): self
+    {
         return new self('string', $items);
     }
 
     /**
      * @param iterable<array-key, mixed> $items
+     *
      * @return self<bool>
-     * @throws InvalidArgumentException When any item is not a bool.
+     *
+     * @throws InvalidArgumentException when any item is not a bool
      */
-    public static function ofBool(iterable $items = []): self {
+    public static function ofBool(iterable $items = []): self
+    {
         return new self('bool', $items);
     }
 
     /**
      * @param iterable<array-key, mixed> $items
+     *
      * @return self<float>
-     * @throws InvalidArgumentException When any item is not a float.
+     *
+     * @throws InvalidArgumentException when any item is not a float
      */
-    public static function ofFloat(iterable $items = []): self {
+    public static function ofFloat(iterable $items = []): self
+    {
         return new self('float', $items);
     }
 
     /**
      * @param iterable<array-key, mixed> $items
+     *
      * @return self<callable>
-     * @throws InvalidArgumentException When any item is not callable.
+     *
+     * @throws InvalidArgumentException when any item is not callable
      */
-    public static function ofCallable(iterable $items = []): self {
+    public static function ofCallable(iterable $items = []): self
+    {
         return new self('callable', $items);
     }
 }

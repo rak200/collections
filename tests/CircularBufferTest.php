@@ -9,16 +9,31 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Rak200\Collections\CircularBuffer;
 
-final class CircularBufferTest extends TestCase {
-
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
+final class CircularBufferTest extends TestCase
+{
     use ConstructsProtected;
 
-    public function testConstructorRejectsNonPositiveCapacity(): void {
+    public function testConstructorRejectsNonPositiveCapacity(): void
+    {
         $this->expectException(InvalidArgumentException::class);
         CircularBuffer::any(0);
     }
 
-    public function testEmptyState(): void {
+    public function testCapacityOfOneIsValid(): void
+    {
+        $b = CircularBuffer::any(1);
+        self::assertSame(1, $b->capacity());
+        self::assertNull($b->push('a'));
+        self::assertSame(['a'], $b->toArray());
+    }
+
+    public function testEmptyState(): void
+    {
         $b = CircularBuffer::any(3);
         self::assertCount(0, $b);
         self::assertTrue($b->isEmpty());
@@ -30,7 +45,8 @@ final class CircularBufferTest extends TestCase {
         self::assertSame('mixed', $b->getType());
     }
 
-    public function testPushUntilFullDoesNotEvict(): void {
+    public function testPushUntilFullDoesNotEvict(): void
+    {
         $b = CircularBuffer::any(3);
         self::assertNull($b->push('a'));
         self::assertNull($b->push('b'));
@@ -39,7 +55,8 @@ final class CircularBufferTest extends TestCase {
         self::assertSame(['a', 'b', 'c'], $b->toArray());
     }
 
-    public function testPushPastFullEvictsOldest(): void {
+    public function testPushPastFullEvictsOldest(): void
+    {
         $b = CircularBuffer::any(3);
         $b->push('a');
         $b->push('b');
@@ -49,7 +66,8 @@ final class CircularBufferTest extends TestCase {
         self::assertSame(['c', 'd', 'e'], $b->toArray());
     }
 
-    public function testPopReturnsOldest(): void {
+    public function testPopReturnsOldest(): void
+    {
         $b = CircularBuffer::any(3, ['a', 'b', 'c']);
         self::assertSame('a', $b->pop());
         self::assertSame('b', $b->pop());
@@ -57,13 +75,15 @@ final class CircularBufferTest extends TestCase {
         self::assertNull($b->pop());
     }
 
-    public function testPeekReturnsOldestWithoutRemoval(): void {
+    public function testPeekReturnsOldestWithoutRemoval(): void
+    {
         $b = CircularBuffer::any(3, ['a', 'b', 'c']);
         self::assertSame('a', $b->peek());
         self::assertCount(3, $b);
     }
 
-    public function testPushPopInterleaving(): void {
+    public function testPushPopInterleaving(): void
+    {
         $b = CircularBuffer::any(3);
         $b->push('a');
         $b->push('b');
@@ -73,7 +93,8 @@ final class CircularBufferTest extends TestCase {
         self::assertSame(['b', 'c', 'd'], $b->toArray());
     }
 
-    public function testWrapAround(): void {
+    public function testWrapAround(): void
+    {
         $b = CircularBuffer::any(3);
         $b->push('a');
         $b->push('b');
@@ -84,25 +105,29 @@ final class CircularBufferTest extends TestCase {
         self::assertSame(['c', 'd', 'e'], $b->toArray());
     }
 
-    /** @return iterable<string, array{string, mixed, mixed}> */
-    public static function rejectedItemProvider(): iterable {
-        yield 'string into int buffer' => ['int', 1, 'not-int'];
-    }
-
     #[DataProvider('rejectedItemProvider')]
-    public function testTypeEnforcement(string $type, mixed $ok, mixed $wrong): void {
+    public function testTypeEnforcement(string $type, mixed $ok, mixed $wrong): void
+    {
         $b = self::build(CircularBuffer::class, 2, $type);
         $b->push($ok);
         $this->expectException(InvalidArgumentException::class);
         $b->push($wrong);
     }
 
-    public function testInitialItemsRespectCapacity(): void {
+    /** @return iterable<string, array{string, mixed, mixed}> */
+    public static function rejectedItemProvider(): iterable
+    {
+        yield 'string into int buffer' => ['int', 1, 'not-int'];
+    }
+
+    public function testInitialItemsRespectCapacity(): void
+    {
         $b = CircularBuffer::any(2, ['a', 'b', 'c']);
         self::assertSame(['b', 'c'], $b->toArray());
     }
 
-    public function testIteration(): void {
+    public function testIteration(): void
+    {
         $b = CircularBuffer::any(3, ['a', 'b', 'c']);
         $b->push('d');  // evicts 'a'
         $out = [];
@@ -112,7 +137,8 @@ final class CircularBufferTest extends TestCase {
         self::assertSame([0 => 'b', 1 => 'c', 2 => 'd'], $out);
     }
 
-    public function testClear(): void {
+    public function testClear(): void
+    {
         $b = CircularBuffer::any(3, ['a', 'b']);
         $b->clear();
         self::assertTrue($b->isEmpty());
@@ -121,7 +147,35 @@ final class CircularBufferTest extends TestCase {
         self::assertSame(['x'], $b->toArray());
     }
 
-    public function testMixedAcceptsScalars(): void {
+    public function testClearResetsIterationPosition(): void
+    {
+        $b = CircularBuffer::any(2, ['a', 'b']);
+        $b->clear();
+        self::assertFalse($b->valid());
+        self::assertNull($b->current());
+    }
+
+    public function testClearResetsHeadForFreshWrapping(): void
+    {
+        $b = CircularBuffer::any(2, [1, 2]);
+        $b->clear();
+        self::assertNull($b->push('a'));
+        self::assertNull($b->push('b'));
+        self::assertSame('a', $b->push('c')); // evicts the oldest of the fresh cycle
+        self::assertSame(['b', 'c'], $b->toArray());
+    }
+
+    public function testCurrentReturnsNullPastLastPosition(): void
+    {
+        $b = CircularBuffer::any(2, ['a', 'b']);
+        $b->rewind();
+        $b->next();
+        $b->next(); // iterPos now equals count
+        self::assertNull($b->current());
+    }
+
+    public function testMixedAcceptsScalars(): void
+    {
         $b = CircularBuffer::any(3);
         $b->push(1);
         $b->push('two');

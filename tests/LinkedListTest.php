@@ -7,13 +7,20 @@ namespace Rak200\Collections\Tests;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Rak200\Collections\LinkedList;
 use Rak200\Collections\Internal\LinkedNode;
+use Rak200\Collections\LinkedList;
 use Rak200\Collections\Vector;
+use stdClass;
 
-final class LinkedListTest extends TestCase {
-
-    public function testEmptyListState(): void {
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
+final class LinkedListTest extends TestCase
+{
+    public function testEmptyListState(): void
+    {
         $list = LinkedList::any();
         self::assertCount(0, $list);
         self::assertNull($list->head());
@@ -23,7 +30,8 @@ final class LinkedListTest extends TestCase {
         self::assertSame([], $list->toArray());
     }
 
-    public function testPushAppendsAndReturnsNode(): void {
+    public function testPushAppendsAndReturnsNode(): void
+    {
         $list = LinkedList::any();
         $a = $list->push('a');
         $b = $list->push('b');
@@ -34,15 +42,28 @@ final class LinkedListTest extends TestCase {
         self::assertCount(2, $list);
     }
 
-    public function testUnshiftPrependsAndAdjustsHead(): void {
+    public function testUnshiftPrependsAndAdjustsHead(): void
+    {
         $list = LinkedList::any();
         $list->push('b');
         $a = $list->unshift('a');
         self::assertSame($a, $list->head());
         self::assertSame(['a', 'b'], $list->toArray());
+        self::assertCount(2, $list);
     }
 
-    public function testPopRemovesTail(): void {
+    public function testUnshiftIncrementsCount(): void
+    {
+        $list = LinkedList::any();
+        self::assertCount(0, $list);
+        $list->unshift('a');
+        self::assertCount(1, $list);
+        $list->unshift('b');
+        self::assertCount(2, $list);
+    }
+
+    public function testPopRemovesTail(): void
+    {
         $list = LinkedList::any(['a', 'b', 'c']);
         self::assertSame('c', $list->pop());
         self::assertCount(2, $list);
@@ -51,7 +72,8 @@ final class LinkedListTest extends TestCase {
         self::assertSame('b', $tail->value);
     }
 
-    public function testShiftRemovesHead(): void {
+    public function testShiftRemovesHead(): void
+    {
         $list = LinkedList::any(['a', 'b', 'c']);
         self::assertSame('a', $list->shift());
         self::assertCount(2, $list);
@@ -60,7 +82,8 @@ final class LinkedListTest extends TestCase {
         self::assertSame('b', $head->value);
     }
 
-    public function testInsertBeforeAtMiddle(): void {
+    public function testInsertBeforeAtMiddle(): void
+    {
         $list = LinkedList::any();
         $a = $list->push('a');
         $c = $list->push('c');
@@ -68,9 +91,19 @@ final class LinkedListTest extends TestCase {
         self::assertSame(['a', 'b', 'c'], $list->toArray());
         self::assertSame($a, $b->prev);
         self::assertSame($c, $b->next);
+        self::assertCount(3, $list);
     }
 
-    public function testInsertBeforeAtHeadUpdatesHead(): void {
+    public function testInsertBeforeRejectsWrongType(): void
+    {
+        $list = LinkedList::of(stdClass::class);
+        $node = $list->push(new stdClass());
+        $this->expectException(InvalidArgumentException::class);
+        $list->insertBefore($node, 'not-an-object'); // @phpstan-ignore argument.type (runtime rejection test)
+    }
+
+    public function testInsertBeforeAtHeadUpdatesHead(): void
+    {
         $list = LinkedList::any();
         $a = $list->push('a');
         $z = $list->insertBefore($a, 'z');
@@ -78,7 +111,8 @@ final class LinkedListTest extends TestCase {
         self::assertSame(['z', 'a'], $list->toArray());
     }
 
-    public function testInsertAfterAtMiddle(): void {
+    public function testInsertAfterAtMiddle(): void
+    {
         $list = LinkedList::any();
         $a = $list->push('a');
         $c = $list->push('c');
@@ -86,16 +120,27 @@ final class LinkedListTest extends TestCase {
         self::assertSame(['a', 'b', 'c'], $list->toArray());
         self::assertSame($a, $b->prev);
         self::assertSame($c, $b->next);
+        self::assertCount(3, $list);
     }
 
-    public function testInsertAfterAtTailUpdatesTail(): void {
+    public function testInsertAfterRejectsWrongType(): void
+    {
+        $list = LinkedList::of(stdClass::class);
+        $node = $list->push(new stdClass());
+        $this->expectException(InvalidArgumentException::class);
+        $list->insertAfter($node, 'not-an-object'); // @phpstan-ignore argument.type (runtime rejection test)
+    }
+
+    public function testInsertAfterAtTailUpdatesTail(): void
+    {
         $list = LinkedList::any();
         $a = $list->push('a');
         $b = $list->insertAfter($a, 'b');
         self::assertSame($b, $list->tail());
     }
 
-    public function testRemoveMiddleNode(): void {
+    public function testRemoveMiddleNode(): void
+    {
         $list = LinkedList::any();
         $a = $list->push('a');
         $b = $list->push('b');
@@ -108,7 +153,8 @@ final class LinkedListTest extends TestCase {
         self::assertNull($b->next);
     }
 
-    public function testRemoveHead(): void {
+    public function testRemoveHead(): void
+    {
         $list = LinkedList::any();
         $a = $list->push('a');
         $b = $list->push('b');
@@ -117,7 +163,8 @@ final class LinkedListTest extends TestCase {
         self::assertCount(1, $list);
     }
 
-    public function testRemoveTail(): void {
+    public function testRemoveTail(): void
+    {
         $list = LinkedList::any();
         $a = $list->push('a');
         $b = $list->push('b');
@@ -126,7 +173,8 @@ final class LinkedListTest extends TestCase {
         self::assertCount(1, $list);
     }
 
-    public function testRemoveOnlyNodeEmptiesList(): void {
+    public function testRemoveOnlyNodeEmptiesList(): void
+    {
         $list = LinkedList::any();
         $only = $list->push('a');
         $list->remove($only);
@@ -135,7 +183,8 @@ final class LinkedListTest extends TestCase {
         self::assertNull($list->tail());
     }
 
-    public function testIterationOrder(): void {
+    public function testIterationOrder(): void
+    {
         $list = LinkedList::any(['a', 'b', 'c']);
         $out = [];
         foreach ($list as $k => $v) {
@@ -144,28 +193,32 @@ final class LinkedListTest extends TestCase {
         self::assertSame([0 => 'a', 1 => 'b', 2 => 'c'], $out);
     }
 
-    /** @return iterable<string, array{string, mixed}> */
-    public static function rejectedItemProvider(): iterable {
-        yield 'non-object into stdClass list' => [\stdClass::class, 'not-an-object'];
-    }
-
     #[DataProvider('rejectedItemProvider')]
-    public function testTypeEnforcementOnPush(string $type, mixed $wrong): void {
+    public function testTypeEnforcementOnPush(string $type, mixed $wrong): void
+    {
         $list = new LinkedList($type);
         $this->expectException(InvalidArgumentException::class);
         $list->push($wrong);
     }
 
-    public function testTypeEnforcementAcceptsInstance(): void {
-        $obj = new \stdClass();
-        $list = LinkedList::of(\stdClass::class);
+    /** @return iterable<string, array{string, mixed}> */
+    public static function rejectedItemProvider(): iterable
+    {
+        yield 'non-object into stdClass list' => [stdClass::class, 'not-an-object'];
+    }
+
+    public function testTypeEnforcementAcceptsInstance(): void
+    {
+        $obj = new stdClass();
+        $list = LinkedList::of(stdClass::class);
         $list->push($obj);
         $head = $list->head();
         self::assertNotNull($head);
         self::assertSame($obj, $head->value);
     }
 
-    public function testMixedTypeAcceptsScalars(): void {
+    public function testMixedTypeAcceptsScalars(): void
+    {
         $list = LinkedList::any();
         $list->push(42);
         $list->push('str');
@@ -173,14 +226,16 @@ final class LinkedListTest extends TestCase {
         self::assertSame([42, 'str', null], $list->toArray());
     }
 
-    public function testFromVector(): void {
+    public function testFromVector(): void
+    {
         $vector = Vector::any([10, 20, 30]);
         $list = LinkedList::fromVector($vector);
         self::assertSame('mixed', $list->getType());
         self::assertSame([10, 20, 30], $list->toArray());
     }
 
-    public function testIsEmpty(): void {
+    public function testIsEmpty(): void
+    {
         $list = LinkedList::any();
         self::assertTrue($list->isEmpty());
         $list->push('a');
@@ -189,7 +244,8 @@ final class LinkedListTest extends TestCase {
         self::assertTrue($list->isEmpty());
     }
 
-    public function testClearResetsAllState(): void {
+    public function testClearResetsAllState(): void
+    {
         $list = LinkedList::any(['a', 'b', 'c']);
         $list->clear();
         self::assertCount(0, $list);
@@ -200,11 +256,50 @@ final class LinkedListTest extends TestCase {
         self::assertSame(['x'], $list->toArray());
     }
 
-    public function testRemoveRejectsForeignNode(): void {
+    public function testRemoveRejectsForeignNode(): void
+    {
         $listA = LinkedList::any();
         $listB = LinkedList::any();
         $node = $listA->push('a');
         $this->expectException(InvalidArgumentException::class);
         $listB->remove($node);
+    }
+
+    public function testRemovingSameNodeTwiceDoesNotUnderflowCount(): void
+    {
+        $list = LinkedList::ofInt([1]);
+        $node = $list->head();
+        self::assertNotNull($node);
+        $list->remove($node);
+        self::assertSame(0, $list->count());
+        // The node is now detached but still belongs to $list; removing it
+        // again must be a no-op, not push the count negative.
+        $list->remove($node);
+        self::assertSame(0, $list->count());
+    }
+
+    public function testClearResetsIterationPosition(): void
+    {
+        $list = LinkedList::ofInt([1, 2]);
+        $list->clear();
+        self::assertSame(0, $list->key());
+    }
+
+    public function testCurrentReturnsNullPastEnd(): void
+    {
+        $list = LinkedList::ofInt([1]);
+        $list->rewind();
+        $list->next(); // cursor becomes null (past the single element)
+        self::assertNull($list->current());
+    }
+
+    public function testNextPastEndStaysNullWithoutWarning(): void
+    {
+        $list = LinkedList::ofInt([1]);
+        $list->rewind();
+        $list->next(); // cursor now null
+        $list->next(); // calling next() again past the end must be a no-op
+        self::assertNull($list->current());
+        self::assertFalse($list->valid());
     }
 }

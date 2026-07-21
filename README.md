@@ -1,6 +1,19 @@
 # collections
 
+[![CI](https://github.com/rak200/collections/actions/workflows/ci.yml/badge.svg)](https://github.com/rak200/collections/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/rak200/collections/graph/badge.svg)](https://codecov.io/gh/rak200/collections)
+[![Infection MSI](https://img.shields.io/badge/mutation%20MSI-100%25-brightgreen)](infection.json5.dist)
+[![Latest tag](https://img.shields.io/github/v/tag/rak200/collections?sort=semver)](https://github.com/rak200/collections/tags)
+[![PHP](https://img.shields.io/badge/php-8.4%2B-777bb4?logo=php&logoColor=white)](https://www.php.net/)
+[![PHPStan](https://img.shields.io/badge/PHPStan-level%20max-brightgreen?logo=php&logoColor=white)](https://phpstan.org/)
+[![Code style](https://img.shields.io/badge/code%20style-PHP--CS--Fixer-blue?logo=php&logoColor=white)](.php-cs-fixer.dist.php)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![SemVer](https://img.shields.io/badge/semver-2.0.0-blue)](https://semver.org/spec/v2.0.0.html)
+[![Keep a Changelog](https://img.shields.io/badge/changelog-Keep%20a%20Changelog-orange)](CHANGELOG.md)
+
 Typed generic collections for PHP 8.4+.
+
+See the [`docs/` reference](docs/README.md) for the full per-class API with runnable examples.
 
 ## Installation
 
@@ -347,20 +360,17 @@ Caster::toJson($users);            // delegates to $users->toArray()
 
 ```bash
 composer install
-composer test      # PHPUnit 13
-composer phpstan   # PHPStan level 9
+composer test       # PHPUnit 13
+composer phpstan    # PHPStan level max
+composer cs-check   # PHP-CS-Fixer, @PhpCsFixer preset (dry-run)
+composer infection  # Infection mutation testing, minMsi/minCoveredMsi 100
 ```
 
-The suite uses PHPUnit 13 and covers every `src/` class. Each class has a paired `tests/*Test.php` exercising construction, type enforcement, public API, and interface compliance. `composer phpstan` runs level-9 static analysis, including a project extension (`phpstan/CollectionTypeResolver.php`) that binds each collection's generics from its factory/constructor discriminator strings.
+The suite uses PHPUnit 13 and covers every `src/` class. Each class has a paired `tests/*Test.php` exercising construction, type enforcement, public API, and interface compliance. `composer phpstan` runs level-max static analysis, including a project extension (`phpstan/CollectionTypeResolver.php`) that binds each collection's generics from its factory/constructor discriminator strings. `composer infection` gates test *quality* — every mutant Infection can generate must be killed or provably equivalent (see `@infection-ignore-all` comments in `src/`).
 
 ## Versioning
 
-Follows [Semantic Versioning](https://semver.org). Current version: **0.6.0** — still pre-1.0 while the API stabilizes.
-
-When releasing a new version:
-1. Update `"version"` in `composer.json`
-2. Commit and push
-3. `git tag 0.x.y && git push origin 0.x.y`
+Follows [Semantic Versioning](https://semver.org) — still pre-1.0 while the API stabilizes. The `Latest tag` badge above tracks the pushed git tag automatically; see `CLAUDE.md` for the release checklist.
 
 ## License
 

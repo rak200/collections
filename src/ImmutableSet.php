@@ -4,13 +4,19 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function count, key, next, reset;
+use Countable;
 use InvalidArgumentException;
+use Iterator;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\HashesValues;
+use Rak200\Collections\Internal\ProvidesValueFactories;
 use Rak200\Collections\Internal\ValidatesType;
 use Rak200\Utils\Arr;
-use Rak200\Collections\Internal\ProvidesValueFactories;
+
+use function count;
+use function key;
+use function next;
+use function reset;
 
 /**
  * Read-only counterpart to {@see Set}. Items are fixed at construction;
@@ -32,13 +38,15 @@ use Rak200\Collections\Internal\ProvidesValueFactories;
  * - O(n): toArray / union / intersection / difference / isSubsetOf / isSupersetOf
  *
  * @template T_Value
- * @implements \Iterator<int, T_Value>
+ *
+ * @implements Iterator<int, T_Value>
+ *
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-final class ImmutableSet implements \Iterator, \Countable, ToArray {
-
+final class ImmutableSet implements Iterator, Countable, ToArray
+{
     use ProvidesValueFactories;
-use HashesValues;
+    use HashesValues;
 
     /** @var array<string, T_Value> Hash → original value. */
     private array $items = [];
@@ -46,11 +54,13 @@ use HashesValues;
     private int $iterPos = 0;
 
     /**
-     * @param string $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
-     * @param iterable<T_Value> $items Initial items; duplicates are silently dropped.
-     * @throws InvalidArgumentException When any item does not satisfy $type.
+     * @param string            $type  class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip
+     * @param iterable<T_Value> $items initial items; duplicates are silently dropped
+     *
+     * @throws InvalidArgumentException when any item does not satisfy $type
      */
-    protected function __construct(private string $type = 'mixed', iterable $items = []) {
+    protected function __construct(private string $type = 'mixed', iterable $items = [])
+    {
         foreach ($items as $item) {
             ValidatesType::checkType($this->type, $item);
             $hash = self::hashValue($item);
@@ -66,12 +76,16 @@ use HashesValues;
      * in both PHPStan and IDE analysis.
      *
      * @template T of object
-     * @param class-string<T> $class Class to enforce on items.
-     * @param iterable<T> $items Initial items; duplicates are silently dropped.
+     *
+     * @param class-string<T> $class class to enforce on items
+     * @param iterable<T>     $items initial items; duplicates are silently dropped
+     *
      * @return self<T>
-     * @throws InvalidArgumentException When any item does not satisfy $class.
+     *
+     * @throws InvalidArgumentException when any item does not satisfy $class
      */
-    public static function of(string $class, iterable $items = []): self {
+    public static function of(string $class, iterable $items = []): self
+    {
         return new self($class, $items);
     }
 
@@ -79,10 +93,13 @@ use HashesValues;
      * Build an immutable copy of the given {@see Set}, preserving its type.
      *
      * @template T
+     *
      * @param Set<T> $set
+     *
      * @return self<T>
      */
-    public static function fromSet(Set $set): self {
+    public static function fromSet(Set $set): self
+    {
         return new self($set->getType(), $set);
     }
 
@@ -91,7 +108,8 @@ use HashesValues;
      *
      * @return class-string<T_Value>|string
      */
-    public function getType(): string {
+    public function getType(): string
+    {
         return $this->type;
     }
 
@@ -100,7 +118,8 @@ use HashesValues;
      *
      * @param T_Value $item
      */
-    public function contains(mixed $item): bool {
+    public function contains(mixed $item): bool
+    {
         return Arr::has($this->items, self::hashValue($item));
     }
 
@@ -110,10 +129,13 @@ use HashesValues;
      * Complexity: O(n + m), where n = |$this| and m = |$other|.
      *
      * @param self<T_Value>|Set<T_Value> $other
+     *
      * @return self<T_Value>
-     * @throws InvalidArgumentException When $other has items incompatible with $this->type.
+     *
+     * @throws InvalidArgumentException when $other has items incompatible with $this->type
      */
-    public function union(self|Set $other): self {
+    public function union(self|Set $other): self
+    {
         return new self($this->type, [...$this->toArray(), ...$other->toArray()]);
     }
 
@@ -123,15 +145,18 @@ use HashesValues;
      * Complexity: O(n), where n = |$this| (each membership test is O(1)).
      *
      * @param self<T_Value>|Set<T_Value> $other
+     *
      * @return self<T_Value>
      */
-    public function intersection(self|Set $other): self {
+    public function intersection(self|Set $other): self
+    {
         $items = [];
         foreach ($this->items as $item) {
             if ($other->contains($item)) {
                 $items[] = $item;
             }
         }
+
         return new self($this->type, $items);
     }
 
@@ -141,15 +166,18 @@ use HashesValues;
      * Complexity: O(n), where n = |$this| (each membership test is O(1)).
      *
      * @param self<T_Value>|Set<T_Value> $other
+     *
      * @return self<T_Value>
      */
-    public function difference(self|Set $other): self {
+    public function difference(self|Set $other): self
+    {
         $items = [];
         foreach ($this->items as $item) {
             if (!$other->contains($item)) {
                 $items[] = $item;
             }
         }
+
         return new self($this->type, $items);
     }
 
@@ -160,12 +188,14 @@ use HashesValues;
      *
      * @param self<T_Value>|Set<T_Value> $other
      */
-    public function isSubsetOf(self|Set $other): bool {
+    public function isSubsetOf(self|Set $other): bool
+    {
         foreach ($this->items as $item) {
             if (!$other->contains($item)) {
                 return false;
             }
         }
+
         return true;
     }
 
@@ -176,50 +206,60 @@ use HashesValues;
      *
      * @param self<T_Value>|Set<T_Value> $other
      */
-    public function isSupersetOf(self|Set $other): bool {
+    public function isSupersetOf(self|Set $other): bool
+    {
         foreach ($other as $item) {
             if (!$this->contains($item)) {
                 return false;
             }
         }
+
         return true;
     }
 
     /** Number of items currently stored. Complexity: O(1). */
-    public function count(): int {
+    public function count(): int
+    {
         return count($this->items);
     }
 
     /** Whether the set holds no items. Complexity: O(1). */
-    public function isEmpty(): bool {
+    public function isEmpty(): bool
+    {
         return $this->items === [];
     }
 
-    /** @return T_Value|null Item at the current iteration cursor, or null past the end. Complexity: O(1). */
-    public function current(): mixed {
+    /** @return null|T_Value Item at the current iteration cursor, or null past the end. Complexity: O(1). */
+    public function current(): mixed
+    {
         $key = key($this->items);
+
         return $key === null ? null : $this->items[$key];
     }
 
     /** Zero-based position within the set. Complexity: O(1). */
-    public function key(): int {
+    public function key(): int
+    {
         return $this->iterPos;
     }
 
     /** Advance the iteration cursor. Complexity: O(1). */
-    public function next(): void {
+    public function next(): void
+    {
         next($this->items);
-        $this->iterPos++;
+        ++$this->iterPos;
     }
 
     /** Reset the iteration cursor to the first item. Complexity: O(1). */
-    public function rewind(): void {
+    public function rewind(): void
+    {
         reset($this->items);
         $this->iterPos = 0;
     }
 
     /** Whether the iteration cursor still points at a valid item. Complexity: O(1). */
-    public function valid(): bool {
+    public function valid(): bool
+    {
         return key($this->items) !== null;
     }
 
@@ -230,7 +270,8 @@ use HashesValues;
      *
      * @return T_Value[]
      */
-    public function toArray(): array {
+    public function toArray(): array
+    {
         return Arr::values($this->items);
     }
 }

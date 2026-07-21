@@ -13,14 +13,17 @@ use ReflectionClass;
  * object maps. Everything else uses the public factories (`of()`, `ofInt()`,
  * `any()`, …).
  */
-trait ConstructsProtected {
-
+trait ConstructsProtected
+{
     /**
      * @template T of object
+     *
      * @param class-string<T> $class
+     *
      * @return T
      */
-    protected static function build(string $class, mixed ...$args): object {
+    protected static function build(string $class, mixed ...$args): object
+    {
         $reflection = new ReflectionClass($class);
         $instance = $reflection->newInstanceWithoutConstructor();
         // Run the (protected) constructor so its validation still fires.

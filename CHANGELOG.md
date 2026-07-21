@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-20
+
+Adopts the shared rak200 PHP conventions (`@~/.claude/rak200-php-conventions.md`) end to end — the codebase now matches the cross-library baseline used by `rak200/caster` and `rak200/utils`.
+
+### Added
+- **PHP-CS-Fixer** on the `@PhpCsFixer` preset (`.php-cs-fixer.dist.php`; `composer cs-check` / `cs-fix`), with the same load-bearing overrides as the sibling libraries (`use function` imports over `\`-prefixing, member order, natural comparisons, one space around `.`).
+- **Infection mutation testing** (`infection.json5.dist`, `minMsi`/`minCoveredMsi: 100`; `composer infection` / `infection-diff`). A handful of mutants that no test can ever distinguish (dead-code branches, heap-comparator magnitude changes consumed only by sign) are marked in-source with `@infection-ignore-all` and an explanation.
+- **`docs/` reference** — `docs/README.md` index plus one page per class (and one for the shared `Internal\*` typing/identity/factory machinery), each with a `## Contents` TOC and runnable examples, per the shared layout.
+- **CI** (`.github/workflows/ci.yml`) — matrix over PHP 8.4/8.5, running `composer validate`, `cs-check` (floor job), `phpstan`, `test` (with Codecov upload on the floor job), and `infection` (diff-scoped on PRs, full run via `workflow_dispatch`).
+- **README badges** (CI, Coverage, Infection MSI, Latest tag, PHP version, PHPStan level, Code style, License, SemVer, Keep a Changelog) and a `LICENSE` file (MIT).
+- `tests/ConstructorVisibilityTest.php` and `tests/HashesValuesTest.php` — cross-cutting coverage that isn't naturally paired with one `src/` class (constructor visibility across every collection; the exact `HashesValues::hashValue()` string format per type).
+- `.git-blame-ignore-revs` for future bulk reformat commits.
+
+### Changed
+- **PHPStan raised from level 9 to `level: max`.**
+- `phpunit.xml` already had `failOnWarning`/`failOnRisky`; no change needed there.
+- `composer.json`: added `friendsofphp/php-cs-fixer` and `infection/infection` to `require-dev`, plus the `cs-check`/`cs-fix`/`infection`/`infection-diff` scripts and the `infection/extension-installer` Composer plugin allowance.
+
 ## [0.6.0] - 2026-07-19
 
 ### Added
@@ -192,7 +210,8 @@ First minor release. Consolidates a wave of API additions and the `object`→`mi
 ### Added
 - Initial release with `Collection<T_Key, T_Object>` — typed generic array container implementing `Iterator`, `ArrayAccess`, `Countable`, and `Rak200\Caster\Contracts\ToArray`.
 
-[Unreleased]: https://github.com/rak200/collections/compare/0.6.0...HEAD
+[Unreleased]: https://github.com/rak200/collections/compare/0.7.0...HEAD
+[0.7.0]: https://github.com/rak200/collections/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/rak200/collections/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/rak200/collections/compare/0.4.2...0.5.0
 [0.4.2]: https://github.com/rak200/collections/compare/0.4.1...0.4.2

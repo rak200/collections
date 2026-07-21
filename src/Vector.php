@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Rak200\Collections;
 
-use function get_debug_type;
-use function is_int;
-use function sprintf;
+use ArrayAccess;
 use InvalidArgumentException;
 use Rak200\Collections\Internal\ProvidesValueFactories;
 use Rak200\Collections\Internal\ValidatesType;
+
+use function get_debug_type;
+use function is_int;
+use function sprintf;
 
 /**
  * Typed generic collection of mixed values, indexed by int.
@@ -29,20 +31,25 @@ use Rak200\Collections\Internal\ValidatesType;
  * (For O(1) insertion or removal in the middle, reach for {@see LinkedList}.)
  *
  * @template T_Value
+ *
  * @extends AbstractCollection<T_Value>
- * @implements \ArrayAccess<int, T_Value>
+ *
+ * @implements ArrayAccess<int, T_Value>
+ *
  * @author rak200 <rak.ricardo@windowslive.com>
  */
-class Vector extends AbstractCollection implements \ArrayAccess {
-
+class Vector extends AbstractCollection implements ArrayAccess
+{
     use ProvidesValueFactories;
 
     /**
-     * @param string $type Class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip.
-     * @param iterable<array-key, T_Value> $items Initial items; keys must be int (validated at runtime).
-     * @throws InvalidArgumentException When any item does not satisfy $type, or any key is not an int.
+     * @param string                       $type  class name or built-in pseudo-type to enforce on items, or `'mixed'` to skip
+     * @param iterable<array-key, T_Value> $items initial items; keys must be int (validated at runtime)
+     *
+     * @throws InvalidArgumentException when any item does not satisfy $type, or any key is not an int
      */
-    protected function __construct(string $type = 'mixed', iterable $items = []) {
+    protected function __construct(string $type = 'mixed', iterable $items = [])
+    {
         parent::__construct($type);
         foreach ($items as $key => $item) {
             if (!is_int($key)) {
@@ -62,22 +69,26 @@ class Vector extends AbstractCollection implements \ArrayAccess {
      * in both PHPStan and IDE analysis.
      *
      * @template T of object
-     * @param class-string<T> $class Class to enforce on items.
-     * @param iterable<array-key, T> $items Initial items; keys must be int (validated at runtime).
+     *
+     * @param class-string<T>        $class class to enforce on items
+     * @param iterable<array-key, T> $items initial items; keys must be int (validated at runtime)
+     *
      * @return self<T>
-     * @throws InvalidArgumentException When any item does not satisfy $class, or any key is not an int.
+     *
+     * @throws InvalidArgumentException when any item does not satisfy $class, or any key is not an int
      */
-    public static function of(string $class, iterable $items = []): self {
+    public static function of(string $class, iterable $items = []): self
+    {
         return new self($class, $items);
     }
 
     /**
      * Integer key at the current iteration cursor, or null past the end. Complexity: O(1).
-     *
-     * @return int|null
      */
-    public function key(): ?int {
+    public function key(): ?int
+    {
         $key = key($this->items);
+
         return is_int($key) ? $key : null;
     }
 
@@ -86,7 +97,8 @@ class Vector extends AbstractCollection implements \ArrayAccess {
      *
      * @param int $offset
      */
-    public function offsetExists(mixed $offset): bool {
+    public function offsetExists(mixed $offset): bool
+    {
         return isset($this->items[$offset]);
     }
 
@@ -94,20 +106,24 @@ class Vector extends AbstractCollection implements \ArrayAccess {
      * Item at the given offset, or null if absent. Complexity: O(1).
      *
      * @param int $offset
-     * @return T_Value|null
+     *
+     * @return null|T_Value
      */
-    public function offsetGet(mixed $offset): mixed {
+    public function offsetGet(mixed $offset): mixed
+    {
         return $this->items[$offset] ?? null;
     }
 
     /**
      * Set the item at the given offset, or append when $offset is null. Complexity: O(1).
      *
-     * @param int|null $offset
-     * @param T_Value $value
-     * @throws InvalidArgumentException When $value is not an instance of $this->type.
+     * @param null|int $offset
+     * @param T_Value  $value
+     *
+     * @throws InvalidArgumentException when $value is not an instance of $this->type
      */
-    public function offsetSet(mixed $offset, mixed $value): void {
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
         ValidatesType::checkType($this->type, $value);
         if ($offset === null) {
             $this->items[] = $value;
@@ -121,38 +137,39 @@ class Vector extends AbstractCollection implements \ArrayAccess {
      *
      * @param int $offset
      */
-    public function offsetUnset(mixed $offset): void {
+    public function offsetUnset(mixed $offset): void
+    {
         unset($this->items[$offset]);
     }
 
     /**
      * Set the item at the given offset, overwriting any existing entry. Complexity: O(1).
      *
-     * @param int $offset
      * @param T_Value $item
-     * @throws InvalidArgumentException When $item is not an instance of $this->type.
+     *
+     * @throws InvalidArgumentException when $item is not an instance of $this->type
      */
-    public function add(int $offset, mixed $item): void {
+    public function add(int $offset, mixed $item): void
+    {
         ValidatesType::checkType($this->type, $item);
         $this->items[$offset] = $item;
     }
 
     /**
      * Remove the item at the given offset (no-op if absent). Complexity: O(1).
-     *
-     * @param int $offset
      */
-    public function remove(int $offset): void {
+    public function remove(int $offset): void
+    {
         unset($this->items[$offset]);
     }
 
     /**
      * Item at the given offset, or null if absent. Complexity: O(1).
      *
-     * @param int $offset
-     * @return T_Value|null
+     * @return null|T_Value
      */
-    public function get(int $offset): mixed {
+    public function get(int $offset): mixed
+    {
         return $this->items[$offset] ?? null;
     }
 }
