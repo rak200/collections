@@ -13,10 +13,7 @@ use Rak200\Collections\Internal\ProvidesValueFactories;
 use Rak200\Collections\Internal\ValidatesType;
 use Rak200\Utils\Arr;
 
-use function array_slice;
-use function count;
 use function max;
-use function usort;
 
 /**
  * Bag / occurrence counter. Records how many times each unique value has been
@@ -206,7 +203,7 @@ class MultiSet implements Iterator, Countable, ToArray
     /** Number of distinct items in the bag. Complexity: O(1). */
     public function distinct(): int
     {
-        return count($this->items);
+        return Arr::count($this->items);
     }
 
     /**
@@ -242,7 +239,7 @@ class MultiSet implements Iterator, Countable, ToArray
         foreach ($hashes as $i => $hash) {
             $order[$hash] = $i;
         }
-        usort($hashes, function (string $a, string $b) use ($order): int {
+        $sorted = Arr::sort($hashes, function (string $a, string $b) use ($order): int {
             $cmp = $this->counts[$b] <=> $this->counts[$a];
             if ($cmp !== 0) {
                 return $cmp;
@@ -250,7 +247,7 @@ class MultiSet implements Iterator, Countable, ToArray
 
             return $order[$a] <=> $order[$b];
         });
-        $top = array_slice($hashes, 0, $n);
+        $top = Arr::slice($sorted, 0, $n);
         $result = [];
         foreach ($top as $hash) {
             $result[] = [$this->items[$hash], $this->counts[$hash]];

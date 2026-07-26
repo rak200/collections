@@ -80,7 +80,8 @@ The `Rak200\Caster\Contracts\ToArray` implementation. Returns the elements as a 
 ```php
 use Rak200\Caster\Caster;
 
-Caster::toJson(Vector::ofInt([1, 2, 3]));   // '[1,2,3]'
+Caster::toArray(Vector::ofInt([1, 2, 3]));     // [1, 2, 3]
+Caster::toJson(Vector::ofInt([1, 2, 3]), 0);   // '[1,2,3]' — Caster::toJson defaults to JSON_PRETTY_PRINT
 ```
 
 The exact shape depends on the collection, because not every storage model maps onto array keys. The base implementation returns `$items` as-is; the classes that override it say so on their own page:

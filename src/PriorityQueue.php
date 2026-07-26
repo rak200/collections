@@ -10,10 +10,10 @@ use Iterator;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\ProvidesValueFactories;
 use Rak200\Collections\Internal\ValidatesType;
+use Rak200\Utils\Arr;
 
 use function array_pop;
 use function count;
-use function usort;
 
 /**
  * Max-heap priority queue. Items with higher priority are extracted first;
@@ -111,7 +111,7 @@ class PriorityQueue implements Iterator, Countable, ToArray
             'sequence' => $this->sequence++,
             'item' => $item,
         ];
-        $this->siftUp(count($this->heap) - 1);
+        $this->siftUp(Arr::count($this->heap) - 1);
     }
 
     /**
@@ -146,7 +146,7 @@ class PriorityQueue implements Iterator, Countable, ToArray
         return $this->heap[0]['item'] ?? null;
     }
 
-    /** Number of items currently in the queue. Complexity: O(1). */
+    /** Number of items currently in the queue. Complexity: O(1). See {@see AbstractCollection::count()} for why the native `count()` stays here. */
     public function count(): int
     {
         return count($this->heap);
@@ -251,7 +251,7 @@ class PriorityQueue implements Iterator, Countable, ToArray
 
     private function siftDown(int $i): void
     {
-        $n = count($this->heap);
+        $n = Arr::count($this->heap);
         while (true) {
             $left = 2 * $i + 1;
             $right = 2 * $i + 2;
@@ -277,14 +277,13 @@ class PriorityQueue implements Iterator, Countable, ToArray
     /** @return list<T_Value> */
     private function sortedItems(): array
     {
-        $copy = $this->heap;
-        usort($copy, static function (array $a, array $b): int {
+        $sorted = Arr::sort($this->heap, static function (array $a, array $b): int {
             if ($a['priority'] !== $b['priority']) {
                 // @infection-ignore-all Equivalent mutant: the guard above rules
                 // out equal priorities, so `<` / `<=` agree here; and — empirically
                 // verified across heap states reachable through the public API
                 // (enqueue/dequeue in any order) — no reachable snapshot lets a
-                // magnitude change to 1/-1 (2, -2, or 0) alter usort's stable
+                // magnitude change to 1/-1 (2, -2, or 0) alter the stable sort's
                 // output, because every heap this sorts already satisfies the
                 // max-heap invariant maintained by compare()/siftUp/siftDown.
                 return $a['priority'] < $b['priority'] ? 1 : -1;
@@ -292,11 +291,7 @@ class PriorityQueue implements Iterator, Countable, ToArray
 
             return $a['sequence'] <=> $b['sequence'];
         });
-        $items = [];
-        foreach ($copy as $entry) {
-            $items[] = $entry['item'];
-        }
 
-        return $items;
+        return Arr::map($sorted, static fn (array $entry): mixed => $entry['item']);
     }
 }

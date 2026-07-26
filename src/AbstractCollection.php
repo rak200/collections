@@ -55,7 +55,13 @@ abstract class AbstractCollection implements Iterator, Countable, ToArray
         return $this->type;
     }
 
-    /** Number of items currently stored. Complexity: O(1). */
+    /**
+     * Number of items currently stored. Complexity: O(1).
+     *
+     * Keeps the native `count()`: utils' `Arr::count()` declares a plain `int`,
+     * while `Countable::count()` is analysed as `int<0, max>` — the helper would
+     * cost a PHPStan suppression here for no gain.
+     */
     public function count(): int
     {
         return count($this->items);

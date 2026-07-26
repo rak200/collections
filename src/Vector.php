@@ -8,10 +8,9 @@ use ArrayAccess;
 use InvalidArgumentException;
 use Rak200\Collections\Internal\ProvidesValueFactories;
 use Rak200\Collections\Internal\ValidatesType;
+use Rak200\Utils\Type;
 
-use function get_debug_type;
-use function is_int;
-use function sprintf;
+use function key;
 
 /**
  * Typed generic collection of mixed values, indexed by int.
@@ -52,11 +51,8 @@ class Vector extends AbstractCollection implements ArrayAccess
     {
         parent::__construct($type);
         foreach ($items as $key => $item) {
-            if (!is_int($key)) {
-                throw new InvalidArgumentException(sprintf(
-                    'Invalid key type: expected int, got %s',
-                    get_debug_type($key)
-                ));
+            if (!Type::isInt($key)) {
+                throw new InvalidArgumentException('Invalid key type: expected int, got ' . Type::of($key));
             }
             ValidatesType::checkType($this->type, $item);
             $this->items[$key] = $item;
@@ -89,7 +85,7 @@ class Vector extends AbstractCollection implements ArrayAccess
     {
         $key = key($this->items);
 
-        return is_int($key) ? $key : null;
+        return Type::isInt($key) ? $key : null;
     }
 
     /**

@@ -12,6 +12,8 @@ use Rak200\Collections\Internal\LinkedNode;
 use Rak200\Collections\Internal\ProvidesValueFactories;
 use Rak200\Collections\Internal\ValidatesType;
 
+use function max;
+
 /**
  * Doubly linked list of typed values.
  *

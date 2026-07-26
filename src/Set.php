@@ -97,7 +97,7 @@ class Set extends AbstractCollection
     {
         ValidatesType::checkType($this->type, $item);
         $hash = self::hashValue($item);
-        if (Arr::has($this->items, $hash)) {
+        if (Arr::hasKey($this->items, $hash)) {
             return false;
         }
         $this->items[$hash] = $item;
@@ -128,7 +128,7 @@ class Set extends AbstractCollection
      */
     public function contains(mixed $item): bool
     {
-        return Arr::has($this->items, self::hashValue($item));
+        return Arr::hasKey($this->items, self::hashValue($item));
     }
 
     /**

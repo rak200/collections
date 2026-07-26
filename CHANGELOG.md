@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-07-25
+
+Dependency release: `rak200/utils` moves from `^1.0` to `^4.4` and `rak200/caster` from `^1.0` to `^3.1`, and the call sites are rebuilt on what those majors changed. The headline is a **latent correctness bug** that the utils bump would otherwise have introduced: `Arr::has()` became a dot-path lookup in utils 3.0.0, and every key lookup in this library is a *literal*-key lookup. The public API is unchanged.
+
+### Fixed
+- **`docs/abstract-collection.md`'s `Caster` example was wrong** — it showed `Caster::toJson(Vector::ofInt([1, 2, 3]))` returning `'[1,2,3]'`, but `Caster::toJson()` defaults to `JSON_PRETTY_PRINT`. The example now shows `Caster::toArray()` and the explicit `flags: 0` form for compact output.
+- **Every key lookup is pinned to the literal key** (`Arr::has()` → `Arr::hasKey()` across `Map`, `MultiMap`, `BiMap`, `ImmutableMap`, `Set`, `OrderedSet`, `ImmutableSet`). Under utils ≥ 3.0.0 the dot-aware `Arr::has()` traverses a string key on `.` instead of matching it, which — had the dependency been bumped without this change — would have meant: `Map::has('user.name')` reporting a stored entry as **absent** (and `remove()` refusing to drop it), a `Map` holding `['user' => ['name' => …]]` answering **true** to `has('user.name')`, and `Set`/`OrderedSet`/`ImmutableSet` losing `contains()` for any string containing a dot (the hash `'s:a.b'` is traversed too), so `add()` would keep reporting an already-stored value as newly added. `Arr::hasKey()` (utils 2.2.0) is the literal-key check, stable across that change.
+
+### Added
+- **`tests/LiteralKeyLookupTest.php`** — cross-cutting regression suite (10 tests) pinning literal-key semantics on every affected collection: dotted keys on `Map` / `ImmutableMap` / `MultiMap` / `BiMap`, dotted string values on `Set` / `OrderedSet` / `ImmutableSet`, and the inverse guarantee that a nested array value is *not* traversed by a dotted key. It joins `ConstructorVisibilityTest` and `HashesValuesTest` as a suite that isn't naturally paired with one `src/` class.
+- `VectorTest` now asserts the **exact** message of the non-int key rejection, keeping the mutation gate closed over the message's new concatenated form (the `sprintf()` it replaced hid the operands from Infection's concat mutators).
+
+### Changed
+- **`rak200/utils` requirement raised `^1.0.0` → `^4.4.0`** and **`rak200/caster` `^1.0.0` → `^3.1.0`**. caster is consumed only for the `Contracts\ToArray` interface, which is unchanged across its majors; the constraint is raised so a fresh install resolves the current library rather than a 1.x sitting several majors behind.
+- **`Internal\ValidatesType`** dispatches through utils' `Type::*` predicates (`isObject` / `isInt` / `isStr` / `isBool` / `isFloat` / `isArray` / `isIterable` / `isCallable`) instead of the raw `is_*` functions, and reports the offending type with `Type::of()` instead of `get_debug_type()`. The predicates carry `@phpstan-assert-if-true` annotations, so the same checks now also narrow under static analysis.
+- **`Internal\HashesValues`** hashes through the same `Type::*` predicates plus `Type::of()`, and digests arrays with `Hash::md5()` instead of the native `md5()`. The emitted hash strings are byte-for-byte identical (pinned by `HashesValuesTest`).
+- `Map`, `MultiMap`, `BiMap` and `ImmutableMap` validate keys with `Type::isInt()` / `Type::isStr()` and interpolate `Type::of()` into the error message; `ImmutableMap`'s two `sprintf()` calls collapse into the plain concatenation the sibling classes already used (identical messages).
+- `OrderedSet::first()` / `last()` are single calls to `Arr::firstOrNull()` / `Arr::lastOrNull()`, replacing the empty-guard plus `array_key_first()` / `array_key_last()` index read.
+- `Map::offsetSet()` reads the append position with `Arr::lastKeyOrNull()`; `MultiMap::hasValue()` is `Arr::contains()` instead of `array_search(…) !== false`; `MultiSet::mostCommon()` sorts and slices with `Arr::sort()` / `Arr::slice()`; `Vector` builds its key-type error by interpolation instead of `sprintf()`.
+- `PriorityQueue::sortedItems()` sorts with `Arr::sort()` (which returns a new list, so the explicit `$copy = $this->heap` disappears) and projects the items with `Arr::map()` — whose **list-preserving conditional return type** (new in utils 4.1.0) keeps the `list<T_Value>` shape without a local `@var`.
+- **`use function` inventory corrected** — `Internal\HashesValues` now declares the `spl_object_id` / `var_export` it calls, and `LinkedList` declares `max`; both were resolving through the global fallback, outside the auditable inventory the convention requires.
+- **README installation section rewritten** — this package and both its dependencies are VCS-only, and Composer reads `repositories` only from the root project, so a consuming project must list **all three** (collections, caster, utils). The previous bare `composer require rak200/collections` could not resolve on a clean project.
+- **`docs/`** — `map.md` documents literal-key matching with an example (`multi-map.md` / `bi-map.md` link to it), and `internals.md` covers the same guarantee for the hash-keyed collections plus the `Hash::md5()` switch.
+
+### Notes
+Natives deliberately kept, per the prefer-lib-over-native carve-outs (each still declared in its file's `use function` block):
+- **`count()` inside `Countable::count()`** (`AbstractCollection`, `BiMap`, `ImmutableMap`, `ImmutableSet`, `MultiMap`, `ObjectMap`, `PriorityQueue`) — `Arr::count()` declares a plain `int`, while `Countable::count()` is analysed as `int<0, max>`; the helper would buy a PHPStan suppression and nothing else. `Arr::count()` **is** used where the result isn't returned straight out of `count()` (`Stack`, `MultiMap::countKey()` / `total()`, `MultiSet::distinct()`, `PriorityQueue`'s heap arithmetic).
+- **`array_search()`** in `Set::key()` / `OrderedSet::key()` / `MultiMap::removeValue()` — the native stub resolves the array's key type generically (`int` for a list), where `Arr::searchOrNull()` declares `int|string|null` and would force a cast to satisfy `key(): ?int` and `array_splice()`.
+- **`is_a()`** in the class-string arm of `ValidatesType::checkType()` — `Type::isInstance()` / `Type::isA()` both take a `class-string<T>`, while the discriminator here is an unconstrained runtime string.
+- **`max()`** in `MultiSet::count()` / `LinkedList::remove()` — `Num::max()` widens the return to `float|int|Number`, breaking the `int` / `int<0, max>` contract of both call sites.
+- **`array_pop()`, `array_splice()`, `uasort()`, `key()` / `next()` / `reset()`, `serialize()`, `spl_object_id()`, `var_export()`** — no equivalent, or the utils equivalent is immutable where the call site mutates in place (`Arr::pop()` returns an `[element, rest]` pair, which would cost a copy on an O(1) operation).
+
 ## [0.7.0] - 2026-07-20
 
 Adopts the shared rak200 PHP conventions (`@~/.claude/rak200-php-conventions.md`) end to end — the codebase now matches the cross-library baseline used by `rak200/caster` and `rak200/utils`.
@@ -210,7 +242,8 @@ First minor release. Consolidates a wave of API additions and the `object`→`mi
 ### Added
 - Initial release with `Collection<T_Key, T_Object>` — typed generic array container implementing `Iterator`, `ArrayAccess`, `Countable`, and `Rak200\Caster\Contracts\ToArray`.
 
-[Unreleased]: https://github.com/rak200/collections/compare/0.7.0...HEAD
+[Unreleased]: https://github.com/rak200/collections/compare/0.8.0...HEAD
+[0.8.0]: https://github.com/rak200/collections/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/rak200/collections/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/rak200/collections/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/rak200/collections/compare/0.4.2...0.5.0

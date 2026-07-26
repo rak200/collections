@@ -10,13 +10,11 @@ use Iterator;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\ValidatesType;
 use Rak200\Utils\Arr;
+use Rak200\Utils\Type;
 
 use function array_search;
 use function array_splice;
 use function count;
-use function get_debug_type;
-use function is_int;
-use function is_string;
 
 /**
  * Key-to-many-values map. Each key holds an ordered list of values; the same
@@ -177,7 +175,7 @@ class MultiMap implements Iterator, Countable, ToArray
      */
     public function has(int|string $key): bool
     {
-        return Arr::has($this->items, $key);
+        return Arr::hasKey($this->items, $key);
     }
 
     /**
@@ -191,11 +189,11 @@ class MultiMap implements Iterator, Countable, ToArray
      */
     public function hasValue(int|string $key, mixed $value): bool
     {
-        if (!Arr::has($this->items, $key)) {
+        if (!Arr::hasKey($this->items, $key)) {
             return false;
         }
 
-        return array_search($value, $this->items[$key], true) !== false;
+        return Arr::contains($this->items[$key], $value);
     }
 
     /**
@@ -207,7 +205,7 @@ class MultiMap implements Iterator, Countable, ToArray
      */
     public function remove(int|string $key): bool
     {
-        if (!Arr::has($this->items, $key)) {
+        if (!Arr::hasKey($this->items, $key)) {
             return false;
         }
         unset($this->items[$key]);
@@ -229,7 +227,7 @@ class MultiMap implements Iterator, Countable, ToArray
      */
     public function removeValue(int|string $key, mixed $value): bool
     {
-        if (!Arr::has($this->items, $key)) {
+        if (!Arr::hasKey($this->items, $key)) {
             return false;
         }
         $idx = array_search($value, $this->items[$key], true);
@@ -270,10 +268,10 @@ class MultiMap implements Iterator, Countable, ToArray
      */
     public function countKey(int|string $key): int
     {
-        return isset($this->items[$key]) ? count($this->items[$key]) : 0;
+        return isset($this->items[$key]) ? Arr::count($this->items[$key]) : 0;
     }
 
-    /** Number of distinct keys currently stored. Complexity: O(1). */
+    /** Number of distinct keys currently stored. Complexity: O(1). See {@see AbstractCollection::count()} for why the native `count()` stays here. */
     public function count(): int
     {
         return count($this->items);
@@ -284,7 +282,7 @@ class MultiMap implements Iterator, Countable, ToArray
     {
         $sum = 0;
         foreach ($this->items as $list) {
-            $sum += count($list);
+            $sum += Arr::count($list);
         }
 
         return $sum;
@@ -362,11 +360,11 @@ class MultiMap implements Iterator, Countable, ToArray
             // 'mixed' here.
             return;
         }
-        if ($this->keyType === 'int' && !is_int($key)) {
-            throw new InvalidArgumentException('Key must be of type int. Got: ' . get_debug_type($key));
+        if ($this->keyType === 'int' && !Type::isInt($key)) {
+            throw new InvalidArgumentException('Key must be of type int. Got: ' . Type::of($key));
         }
-        if ($this->keyType === 'string' && !is_string($key)) {
-            throw new InvalidArgumentException('Key must be of type string. Got: ' . get_debug_type($key));
+        if ($this->keyType === 'string' && !Type::isStr($key)) {
+            throw new InvalidArgumentException('Key must be of type string. Got: ' . Type::of($key));
         }
     }
 

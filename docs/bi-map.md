@@ -93,6 +93,8 @@ $sessions->hasKey('sess-abc');     // true
 $sessions->hasValue($alice);       // true
 ```
 
+Keys are matched literally, dots included — see [`Map`](map.md#set--get--has--remove).
+
 [↑ Back to top](#bimap)
 
 ---

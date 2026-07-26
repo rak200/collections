@@ -150,6 +150,7 @@ final class VectorTest extends TestCase
     public function testConstructorRejectsStringKeys(): void
     {
         $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid key type: expected int, got string');
         Vector::any(['foo' => 'bar']);
     }
 

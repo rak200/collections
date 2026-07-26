@@ -12,15 +12,12 @@ use Iterator;
 use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\ValidatesType;
 use Rak200\Utils\Arr;
+use Rak200\Utils\Type;
 
 use function count;
-use function get_debug_type;
-use function is_int;
-use function is_string;
 use function key;
 use function next;
 use function reset;
-use function sprintf;
 
 /**
  * Read-only counterpart to {@see Map}. Entries are fixed at construction;
@@ -158,7 +155,7 @@ final class ImmutableMap implements Iterator, ArrayAccess, Countable, ToArray
      */
     public function has(int|string $key): bool
     {
-        return Arr::has($this->items, $key);
+        return Arr::hasKey($this->items, $key);
     }
 
     /** @return T_Key[] Keys in insertion order. Complexity: O(n). */
@@ -173,7 +170,7 @@ final class ImmutableMap implements Iterator, ArrayAccess, Countable, ToArray
         return Arr::values($this->items);
     }
 
-    /** Number of entries currently stored. Complexity: O(1). */
+    /** Number of entries currently stored. Complexity: O(1). See {@see AbstractCollection::count()} for why the native `count()` stays here. */
     public function count(): int
     {
         return count($this->items);
@@ -279,11 +276,11 @@ final class ImmutableMap implements Iterator, ArrayAccess, Countable, ToArray
             // 'mixed' here.
             return;
         }
-        if ($this->keyType === 'int' && !is_int($key)) {
-            throw new InvalidArgumentException(sprintf('Key must be of type int. Got: %s', get_debug_type($key)));
+        if ($this->keyType === 'int' && !Type::isInt($key)) {
+            throw new InvalidArgumentException('Key must be of type int. Got: ' . Type::of($key));
         }
-        if ($this->keyType === 'string' && !is_string($key)) {
-            throw new InvalidArgumentException(sprintf('Key must be of type string. Got: %s', get_debug_type($key)));
+        if ($this->keyType === 'string' && !Type::isStr($key)) {
+            throw new InvalidArgumentException('Key must be of type string. Got: ' . Type::of($key));
         }
     }
 }

@@ -11,28 +11,26 @@ use Rak200\Collections\LinkedList;
 use Rak200\Collections\Map;
 use Rak200\Collections\ObjectMap;
 use Rak200\Collections\PriorityQueue;
+use Rak200\Utils\Type;
 
-use function get_debug_type;
 use function is_a;
-use function is_array;
-use function is_bool;
-use function is_callable;
-use function is_float;
-use function is_int;
-use function is_iterable;
-use function is_object;
-use function is_string;
 
 /**
  * Static helpers for validating values against a configured `$type` discriminator.
  *
  * `$type` is one of:
  * - `'mixed'` — no check (any value passes)
- * - `'object'` — any object (`is_object`)
+ * - `'object'` — any object ({@see Type::isObject()})
  * - a pseudo-type for a PHP built-in: `'int'`/`'integer'`, `'string'`,
  *   `'bool'`/`'boolean'`, `'float'`/`'double'`, `'array'`, `'iterable'`,
- *   `'callable'` — checked with the matching `is_*` function
+ *   `'callable'` — checked with the matching `Type::is*()` predicate
  * - any other string — treated as a class-string; checked with `is_a()`
+ *
+ * The class-string arm keeps the native `is_a()` rather than utils'
+ * {@see Type::isInstance()} / {@see Type::isA()}: both declare a
+ * `class-string<T>` parameter, while `$type` here is an unconstrained string
+ * validated at runtime — adopting them would only trade a native call for a
+ * PHPStan suppression.
  *
  * Callers pass their own type as the first argument; the helper has no
  * knowledge of the containing class or its property layout.
@@ -64,20 +62,20 @@ abstract class ValidatesType
     {
         $valid = match ($type) {
             'mixed' => true,
-            'object' => is_object($value),
-            'int', 'integer' => is_int($value),
-            'string' => is_string($value),
-            'bool', 'boolean' => is_bool($value),
-            'float', 'double' => is_float($value),
-            'array' => is_array($value),
-            'iterable' => is_iterable($value),
-            'callable' => is_callable($value),
+            'object' => Type::isObject($value),
+            'int', 'integer' => Type::isInt($value),
+            'string' => Type::isStr($value),
+            'bool', 'boolean' => Type::isBool($value),
+            'float', 'double' => Type::isFloat($value),
+            'array' => Type::isArray($value),
+            'iterable' => Type::isIterable($value),
+            'callable' => Type::isCallable($value),
             // 'null' => $value === null, // 'null' is not a valid type for collection items, keys, or values, so we don't support it as a type discriminator. If we did, this would be the check.
-            default => is_object($value) && is_a($value, $type),
+            default => Type::isObject($value) && is_a($value, $type),
         };
 
         if (!$valid) {
-            throw new InvalidArgumentException("{$label} must be an instance of {$type}. Got: " . get_debug_type($value));
+            throw new InvalidArgumentException("{$label} must be an instance of {$type}. Got: " . Type::of($value));
         }
     }
 }

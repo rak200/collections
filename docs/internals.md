@@ -91,7 +91,7 @@ The `phpstan/CollectionTypeResolver.php` extension shipped with the package clos
 | ----- | ------ |
 | object | `spl_object_id()` — identity, so equal-but-distinct instances are **different** entries |
 | scalar / `null` | the value itself, type-prefixed |
-| array | `md5(serialize($value))` — structural equality |
+| array | `Hash::md5(serialize($value))` — structural equality |
 
 Every handle carries a type prefix (`o:`, `i:`, `s:`, …), so values of different types never collide:
 
@@ -109,5 +109,14 @@ $s->add($b);     // true  — identity, not equality
 ```
 
 The object rule is the one that surprises: two value objects that compare `==` are still two separate members. When you want equality semantics, key on a scalar you derive yourself (an id, a hash) rather than on the object.
+
+A scalar handle carries the value verbatim after its prefix (`'s:a.b'` for the string `'a.b'`), and every lookup against it is a literal-key one — so a string containing a dot behaves like any other member:
+
+```php
+$s = Set::any(['a.b', 'a.c', 'a']);
+$s->contains('a.b');  // true
+$s->add('a.b');       // false — already a member
+$s->count();          // 3
+```
 
 [↑ Back to top](#internals--typing-identity-factories)

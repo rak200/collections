@@ -11,11 +11,9 @@ use Rak200\Caster\Contracts\ToArray;
 use Rak200\Collections\Internal\HashesValues;
 use Rak200\Collections\Internal\ValidatesType;
 use Rak200\Utils\Arr;
+use Rak200\Utils\Type;
 
 use function count;
-use function get_debug_type;
-use function is_int;
-use function is_string;
 use function key;
 use function next;
 use function reset;
@@ -127,7 +125,7 @@ class BiMap implements Iterator, Countable, ToArray
     {
         $this->checkKey($key);
         ValidatesType::checkType($this->valueType, $value, 'Value');
-        if (Arr::has($this->keyToValue, $key)) {
+        if (Arr::hasKey($this->keyToValue, $key)) {
             throw new InvalidArgumentException('Key ' . var_export($key, true) . ' is already mapped.');
         }
         $valueHash = self::hashValue($value);
@@ -189,7 +187,7 @@ class BiMap implements Iterator, Countable, ToArray
      */
     public function hasKey(int|string $key): bool
     {
-        return Arr::has($this->keyToValue, $key);
+        return Arr::hasKey($this->keyToValue, $key);
     }
 
     /**
@@ -209,7 +207,7 @@ class BiMap implements Iterator, Countable, ToArray
      */
     public function removeByKey(int|string $key): bool
     {
-        if (!Arr::has($this->keyToValue, $key)) {
+        if (!Arr::hasKey($this->keyToValue, $key)) {
             return false;
         }
         $value = $this->keyToValue[$key];
@@ -235,7 +233,7 @@ class BiMap implements Iterator, Countable, ToArray
         return true;
     }
 
-    /** Number of mappings currently stored. Complexity: O(1). */
+    /** Number of mappings currently stored. Complexity: O(1). See {@see AbstractCollection::count()} for why the native `count()` stays here. */
     public function count(): int
     {
         return count($this->keyToValue);
@@ -308,11 +306,11 @@ class BiMap implements Iterator, Countable, ToArray
             // 'mixed' here.
             return;
         }
-        if ($this->keyType === 'int' && !is_int($key)) {
-            throw new InvalidArgumentException('Key must be of type int. Got: ' . get_debug_type($key));
+        if ($this->keyType === 'int' && !Type::isInt($key)) {
+            throw new InvalidArgumentException('Key must be of type int. Got: ' . Type::of($key));
         }
-        if ($this->keyType === 'string' && !is_string($key)) {
-            throw new InvalidArgumentException('Key must be of type string. Got: ' . get_debug_type($key));
+        if ($this->keyType === 'string' && !Type::isStr($key)) {
+            throw new InvalidArgumentException('Key must be of type string. Got: ' . Type::of($key));
         }
     }
 }

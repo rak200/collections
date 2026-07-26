@@ -7,9 +7,9 @@ namespace Rak200\Collections;
 use InvalidArgumentException;
 use Rak200\Collections\Internal\ProvidesValueFactories;
 use Rak200\Collections\Internal\ValidatesType;
+use Rak200\Utils\Arr;
 
 use function array_pop;
-use function count;
 
 /**
  * LIFO stack. Iteration yields elements from top (most recently pushed) to bottom.
@@ -99,7 +99,7 @@ class Stack extends AbstractCollection
      */
     public function peek(): mixed
     {
-        $count = count($this->items);
+        $count = Arr::count($this->items);
 
         return $count === 0 ? null : $this->items[$count - 1];
     }
@@ -114,7 +114,7 @@ class Stack extends AbstractCollection
     /** @return T_Value Item at the current iteration position (top-to-bottom). Complexity: O(1). */
     public function current(): mixed
     {
-        return $this->items[count($this->items) - 1 - $this->position];
+        return $this->items[Arr::count($this->items) - 1 - $this->position];
     }
 
     /** Zero-based offset from the top of the stack. Complexity: O(1). */
@@ -138,6 +138,6 @@ class Stack extends AbstractCollection
     /** Whether the iteration cursor still points at a valid item. Complexity: O(1). */
     public function valid(): bool
     {
-        return $this->position < count($this->items);
+        return $this->position < Arr::count($this->items);
     }
 }

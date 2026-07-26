@@ -6,17 +6,12 @@ namespace Rak200\Collections\Internal;
 
 use Exception;
 use InvalidArgumentException;
+use Rak200\Utils\Hash;
+use Rak200\Utils\Type;
 
-use function get_debug_type;
-use function is_array;
-use function is_bool;
-use function is_float;
-use function is_int;
-use function is_null;
-use function is_object;
-use function is_string;
-use function md5;
 use function serialize;
+use function spl_object_id;
+use function var_export;
 
 /**
  * Hybrid hashing for collections that need a uniqueness handle for arbitrary
@@ -42,15 +37,15 @@ trait HashesValues
     private static function hashValue(mixed $value): string
     {
         return match (true) {
-            is_object($value) => 'o:' . spl_object_id($value),
-            is_int($value) => 'i:' . $value,
-            is_string($value) => 's:' . $value,
-            is_bool($value) => 'b:' . ($value ? '1' : '0'),
-            is_null($value) => 'n:',
-            is_float($value) => 'f:' . var_export($value, true),
-            is_array($value) => 'a:' . self::serializeArray($value),
+            Type::isObject($value) => 'o:' . spl_object_id($value),
+            Type::isInt($value) => 'i:' . $value,
+            Type::isStr($value) => 's:' . $value,
+            Type::isBool($value) => 'b:' . ($value ? '1' : '0'),
+            Type::isNull($value) => 'n:',
+            Type::isFloat($value) => 'f:' . var_export($value, true),
+            Type::isArray($value) => 'a:' . self::serializeArray($value),
             default => throw new InvalidArgumentException(
-                'Unsupported value type: ' . get_debug_type($value)
+                'Unsupported value type: ' . Type::of($value)
             ),
         };
     }
@@ -70,7 +65,7 @@ trait HashesValues
     {
         try {
             // Test if the array is serializable (e.g. doesn't contain resources)
-            return md5(serialize($array));
+            return Hash::md5(serialize($array));
         } catch (Exception $e) {
             throw new InvalidArgumentException(
                 'Cannot hash array: ' . $e->getMessage()

@@ -82,6 +82,8 @@ $headers->hasValue('Set-Cookie', 'fresh=1'); // true
 $headers->hasValue('Set-Cookie', 'nope');    // false
 ```
 
+Keys are matched literally, so a dotted header name (`'x-trace.id'`) is one key — see [`Map`](map.md#set--get--has--remove).
+
 [↑ Back to top](#multimap)
 
 ---

@@ -8,11 +8,7 @@ use ArrayAccess;
 use InvalidArgumentException;
 use Rak200\Collections\Internal\ValidatesType;
 use Rak200\Utils\Arr;
-
-use function array_key_last;
-use function get_debug_type;
-use function is_int;
-use function is_string;
+use Rak200\Utils\Type;
 
 /**
  * Ordered key-value map with separate key and value type enforcement.
@@ -146,7 +142,7 @@ class Map extends AbstractCollection implements ArrayAccess
      */
     public function has(int|string $key): bool
     {
-        return Arr::has($this->items, $key);
+        return Arr::hasKey($this->items, $key);
     }
 
     /**
@@ -156,7 +152,7 @@ class Map extends AbstractCollection implements ArrayAccess
      */
     public function remove(int|string $key): bool
     {
-        if (!Arr::has($this->items, $key)) {
+        if (!Arr::hasKey($this->items, $key)) {
             return false;
         }
         unset($this->items[$key]);
@@ -218,8 +214,8 @@ class Map extends AbstractCollection implements ArrayAccess
     public function offsetSet(mixed $offset, mixed $value): void
     {
         if ($offset === null) {
-            $lastKey = array_key_last($this->items);
-            $nextKey = is_int($lastKey) ? $lastKey + 1 : 0;
+            $lastKey = Arr::lastKeyOrNull($this->items);
+            $nextKey = Type::isInt($lastKey) ? $lastKey + 1 : 0;
             $this->checkKey($nextKey);
             ValidatesType::checkType($this->type, $value, 'Value');
             $this->items[$nextKey] = $value;
@@ -253,11 +249,11 @@ class Map extends AbstractCollection implements ArrayAccess
             // 'mixed' here.
             return;
         }
-        if ($this->keyType === 'int' && !is_int($key)) {
-            throw new InvalidArgumentException('Key must be of type int. Got: ' . get_debug_type($key));
+        if ($this->keyType === 'int' && !Type::isInt($key)) {
+            throw new InvalidArgumentException('Key must be of type int. Got: ' . Type::of($key));
         }
-        if ($this->keyType === 'string' && !is_string($key)) {
-            throw new InvalidArgumentException('Key must be of type string. Got: ' . get_debug_type($key));
+        if ($this->keyType === 'string' && !Type::isStr($key)) {
+            throw new InvalidArgumentException('Key must be of type string. Got: ' . Type::of($key));
         }
     }
 }

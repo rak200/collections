@@ -191,7 +191,7 @@ class ObjectMap implements Iterator, Countable, ToArray
         return Arr::values($this->values);
     }
 
-    /** Number of entries currently stored. Complexity: O(1). */
+    /** Number of entries currently stored. Complexity: O(1). See {@see AbstractCollection::count()} for why the native `count()` stays here. */
     public function count(): int
     {
         return count($this->keys);

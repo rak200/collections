@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**rak200/collections** is a standalone PHP 8.4+ library providing typed generic collection types. It depends on `rak200/caster` for the `ToArray` contract.
+**rak200/collections** is a standalone PHP 8.4+ library providing typed generic collection types. It depends on `rak200/caster` (`^3.1`, for the `Contracts\ToArray` interface — the only symbol consumed) and `rak200/utils` (`^4.4`, for the `Arr` / `Type` / `Hash` helpers used internally).
 
 ## Structure
 
@@ -40,7 +40,7 @@ collections/
 │       ├── ProvidesValueFactories.php  # Trait: any()/ofInt()/ofString()/… factories for single-value collections
 │       ├── ValidatesType.php     # Static utility (abstract class): checkType($type, $value, $label)
 │       └── LinkedNode.php        # Node used by LinkedList (was Rak200\Collections\LinkedNode in 0.0.x)
-├── tests/                        # PHPUnit suites mirroring each src/ class (+ ConstructsProtected trait, TypedFactoriesTest, ConstructorVisibilityTest, HashesValuesTest)
+├── tests/                        # PHPUnit suites mirroring each src/ class (+ ConstructsProtected trait, TypedFactoriesTest, ConstructorVisibilityTest, HashesValuesTest, LiteralKeyLookupTest)
 └── docs/                         # Per-class reference (docs/README.md index + one page per class)
 ```
 
@@ -54,7 +54,7 @@ All classes live under the `Rak200\Collections` namespace (PSR-4 from `src/`); t
 
 Test construction: constructors are `protected` (see below), so tests build through the public factories. The few cases with no factory — the `'array'`/`'iterable'` discriminators, pseudo-typed map values, partially-typed object maps — go through the `tests/ConstructsProtected.php` trait's `build(Cls::class, ...$args)` helper (Reflection: `newInstanceWithoutConstructor()` + `getConstructor()?->invokeArgs()`, so the protected constructor's validation still fires). Negative type-rejection tests deliberately violate the static types and carry a `// @phpstan-ignore` on the offending line.
 
-Two cross-cutting test files aren't paired 1:1 with a `src/` class: `tests/ConstructorVisibilityTest.php` reflects on every collection's constructor to pin it as `protected` (not `private` — that's what lets a consumer subclass a collection and still call `parent::__construct()`), and `tests/HashesValuesTest.php` pins the exact string format `Internal\HashesValues::hashValue()` produces per type (via `Set` as the reflection target), since the type-prefix format is what keeps values like `1` and `'1'` from colliding.
+Three cross-cutting test files aren't paired 1:1 with a `src/` class: `tests/ConstructorVisibilityTest.php` reflects on every collection's constructor to pin it as `protected` (not `private` — that's what lets a consumer subclass a collection and still call `parent::__construct()`); `tests/HashesValuesTest.php` pins the exact string format `Internal\HashesValues::hashValue()` produces per type (via `Set` as the reflection target), since the type-prefix format is what keeps values like `1` and `'1'` from colliding; and `tests/LiteralKeyLookupTest.php` pins literal-key semantics across every keyed collection (see "Key lookups" below), the one guarantee a dot-aware `Arr::has()` would silently break.
 
 `composer cs-check` runs PHP-CS-Fixer (`@PhpCsFixer` preset, dry-run) over `phpstan/`, `src/`, and `tests/`; `composer cs-fix` applies it. `composer infection` runs mutation testing (`infection.json5.dist`, `minMsi`/`minCoveredMsi: 100`) over `src/`. Genuinely equivalent mutants (a change Infection can generate but no test can ever observe) are marked in-source with `@infection-ignore-all` rather than chased with a test — see e.g. the `checkKey()` early-return in `Map`/`BiMap`/`MultiMap`/`ImmutableMap`, or the heap-comparator ternaries in `PriorityQueue`, each with a comment explaining why no input can distinguish the mutant.
 
@@ -228,13 +228,14 @@ All dispatch lives in `Internal\ValidatesType::checkType()`. `Map`/`BiMap` `$key
 ### Internal
 
 **`Internal\HashesValues`** (trait)
-- `private static function hashValue(mixed $value): string` — used by `Set`, `OrderedSet`, `BiMap`, and `ObjectMap` to derive a uniqueness handle: `spl_object_id` for objects, value with a type prefix for scalars/null/arrays. Different types never collide (`'1'` vs `1`).
+- `private static function hashValue(mixed $value): string` — used by `Set`, `OrderedSet`, `BiMap`, and `ObjectMap` to derive a uniqueness handle: `spl_object_id` for objects, value with a type prefix for scalars/null/arrays. Different types never collide (`'1'` vs `1`). Dispatch is on utils' `Type::*` predicates; arrays are digested with `Hash::md5(serialize(…))`.
+- The hash carries the value **verbatim** after the type prefix (`'s:a.b'` for the string `'a.b'`), which is why every lookup against a hash-keyed array must be a literal-key one — see the note under "Key lookups" below.
 
 **`Internal\ProvidesValueFactories`** (trait)
 - Supplies the pseudo-type factories (`any()`, `ofObject()`, `ofInt()`, `ofString()`, `ofBool()`, `ofFloat()`, `ofCallable()`) to the ten single-value collections whose constructor is `__construct(string $type, iterable $items = [])`. Each returns the statically-inferred element type via a literal `@return self<int>` etc. The class-string `of()` is **not** here — a per-call method template doesn't resolve through a trait in IDE analysis, so each class declares `of()` inline.
 
 **`Internal\ValidatesType`** (abstract class — static utility)
-- `public static function checkType(string $type, mixed $value, string $label = 'Item'): void` — validates `$value` against `$type` via a `match` on the type string. Recognizes `'mixed'` (skip), `'object'` (`is_object`), PHP built-in pseudo-types `'int'`/`'integer'`, `'string'`, `'bool'`/`'boolean'`, `'float'`/`'double'`, `'array'`, `'iterable'`, `'callable'`, and falls back to `is_a($value, $type)` for class-strings. `$label` is interpolated into the error message so callers can distinguish `'Item'`/`'Key'`/`'Value'`.
+- `public static function checkType(string $type, mixed $value, string $label = 'Item'): void` — validates `$value` against `$type` via a `match` on the type string. Recognizes `'mixed'` (skip), `'object'` (`Type::isObject`), PHP built-in pseudo-types `'int'`/`'integer'`, `'string'`, `'bool'`/`'boolean'`, `'float'`/`'double'`, `'array'`, `'iterable'`, `'callable'` (each on the matching `Type::is*` predicate), and falls back to `Type::isObject($value) && is_a($value, $type)` for class-strings. `$label` is interpolated into the error message so callers can distinguish `'Item'`/`'Key'`/`'Value'`.
 - Was a trait through 0.2.0; converted to an abstract class with a static method in 0.3.0 so it can be used anywhere without depending on a `$type` property in the using class. The `AbstractCollection::checkType()` pass-through that existed for backwards compatibility was removed in 0.4.1.
 
 **`Internal\LinkedNode`** (final class)
@@ -248,6 +249,40 @@ When adding a new collection type:
 5. Add complexity notation in every public method
 6. Add method reference in class description, groupped by complexity
 7. Add a `docs/<class>.md` page (per the shared conventions' fixed layout) and link it from `docs/README.md`'s index table
+
+## Key lookups
+
+**Every key lookup here is a literal-key lookup — `Arr::hasKey()`, never `Arr::has()`.**
+Since utils 3.0.0 `Arr::has()` / `get()` / `getOrNull()` traverse a string key on `.`,
+which is wrong at every call site in this library: map keys are caller-supplied strings
+(`'user.name'` is one key, not a path), and set/bag keys are `HashesValues` hashes that
+carry the value verbatim (`'s:a.b'`). The dot-aware form would report stored entries as
+absent and let a nested array value masquerade as a dotted key. `tests/LiteralKeyLookupTest.php`
+pins this across `Map`, `ImmutableMap`, `MultiMap`, `BiMap`, `Set`, `OrderedSet`, and `ImmutableSet`.
+
+## Prefer-lib-over-native carve-outs
+
+The shared conventions' prefer-`rak200/utils`-over-native rule applies, and the sweep is
+done — the natives that remain are **deliberate** (each declared in its file's
+`use function` block). Don't "fix" them:
+
+- **`count()` inside `Countable::count()`** — `Arr::count()` declares plain `int`, while
+  `Countable::count()` is analysed as `int<0, max>` under PHPStan max; the helper only buys
+  a suppression. `Arr::count()` **is** used everywhere the value isn't returned straight
+  out of `count()` (`Stack`, `MultiMap::countKey()`/`total()`, `MultiSet::distinct()`,
+  `PriorityQueue`'s heap arithmetic).
+- **`array_search()`** (`Set::key()`, `OrderedSet::key()`, `MultiMap::removeValue()`) — the
+  native stub resolves the array's key type generically (`int` over a list);
+  `Arr::searchOrNull()` declares `int|string|null` and would force a cast to satisfy
+  `key(): ?int` / `array_splice()`.
+- **`is_a()`** (class-string arm of `ValidatesType::checkType()`) — `Type::isInstance()` /
+  `Type::isA()` require a `class-string<T>`; the discriminator is an unconstrained runtime
+  string.
+- **`max()`** (`MultiSet::count()`, `LinkedList::remove()`) — `Num::max()` widens to
+  `float|int|Number`, breaking both `int` return contracts.
+- **`array_pop()`, `array_splice()`, `uasort()`, `key()`/`next()`/`reset()`, `serialize()`,
+  `spl_object_id()`, `var_export()`** — no equivalent, or the utils equivalent is immutable
+  (`Arr::pop()` returns an `[element, rest]` pair) where the call site mutates in place.
 
 ## Versioning
 

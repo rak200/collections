@@ -64,7 +64,7 @@ final class ImmutableSet implements Iterator, Countable, ToArray
         foreach ($items as $item) {
             ValidatesType::checkType($this->type, $item);
             $hash = self::hashValue($item);
-            if (!Arr::has($this->items, $hash)) {
+            if (!Arr::hasKey($this->items, $hash)) {
                 $this->items[$hash] = $item;
             }
         }
@@ -120,7 +120,7 @@ final class ImmutableSet implements Iterator, Countable, ToArray
      */
     public function contains(mixed $item): bool
     {
-        return Arr::has($this->items, self::hashValue($item));
+        return Arr::hasKey($this->items, self::hashValue($item));
     }
 
     /**
@@ -217,7 +217,7 @@ final class ImmutableSet implements Iterator, Countable, ToArray
         return true;
     }
 
-    /** Number of items currently stored. Complexity: O(1). */
+    /** Number of items currently stored. Complexity: O(1). See {@see AbstractCollection::count()} for why the native `count()` stays here. */
     public function count(): int
     {
         return count($this->items);

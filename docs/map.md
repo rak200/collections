@@ -78,6 +78,14 @@ $index->remove('alice');  // false — nothing to remove
 
 `get()` returning `null` is ambiguous when `null` is a legitimate stored value; use `has()` to distinguish "absent" from "present and null". Overwriting an existing key does **not** move it to the end — insertion order is set by the first `set()` for that key.
 
+Keys are matched **literally** — a key containing a dot is one key, never a path into nested values:
+
+```php
+$m = Map::any(['user.name' => 'ada', 'user' => ['name' => 'grace']]);
+$m->has('user.name');   // true  — the literal key
+$m->get('user.name');   // 'ada' — not 'grace'
+```
+
 [↑ Back to top](#map)
 
 ---

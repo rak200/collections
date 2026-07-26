@@ -11,8 +11,6 @@ use Rak200\Collections\Internal\ProvidesValueFactories;
 use Rak200\Collections\Internal\ValidatesType;
 use Rak200\Utils\Arr;
 
-use function array_key_first;
-use function array_key_last;
 use function array_search;
 use function uasort;
 
@@ -128,7 +126,7 @@ class OrderedSet extends AbstractCollection
     {
         ValidatesType::checkType($this->type, $item);
         $hash = self::hashValue($item);
-        if (Arr::has($this->items, $hash)) {
+        if (Arr::hasKey($this->items, $hash)) {
             return false;
         }
         $this->items[$hash] = $item;
@@ -162,7 +160,7 @@ class OrderedSet extends AbstractCollection
      */
     public function contains(mixed $item): bool
     {
-        return Arr::has($this->items, self::hashValue($item));
+        return Arr::hasKey($this->items, self::hashValue($item));
     }
 
     /**
@@ -265,11 +263,7 @@ class OrderedSet extends AbstractCollection
      */
     public function first(): mixed
     {
-        if ($this->items === []) {
-            return null;
-        }
-
-        return $this->items[array_key_first($this->items)];
+        return Arr::firstOrNull($this->items);
     }
 
     /**
@@ -279,11 +273,7 @@ class OrderedSet extends AbstractCollection
      */
     public function last(): mixed
     {
-        if ($this->items === []) {
-            return null;
-        }
-
-        return $this->items[array_key_last($this->items)];
+        return Arr::lastOrNull($this->items);
     }
 
     /**

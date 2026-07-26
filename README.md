@@ -17,6 +17,20 @@ See the [`docs/` reference](docs/README.md) for the full per-class API with runn
 
 ## Installation
 
+Not published on Packagist — install straight from the GitHub repository as a Composer VCS package. Its dependencies (`rak200/caster`, `rak200/utils`) are VCS-only too, and Composer reads `repositories` only from the root project, so the consuming project must list **all three**:
+
+```json
+{
+    "repositories": [
+        { "type": "vcs", "url": "https://github.com/rak200/collections" },
+        { "type": "vcs", "url": "https://github.com/rak200/caster" },
+        { "type": "vcs", "url": "https://github.com/rak200/utils" }
+    ]
+}
+```
+
+then require it as usual:
+
 ```bash
 composer require rak200/collections
 ```
